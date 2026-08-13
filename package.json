@@ -1,0 +1,17 @@
+{
+  "name": "tileflow-demos",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "build": "pnpm --recursive --if-present run build",
+    "dev:next-basic": "pnpm --filter @tileflow-demos/next-basic dev",
+    "dev:vite-basic": "pnpm --filter @tileflow-demos/vite-basic dev",
+    "start:next-basic": "pnpm --filter @tileflow-demos/next-basic start",
+    "preview:vite-basic": "pnpm --filter @tileflow-demos/vite-basic preview",
+    "typecheck": "pnpm --recursive --if-present run typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
