@@ -40,8 +40,8 @@ export default defineTileflow({
       theme: "light",
       modules: [
         labels({
-          roads: "minimal",
-          water: "balanced",
+          roads: "highways",
+          water: "major",
         }),
         poi({
           preset: "balanced",

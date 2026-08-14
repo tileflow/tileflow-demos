@@ -1,0 +1,383 @@
+name: SDK Sync
+run-name: Reconcile published SDK packages (${{ github.run_id }}.${{ github.run_attempt }})
+
+on:
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: sdk-sync
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Reconcile exact SDK pins
+    if: github.repository == 'tileflow/tileflow-demos'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      BOT_BRANCH: automation/sdk-sync
+      CI_WORKFLOW: ci.yml
+      MAIN_BRANCH: main
+    steps:
+      - name: Require main context
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = 'tileflow/tileflow-demos'
+          test "$GITHUB_REF" = 'refs/heads/main'
+
+      - name: Checkout current main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Plan synchronization without writes
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          plan_file="$RUNNER_TEMP/sdk-sync-plan.json"
+          node scripts/sync-sdk-versions.mjs plan > "$plan_file"
+          node -e '
+            const {appendFileSync, readFileSync} = require("node:fs");
+            const plan = JSON.parse(readFileSync(process.argv[1], "utf8"));
+            if (typeof plan.changed !== "boolean" || !Number.isSafeInteger(plan.changeCount)) {
+              throw new Error("SDK Sync emitted invalid deterministic outputs.");
+            }
+            if (plan.changed !== (plan.changeCount > 0) || plan.changeCount !== plan.changedFiles.length) {
+              throw new Error("SDK Sync plan outputs disagree.");
+            }
+            appendFileSync(process.env.GITHUB_OUTPUT, `changed=${plan.changed}\n`);
+          ' "$plan_file"
+
+      - name: Setup pnpm
+        if: steps.plan.outputs.changed == 'true'
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.13.1 --activate
+
+      - name: Test synchronization policy
+        if: steps.plan.outputs.changed == 'true'
+        run: node --test scripts/sync-sdk-versions.test.mjs
+
+      - name: Apply published alpha versions
+        if: steps.plan.outputs.changed == 'true'
+        run: node scripts/sync-sdk-versions.mjs apply
+
+      - name: Regenerate the exact lockfile
+        if: steps.plan.outputs.changed == 'true'
+        env:
+          CI: 'true'
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: pnpm install --lockfile-only --no-frozen-lockfile
+
+      - name: Verify generated state
+        if: steps.plan.outputs.changed == 'true'
+        run: |
+          node scripts/sync-sdk-versions.mjs check
+          git diff --check
+
+      - name: Detect generated changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "base_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if git diff --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update the bot pull request
+        if: steps.changes.outputs.changed == 'true'
+        id: pull-request
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          BASE_SHA: ${{ steps.changes.outputs.base_sha }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const {execFileSync} = await import('node:child_process');
+            const {readFile} = await import('node:fs/promises');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const repository = `${owner}/${repo}`;
+            const baseSha = process.env.BASE_SHA;
+            const botBranch = process.env.BOT_BRANCH;
+            const mainBranch = process.env.MAIN_BRANCH;
+            const commitPattern = /^[0-9a-f]{40}$/;
+            if (repository !== 'tileflow/tileflow-demos') throw new Error(`Unexpected repository: ${repository}`);
+            if (!commitPattern.test(baseSha)) throw new Error(`Invalid base SHA: ${baseSha}`);
+            if (botBranch !== 'automation/sdk-sync' || mainBranch !== 'main') throw new Error('Unexpected branch configuration.');
+
+            const changedOutput = execFileSync(
+              'git',
+              ['diff', '--name-only', '--diff-filter=ACMRTUXB', '-z', baseSha, '--'],
+              {cwd: process.env.GITHUB_WORKSPACE, encoding: 'utf8'},
+            );
+            const deletedOutput = execFileSync(
+              'git',
+              ['diff', '--name-only', '--diff-filter=D', '-z', baseSha, '--'],
+              {cwd: process.env.GITHUB_WORKSPACE, encoding: 'utf8'},
+            );
+            if (deletedOutput) throw new Error(`SDK Sync may not delete files: ${deletedOutput.replaceAll('\0', ', ')}`);
+            const changedFiles = changedOutput.split('\0').filter(Boolean).sort();
+            const allowedPath = /^(?:pnpm-(?:lock|workspace)\.yaml|apps\/[^/]+\/package\.json)$/;
+            if (changedFiles.length === 0) throw new Error('Expected generated SDK changes.');
+            for (const path of changedFiles) {
+              if (!allowedPath.test(path)) throw new Error(`Unexpected SDK Sync output: ${path}`);
+            }
+
+            const {data: mainRef} = await github.rest.git.getRef({owner, repo, ref: `heads/${mainBranch}`});
+            if (mainRef.object.type !== 'commit' || mainRef.object.sha !== baseSha) {
+              throw new Error(`main advanced while generating SDK pins: ${mainRef.object.sha} != ${baseSha}`);
+            }
+            const {data: baseCommit} = await github.rest.git.getCommit({owner, repo, commit_sha: baseSha});
+            const tree = [];
+            for (const path of changedFiles) {
+              const contents = await readFile(`${process.env.GITHUB_WORKSPACE}/${path}`);
+              const {data: blob} = await github.rest.git.createBlob({
+                owner,
+                repo,
+                content: contents.toString('base64'),
+                encoding: 'base64',
+              });
+              tree.push({path, mode: '100644', type: 'blob', sha: blob.sha});
+            }
+            const {data: generatedTree} = await github.rest.git.createTree({
+              owner,
+              repo,
+              base_tree: baseCommit.tree.sha,
+              tree,
+            });
+            const {data: generatedCommit} = await github.rest.git.createCommit({
+              owner,
+              repo,
+              message: 'chore: sync published SDK versions',
+              tree: generatedTree.sha,
+              parents: [baseSha],
+            });
+            const headSha = generatedCommit.sha;
+            if (!commitPattern.test(headSha)) throw new Error(`Invalid generated SHA: ${headSha}`);
+
+            try {
+              await github.rest.git.getRef({owner, repo, ref: `heads/${botBranch}`});
+              await github.rest.git.updateRef({owner, repo, ref: `heads/${botBranch}`, sha: headSha, force: true});
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.git.createRef({owner, repo, ref: `refs/heads/${botBranch}`, sha: headSha});
+            }
+
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              base: mainBranch,
+              head: `${owner}:${botBranch}`,
+              per_page: 100,
+            });
+            if (pulls.length > 1) throw new Error(`Found ${pulls.length} open SDK Sync pull requests.`);
+            const title = 'chore: sync published SDK versions';
+            const body = [
+              'Generated by the protected SDK Sync workflow.',
+              '',
+              '- Pins every directly used `@tileflow/*` package to its exact public `alpha` version.',
+              '- Regenerates `pnpm-lock.yaml` from the public npm registry.',
+              '- Runs install, policy tests, typecheck, builds, and Tileflow config validation.',
+              '',
+              'The workflow merges only this exact commit after `CI / Required` succeeds. Do not edit the bot branch.',
+            ].join('\n');
+            let pull;
+            if (pulls.length === 0) {
+              ({data: pull} = await github.rest.pulls.create({owner, repo, base: mainBranch, head: botBranch, title, body, draft: false}));
+            } else {
+              ({data: pull} = await github.rest.pulls.update({owner, repo, pull_number: pulls[0].number, title, body}));
+            }
+            if (pull.draft) throw new Error(`SDK Sync pull request #${pull.number} is unexpectedly a draft.`);
+            core.setOutput('base_sha', baseSha);
+            core.setOutput('head_sha', headSha);
+            core.setOutput('number', pull.number.toString());
+
+      - name: Dispatch and require CI for the exact bot commit
+        if: steps.changes.outputs.changed == 'true'
+        id: pull-request-ci
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          BASE_SHA: ${{ steps.pull-request.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pull-request.outputs.head_sha }}
+          PULL_NUMBER: ${{ steps.pull-request.outputs.number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const baseSha = process.env.BASE_SHA;
+            const headSha = process.env.HEAD_SHA;
+            const pullNumber = Number(process.env.PULL_NUMBER);
+            const requestId = `${context.runId}-${context.runAttempt}-pr-${headSha.slice(0, 12)}`;
+            if (!/^[0-9a-f]{40}$/.test(baseSha) || !/^[0-9a-f]{40}$/.test(headSha)) throw new Error('Invalid commit identity.');
+            if (!Number.isSafeInteger(pullNumber) || pullNumber <= 0) throw new Error('Invalid pull request number.');
+            const {data: branchRef} = await github.rest.git.getRef({owner, repo, ref: `heads/${process.env.BOT_BRANCH}`});
+            if (branchRef.object.type !== 'commit' || branchRef.object.sha !== headSha) throw new Error('Bot branch changed before CI.');
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id: process.env.CI_WORKFLOW,
+              ref: process.env.BOT_BRANCH,
+              inputs: {
+                sdk_sync_mode: 'pull-request',
+                sdk_sync_base_sha: baseSha,
+                sdk_sync_expected_sha: headSha,
+                sdk_sync_request_id: requestId,
+              },
+            });
+            const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+            let run;
+            for (let attempt = 0; attempt < 240; attempt += 1) {
+              const {data} = await github.rest.actions.listWorkflowRuns({
+                owner,
+                repo,
+                workflow_id: process.env.CI_WORKFLOW,
+                branch: process.env.BOT_BRANCH,
+                event: 'workflow_dispatch',
+                per_page: 100,
+              });
+              run = data.workflow_runs.find(
+                (candidate) => candidate.display_title === `SDK sync ${requestId}` && candidate.head_sha === headSha,
+              );
+              if (run?.status === 'completed') break;
+              await sleep(15_000);
+            }
+            if (!run || run.status !== 'completed') throw new Error(`Timed out waiting for SDK Sync CI ${requestId}.`);
+            if (run.conclusion !== 'success') throw new Error(`SDK Sync CI ${run.html_url} concluded ${run.conclusion}.`);
+            if (
+              run.event !== 'workflow_dispatch' ||
+              run.head_branch !== process.env.BOT_BRANCH ||
+              run.head_sha !== headSha ||
+              run.repository?.full_name !== `${owner}/${repo}` ||
+              run.head_repository?.full_name !== `${owner}/${repo}`
+            ) throw new Error('Completed CI identity does not match the dispatched bot commit.');
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner,
+              repo,
+              run_id: run.id,
+              per_page: 100,
+            });
+            const required = jobs.filter((job) => job.name === 'Required');
+            if (required.length !== 1 || required[0].conclusion !== 'success') {
+              throw new Error(`Exact SDK Sync CI did not produce one successful Required job: ${run.html_url}`);
+            }
+
+      - name: Merge only the exact green bot commit
+        if: steps.changes.outputs.changed == 'true'
+        id: merge
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          BASE_SHA: ${{ steps.pull-request.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.pull-request.outputs.head_sha }}
+          PULL_NUMBER: ${{ steps.pull-request.outputs.number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const baseSha = process.env.BASE_SHA;
+            const headSha = process.env.HEAD_SHA;
+            const pullNumber = Number(process.env.PULL_NUMBER);
+            const mainBranch = process.env.MAIN_BRANCH;
+            const botBranch = process.env.BOT_BRANCH;
+            const {mergeSyncPullRequest} = await import(`${process.env.GITHUB_WORKSPACE}/scripts/sync-sdk-versions.mjs`);
+            const {data: mainRef} = await github.rest.git.getRef({owner, repo, ref: `heads/${mainBranch}`});
+            const {data: branchRef} = await github.rest.git.getRef({owner, repo, ref: `heads/${botBranch}`});
+            if (mainRef.object.sha !== baseSha || branchRef.object.sha !== headSha) throw new Error('Repository refs changed before merge.');
+
+            const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+            let pull;
+            for (let attempt = 0; attempt < 30; attempt += 1) {
+              ({data: pull} = await github.rest.pulls.get({owner, repo, pull_number: pullNumber}));
+              if (pull.mergeable !== null) break;
+              await sleep(2_000);
+            }
+            if (
+              pull.state !== 'open' || pull.draft || pull.merged ||
+              pull.base.ref !== mainBranch || pull.base.sha !== baseSha ||
+              pull.head.ref !== botBranch || pull.head.repo?.full_name !== `${owner}/${repo}` ||
+              pull.head.sha !== headSha || pull.mergeable !== true || pull.mergeable_state !== 'clean'
+            ) throw new Error(`SDK Sync pull request #${pullNumber} is not the exact clean pull request approved by CI.`);
+
+            const mergeSha = await mergeSyncPullRequest({
+              baseSha,
+              headSha,
+              getMainRef: async () => (await github.rest.git.getRef({owner, repo, ref: `heads/${mainBranch}`})).data,
+              mergePull: async ({headSha: exactHeadSha, mergeMethod}) =>
+                (await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: pullNumber,
+                  sha: exactHeadSha,
+                  merge_method: mergeMethod,
+                })).data,
+            });
+            core.setOutput('sha', mergeSha);
+
+      - name: Reconcile CI for exact current main
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          EXPECTED_MAIN_SHA: ${{ steps.changes.outputs.changed == 'true' && steps.merge.outputs.sha || steps.changes.outputs.base_sha }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const mainSha = process.env.EXPECTED_MAIN_SHA;
+            if (!/^[0-9a-f]{40}$/.test(mainSha ?? '')) throw new Error(`Invalid main SHA: ${mainSha}`);
+            const {data: mainRef} = await github.rest.git.getRef({owner, repo, ref: `heads/${process.env.MAIN_BRANCH}`});
+            if (mainRef.object.type !== 'commit' || mainRef.object.sha !== mainSha) throw new Error('Expected main changed before CI reconciliation.');
+            const {data} = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: process.env.CI_WORKFLOW,
+              branch: process.env.MAIN_BRANCH,
+              per_page: 100,
+            });
+            const acceptable = data.workflow_runs.find(
+              (run) =>
+                run.head_sha === mainSha && run.head_branch === process.env.MAIN_BRANCH &&
+                run.repository?.full_name === `${owner}/${repo}` &&
+                ['push', 'workflow_dispatch'].includes(run.event) &&
+                (run.status !== 'completed' || run.conclusion === 'success'),
+            );
+            if (acceptable) {
+              core.notice(`Exact main CI already ${acceptable.status}: ${acceptable.html_url}`);
+              return;
+            }
+            const requestId = `${context.runId}-${context.runAttempt}-main-${mainSha.slice(0, 12)}`;
+            await github.rest.actions.createWorkflowDispatch({
+              owner,
+              repo,
+              workflow_id: process.env.CI_WORKFLOW,
+              ref: process.env.MAIN_BRANCH,
+              inputs: {
+                sdk_sync_mode: 'main',
+                sdk_sync_base_sha: '',
+                sdk_sync_expected_sha: mainSha,
+                sdk_sync_request_id: requestId,
+              },
+            });

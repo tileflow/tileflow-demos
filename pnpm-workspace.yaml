@@ -1,2 +1,18 @@
 packages:
-  - "apps/*"
+  - 'apps/*'
+
+allowBuilds:
+  sharp: true
+
+# sdk-sync:start
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@tileflow/capture@0.1.0-alpha.16'
+  - '@tileflow/cli@0.1.0-alpha.16'
+  - '@tileflow/core@0.1.0-alpha.16'
+  - '@tileflow/dev@0.1.0-alpha.16'
+  - '@tileflow/next@0.1.0-alpha.16'
+  - '@tileflow/react@0.1.0-alpha.16'
+  - '@tileflow/static@0.1.0-alpha.16'
+  - '@tileflow/vite@0.1.0-alpha.16'
+# sdk-sync:end
