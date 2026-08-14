@@ -5,11 +5,12 @@
   "packageManager": "pnpm@11.13.1",
   "scripts": {
     "build": "pnpm --recursive --if-present run build",
-    "check": "pnpm run test:sdk-sync && pnpm run typecheck && pnpm run build && pnpm run validate:configs",
+    "check": "pnpm run test:sdk-sync && pnpm run typecheck && pnpm run build && pnpm run validate:configs && pnpm run smoke:runtime",
     "dev:next-basic": "pnpm --filter @tileflow-demos/next-basic dev",
     "dev:vite-basic": "pnpm --filter @tileflow-demos/vite-basic dev",
     "start:next-basic": "pnpm --filter @tileflow-demos/next-basic start",
     "preview:vite-basic": "pnpm --filter @tileflow-demos/vite-basic preview",
+    "smoke:runtime": "node scripts/smoke-built-demos.mjs",
     "test:sdk-sync": "node --test scripts/sync-sdk-versions.test.mjs",
     "validate:configs": "pnpm --filter @tileflow-demos/vite-basic exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/next-basic exec tileflow validate -c tileflow.config.ts",
     "typecheck": "pnpm --recursive --if-present run typecheck"
