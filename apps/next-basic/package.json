@@ -5,22 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3001 --webpack",
+    "pretypecheck": "next typegen",
     "tileflow:deploy": "tileflow deploy --config tileflow.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "next build",
     "start": "next start --port 3001"
   },
   "dependencies": {
-    "@tileflow/core": "0.1.0-alpha.8",
-    "@tileflow/next": "0.1.0-alpha.8",
-    "@tileflow/react": "0.1.0-alpha.8",
+    "@tileflow/core": "0.1.0-alpha.16",
+    "@tileflow/next": "0.1.0-alpha.16",
+    "@tileflow/react": "0.1.0-alpha.16",
     "maplibre-gl": "^5.24.0",
     "next": "^16.2.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@tileflow/cli": "0.1.0-alpha.8",
+    "@tileflow/cli": "0.1.0-alpha.16",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

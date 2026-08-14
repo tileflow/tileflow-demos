@@ -1,0 +1,120 @@
+name: CI
+run-name: >-
+  ${{ inputs.sdk_sync_request_id != '' && format('SDK sync {0}', inputs.sdk_sync_request_id) || format('CI {0}', github.sha) }}
+
+on:
+  pull_request:
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sdk_sync_mode:
+        description: Empty for an operator run; pull-request or main for SDK Sync.
+        required: false
+        default: ''
+        type: string
+      sdk_sync_base_sha:
+        description: Exact main parent for an SDK Sync pull request.
+        required: false
+        default: ''
+        type: string
+      sdk_sync_expected_sha:
+        description: Exact commit dispatched by SDK Sync.
+        required: false
+        default: ''
+        type: string
+      sdk_sync_request_id:
+        description: Unique SDK Sync correlation identifier.
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Required
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ inputs.sdk_sync_expected_sha != '' && inputs.sdk_sync_expected_sha || github.sha }}
+
+      - name: Verify dispatched SDK Sync identity
+        if: inputs.sdk_sync_mode != ''
+        shell: bash
+        env:
+          BASE_SHA: ${{ inputs.sdk_sync_base_sha }}
+          EXPECTED_SHA: ${{ inputs.sdk_sync_expected_sha }}
+          REQUEST_ID: ${{ inputs.sdk_sync_request_id }}
+          SYNC_MODE: ${{ inputs.sdk_sync_mode }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$REQUEST_ID" =~ ^[0-9]+-[0-9]+-(pr|main)-[0-9a-f]{12}$ ]]
+          test "$EXPECTED_SHA" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+
+          case "$SYNC_MODE" in
+            pull-request)
+              test "$GITHUB_REF" = 'refs/heads/automation/sdk-sync'
+              [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+              git merge-base --is-ancestor "$BASE_SHA" "$EXPECTED_SHA"
+              ;;
+            main)
+              test "$GITHUB_REF" = 'refs/heads/main'
+              test -z "$BASE_SHA"
+              ;;
+            *)
+              echo "Unknown SDK Sync mode: $SYNC_MODE"
+              exit 1
+              ;;
+          esac
+
+      - name: Verify ordinary dispatch identity
+        if: github.event_name == 'workflow_dispatch' && inputs.sdk_sync_mode == ''
+        shell: bash
+        env:
+          BASE_SHA: ${{ inputs.sdk_sync_base_sha }}
+          EXPECTED_SHA: ${{ inputs.sdk_sync_expected_sha }}
+          REQUEST_ID: ${{ inputs.sdk_sync_request_id }}
+        run: |
+          set -euo pipefail
+          test -z "$BASE_SHA"
+          test -z "$EXPECTED_SHA"
+          test -z "$REQUEST_ID"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.13.1 --activate
+
+      - name: Test SDK synchronization policy
+        run: node --test scripts/sync-sdk-versions.test.mjs
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify synchronized npm state
+        if: inputs.sdk_sync_mode != ''
+        run: node scripts/sync-sdk-versions.mjs check
+
+      - name: Verify every demo
+        run: pnpm check
