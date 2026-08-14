@@ -23,6 +23,8 @@ The demos pin every `@tileflow/*` dependency to an exact public npm version. `SD
 hourly and uses one reserved pull request to update those pins and `pnpm-lock.yaml`. The pull request
 is merged automatically only after `CI / Required` installs the exact graph, tests the sync policy,
 typechecks and builds every demo, and validates each `tileflow.config.ts` with the published CLI.
+CI then starts both production builds and requests their HTML, Tileflow manifest, and Madrid style;
+the Next demo is checked through both its static output and its route handler.
 
 An incompatible or breaking SDK release therefore leaves a failing pull request open; it cannot
 change protected `main`. Fix the affected demo or publish a compatible SDK correction and let the
