@@ -78,7 +78,7 @@ async function stopServer(child) {
 
 async function validateAssets({assetBase, name, origin}) {
   const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
-  assert.equal(manifest.version, 1, `${name} manifest version changed unexpectedly.`);
+  assert.equal(manifest.version, 2, `${name} manifest version changed unexpectedly.`);
   assert.equal(
     manifest.maps?.madrid,
     '/tileflow/styles/madrid.json',
