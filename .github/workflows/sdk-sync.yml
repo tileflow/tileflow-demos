@@ -230,7 +230,7 @@ jobs:
             const baseSha = process.env.BASE_SHA;
             const headSha = process.env.HEAD_SHA;
             const pullNumber = Number(process.env.PULL_NUMBER);
-            const requestId = `${context.runId}-${context.runAttempt}-pr-${headSha.slice(0, 12)}`;
+            const requestId = `${context.runId}-${process.env.GITHUB_RUN_ATTEMPT}-pr-${headSha.slice(0, 12)}`;
             if (!/^[0-9a-f]{40}$/.test(baseSha) || !/^[0-9a-f]{40}$/.test(headSha)) throw new Error('Invalid commit identity.');
             if (!Number.isSafeInteger(pullNumber) || pullNumber <= 0) throw new Error('Invalid pull request number.');
             const {data: branchRef} = await github.rest.git.getRef({owner, repo, ref: `heads/${process.env.BOT_BRANCH}`});
@@ -368,7 +368,7 @@ jobs:
               core.notice(`Exact main CI already ${acceptable.status}: ${acceptable.html_url}`);
               return;
             }
-            const requestId = `${context.runId}-${context.runAttempt}-main-${mainSha.slice(0, 12)}`;
+            const requestId = `${context.runId}-${process.env.GITHUB_RUN_ATTEMPT}-main-${mainSha.slice(0, 12)}`;
             await github.rest.actions.createWorkflowDispatch({
               owner,
               repo,

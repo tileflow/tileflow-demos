@@ -242,3 +242,12 @@ test('merges only the exact tested pull request through protected main', async (
     /main advanced/u,
   );
 });
+
+test('uses the Actions-provided run attempt in SDK Sync request IDs', async () => {
+  const workflow = await readFile(
+    new URL('../.github/workflows/sdk-sync.yml', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(workflow, /context\.runAttempt/u);
+  assert.equal((workflow.match(/process\.env\.GITHUB_RUN_ATTEMPT/gu) ?? []).length, 2);
+});

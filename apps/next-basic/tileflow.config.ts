@@ -1,4 +1,4 @@
-import { defineTileflow, labels, osm, poi } from "@tileflow/core";
+import { defineTileflow, labels, poi, streets } from "@tileflow/core";
 
 export default defineTileflow({
   themes: {
@@ -36,20 +36,20 @@ export default defineTileflow({
   },
   maps: {
     madrid: {
-      basemap: osm(),
+      basemap: streets(),
       theme: "light",
-      modules: [
-        labels({
+      modules: {
+        labels: labels({
           roads: "highways",
           water: "major",
         }),
-        poi({
+        poi: poi({
           preset: "balanced",
           categories: ["food", "coffee", "culture", "transit"],
           icons: false,
           minZoom: 14,
         }),
-      ],
+      },
       view: {
         center: [-3.7038, 40.4168],
         zoom: 15,

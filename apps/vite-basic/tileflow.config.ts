@@ -1,4 +1,4 @@
-import { defineTileflow, labels, osm, roads } from "@tileflow/core";
+import { defineTileflow, labels, poi, roads, streets } from "@tileflow/core";
 
 export default defineTileflow({
   themes: {
@@ -27,17 +27,17 @@ export default defineTileflow({
   },
   maps: {
     madrid: {
-      basemap: osm(),
+      basemap: streets(),
       theme: "light",
-      poi: "none",
-      modules: [
-        labels({
+      modules: {
+        labels: labels({
           language: "es", // "auto" | "local" | language code, e.g. "es" or "en"
           places: "none", // "none" | "major" | "all"
           roads: "major", // "none" | "highways" | "major" | "streets" | "all"
           water: "major", // "none" | "major" | "all"
         }),
-        roads({
+        poi: poi({ enabled: false }),
+        roads: roads({
           detail: "major", // "none" | "highways" | "major" | "streets" | "all"
           hierarchy: "strong", // "subtle" | "clear" | "strong"
           weight: "bold", // "thin" | "regular" | "bold"
@@ -45,11 +45,9 @@ export default defineTileflow({
           extras: {
             // Optional; each extra defaults to false
             paths: false, // true | false
-            rail: false, // true | false
-            ferry: false, // true | false
           },
         }),
-      ],
+      },
       view: {
         center: [-3.7038, 40.4168],
         zoom: 15,
