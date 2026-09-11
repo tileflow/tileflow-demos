@@ -41,11 +41,12 @@ function registry(overrides = {}) {
         '@tileflow/dev': alpha16,
       }),
     }),
-    '@tileflow/cli': metadata('@tileflow/cli', alpha16, {
-      [alpha16]: packageVersion('@tileflow/cli', alpha16, {
-        '@tileflow/capture': alpha16,
-        '@tileflow/core': alpha16,
-        '@tileflow/dev': alpha16,
+    '@tileflow/coordinates': metadata('@tileflow/coordinates', alpha16, {
+      [alpha16]: packageVersion('@tileflow/coordinates', alpha16),
+    }),
+    '@tileflow/coordinates-runtime': metadata('@tileflow/coordinates-runtime', alpha16, {
+      [alpha16]: packageVersion('@tileflow/coordinates-runtime', alpha16, {
+        '@tileflow/coordinates': alpha16,
       }),
     }),
     '@tileflow/core': metadata('@tileflow/core', alpha16, {
@@ -53,6 +54,9 @@ function registry(overrides = {}) {
     }),
     '@tileflow/dev': metadata('@tileflow/dev', alpha16, {
       [alpha16]: packageVersion('@tileflow/dev', alpha16, {'@tileflow/core': alpha16}),
+    }),
+    '@tileflow/maps': metadata('@tileflow/maps', alpha16, {
+      [alpha16]: packageVersion('@tileflow/maps', alpha16, {'@tileflow/core': alpha16}),
     }),
     '@tileflow/next': metadata('@tileflow/next', alpha16, {
       [alpha16]: packageVersion('@tileflow/next', alpha16, {'@tileflow/dev': alpha16}),
@@ -68,6 +72,16 @@ function registry(overrides = {}) {
     }),
     '@tileflow/vite': metadata('@tileflow/vite', alpha16, {
       [alpha16]: packageVersion('@tileflow/vite', alpha16, {'@tileflow/dev': alpha16}),
+    }),
+    tileflow: metadata('tileflow', alpha16, {
+      [alpha16]: packageVersion('tileflow', alpha16, {
+        '@tileflow/capture': alpha16,
+        '@tileflow/coordinates': alpha16,
+        '@tileflow/coordinates-runtime': alpha16,
+        '@tileflow/core': alpha16,
+        '@tileflow/dev': alpha16,
+        '@tileflow/maps': alpha16,
+      }),
     }),
     ...overrides,
   };
@@ -88,7 +102,7 @@ async function createFixture() {
       '@tileflow/react': alpha14,
       '@tileflow/vite': alpha14,
     },
-    devDependencies: {'@tileflow/cli': alpha14},
+    devDependencies: {tileflow: alpha14},
   });
   await writeJson(join(root, 'apps/next/package.json'), {
     name: '@tileflow-demos/next',
@@ -98,7 +112,7 @@ async function createFixture() {
       '@tileflow/next': alpha8,
       '@tileflow/react': alpha8,
     },
-    devDependencies: {'@tileflow/cli': alpha8},
+    devDependencies: {tileflow: alpha8},
   });
   await writeFile(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n");
   return root;
@@ -128,26 +142,61 @@ test('updates every demo to the public alpha and resolves the transitive SDK gra
       plan.requiredVersions.map(({name, version}) => `${name}@${version}`),
       [
         '@tileflow/capture@0.1.0-alpha.16',
-        '@tileflow/cli@0.1.0-alpha.16',
+        '@tileflow/coordinates@0.1.0-alpha.16',
+        '@tileflow/coordinates-runtime@0.1.0-alpha.16',
         '@tileflow/core@0.1.0-alpha.16',
         '@tileflow/dev@0.1.0-alpha.16',
+        '@tileflow/maps@0.1.0-alpha.16',
         '@tileflow/next@0.1.0-alpha.16',
         '@tileflow/react@0.1.0-alpha.16',
         '@tileflow/static@0.1.0-alpha.16',
         '@tileflow/vite@0.1.0-alpha.16',
+        'tileflow@0.1.0-alpha.16',
       ],
     );
     assert.equal(summarizePlan(plan).changed, true);
     await applySyncPlan(root, plan);
     const next = JSON.parse(await readFile(join(root, 'apps/next/package.json'), 'utf8'));
     assert.equal(next.dependencies['@tileflow/core'], alpha16);
-    assert.equal(next.devDependencies['@tileflow/cli'], alpha16);
+    assert.equal(next.devDependencies.tileflow, alpha16);
     const workspace = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8');
     assert.match(workspace, /minimumReleaseAge: 1440/u);
     assert.match(workspace, /@tileflow\/static@0\.1\.0-alpha\.16/u);
 
     const noOp = await createSyncPlan({repositoryRoot: root, getPackageMetadata: registry()});
     assert.deepEqual(noOp.changedFiles, []);
+  } finally {
+    await rm(root, {force: true, recursive: true});
+  }
+});
+
+test('tracks the canonical unscoped CLI and its scoped package graph', async () => {
+  const root = await createFixture();
+  try {
+    const vitePath = join(root, 'apps/vite/package.json');
+    const plan = await createSyncPlan({repositoryRoot: root, getPackageMetadata: registry()});
+    assert.deepEqual(
+      plan.requiredVersions.map(({name, version}) => `${name}@${version}`),
+      [
+        '@tileflow/capture@0.1.0-alpha.16',
+        '@tileflow/coordinates@0.1.0-alpha.16',
+        '@tileflow/coordinates-runtime@0.1.0-alpha.16',
+        '@tileflow/core@0.1.0-alpha.16',
+        '@tileflow/dev@0.1.0-alpha.16',
+        '@tileflow/maps@0.1.0-alpha.16',
+        '@tileflow/next@0.1.0-alpha.16',
+        '@tileflow/react@0.1.0-alpha.16',
+        '@tileflow/static@0.1.0-alpha.16',
+        '@tileflow/vite@0.1.0-alpha.16',
+        'tileflow@0.1.0-alpha.16',
+      ],
+    );
+    assert.ok(
+      plan.updates.some(
+        ({name, path, target}) =>
+          name === 'tileflow' && path === 'apps/vite/package.json' && target === alpha16,
+      ),
+    );
   } finally {
     await rm(root, {force: true, recursive: true});
   }
