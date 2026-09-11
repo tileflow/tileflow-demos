@@ -6,13 +6,14 @@ import { Map } from "@tileflow/react";
 
 const madridCenter: [number, number] = [-3.7038, 40.4168];
 const madridZoom = 15;
-const madridMarkers = [
+const madridAnnotations = [
   {
+    ariaLabel: "Madrid",
+    coordinate: madridCenter,
     id: "madrid",
-    coordinates: madridCenter,
-    label: "Madrid",
+    kind: "marker",
   },
-];
+] as const;
 
 export function MadridMap() {
   const [initialView] = useState(readInitialViewFromUrl);
@@ -34,12 +35,12 @@ export function MadridMap() {
   return (
     <section className="mapPanel" aria-label="Madrid map preview">
       <Map
+        annotations={madridAnnotations}
         center={initialView.center}
         height="100%"
-        map="madrid"
-        markers={madridMarkers}
         onLoad={handleMapLoad}
-        preferLocalDev
+        renderMarker={() => <span className="tileflow-marker" />}
+        source={{ kind: "tileflow", map: "madrid" }}
         zoom={initialView.zoom}
       />
     </section>

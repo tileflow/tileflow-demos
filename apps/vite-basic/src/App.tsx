@@ -5,13 +5,14 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 const madridCenter: [number, number] = [-3.7038, 40.4168];
 const madridZoom = 15;
 
-const madridMarkers = [
+const madridAnnotations = [
   {
+    ariaLabel: "Madrid",
+    coordinate: madridCenter,
     id: "madrid",
-    coordinates: madridCenter,
-    label: "Madrid",
+    kind: "marker",
   },
-];
+] as const;
 
 export default function App() {
   const initialView = useMemo(readInitialViewFromUrl, []);
@@ -31,13 +32,12 @@ export default function App() {
     <main className="demoShell">
       <section className="mapPanel" aria-label="Madrid map preview">
         <Map
+          annotations={madridAnnotations}
           center={initialView.center}
           height="100%"
-          map="madrid"
-          markers={madridMarkers}
           onLoad={handleMapLoad}
-          preferLocalDev={!import.meta.env.PROD}
-          styleBaseUrl="/tileflow"
+          renderMarker={() => <span className="tileflow-marker" />}
+          source={{ kind: "tileflow", map: "madrid" }}
           zoom={initialView.zoom}
         />
       </section>
