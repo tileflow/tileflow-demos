@@ -7,18 +7,24 @@ import {fileURLToPath} from 'node:url';
 
 export const publicPackageNames = new Set(
   [
-    'capture',
-    'cli',
-    'core',
-    'dev',
-    'next',
-    'react',
-    'static',
-    'svelte',
-    'vite',
-    'vue',
-    'webpack',
-  ].map((name) => `@tileflow/${name}`),
+    '@tileflow/capture',
+    '@tileflow/coordinates',
+    '@tileflow/coordinates-runtime',
+    '@tileflow/core',
+    '@tileflow/dev',
+    '@tileflow/geoip',
+    '@tileflow/interactions',
+    '@tileflow/maps',
+    '@tileflow/next',
+    '@tileflow/react',
+    '@tileflow/search',
+    '@tileflow/static',
+    '@tileflow/svelte',
+    '@tileflow/vite',
+    '@tileflow/vue',
+    '@tileflow/webpack',
+    'tileflow',
+  ],
 );
 
 const npmRegistry = 'https://registry.npmjs.org/';
@@ -36,6 +42,10 @@ const canonicalSemverPattern =
 const commitPattern = /^[0-9a-f]{40}$/u;
 const policyStart = '# sdk-sync:start';
 const policyEnd = '# sdk-sync:end';
+
+function isTileflowPackageName(name) {
+  return name === 'tileflow' || name.startsWith('@tileflow/');
+}
 
 export function parseNumericAlpha(version, label = 'version') {
   assert.equal(typeof version, 'string', `${label} must be a string.`);
@@ -161,7 +171,7 @@ function readSdkPins(manifest, path) {
   const pins = [];
   for (const section of dependencySections) {
     for (const [name, version] of Object.entries(manifest[section] ?? {})) {
-      if (!name.startsWith('@tileflow/')) continue;
+      if (!isTileflowPackageName(name)) continue;
       assert.ok(publicPackageNames.has(name), `${path} contains unknown Tileflow package ${name}.`);
       parseNumericAlpha(version, `${path} ${section}.${name}`);
       pins.push({name, path, section, version});
@@ -214,7 +224,7 @@ async function resolveRequiredVersions(targets, getPackageMetadata) {
     required.set(key, current);
     for (const section of publishedDependencySections) {
       for (const [name, range] of Object.entries(manifest[section] ?? {})) {
-        if (!name.startsWith('@tileflow/')) continue;
+        if (!isTileflowPackageName(name)) continue;
         assert.ok(
           publicPackageNames.has(name),
           `${key} contains unknown Tileflow dependency ${name}.`,
