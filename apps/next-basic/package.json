@@ -12,16 +12,17 @@
     "start": "next start --port 3001"
   },
   "dependencies": {
-    "@tileflow/core": "0.1.0-alpha.20",
-    "@tileflow/next": "0.1.0-alpha.17",
-    "@tileflow/react": "0.1.0-alpha.19",
+    "@tileflow/core": "0.1.0-alpha.24",
+    "@tileflow/maps": "0.1.0-alpha.2",
+    "@tileflow/next": "0.1.0-alpha.20",
+    "@tileflow/react": "0.1.0-alpha.23",
     "maplibre-gl": "^5.24.0",
     "next": "^16.2.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@tileflow/cli": "0.1.0-alpha.19",
+    "tileflow": "0.1.0-alpha.3",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

@@ -78,14 +78,17 @@ async function stopServer(child) {
 
 async function validateAssets({assetBase, name, origin}) {
   const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
-  assert.equal(manifest.version, 2, `${name} manifest version changed unexpectedly.`);
+  assert.equal(manifest.version, 1, `${name} manifest version changed unexpectedly.`);
+  const styleUrl = manifest.maps?.madrid?.themes?.light?.styleUrl;
   assert.equal(
-    manifest.maps?.madrid,
-    '/tileflow/styles/madrid.json',
-    `${name} manifest does not expose the Madrid map.`,
+    typeof styleUrl,
+    'string',
+    `${name} manifest does not expose Madrid's light Style URL.`,
   );
+  const styleLocation = new URL(styleUrl, origin);
+  assert.equal(styleLocation.origin, origin, `${name} points Madrid at another origin.`);
 
-  const style = await requestJson(`${origin}${assetBase}/styles/madrid.json`);
+  const style = await requestJson(styleLocation);
   assert.equal(style.version, 8, `${name} did not serve a MapLibre v8 style.`);
   assert.ok(Array.isArray(style.layers) && style.layers.length > 0, `${name} style has no layers.`);
 }

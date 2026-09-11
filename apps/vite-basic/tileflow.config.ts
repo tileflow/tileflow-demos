@@ -1,57 +1,31 @@
-import { defineTileflow, labels, poi, roads, streets } from "@tileflow/core";
+import { defineMap, disable, labels, roads } from "@tileflow/core";
+import { streets, streetsThemes } from "@tileflow/maps";
 
-export default defineTileflow({
-  themes: {
-    light: {
-      colors: {
-        background: "#ebebeb",
-        land: "#ebebeb",
-        water: "#82c8ed",
-        park: "#e8ebe8",
-        building: "#e7e7e7",
-        road: "#ffffff",
-        roadMajor: "#ffffff",
-        roadCasing: "#e3e3e3",
-        boundary: "#d4d4d4",
-        text: "#5f5f5f",
-        textMuted: "#8a8a8a",
-        textHalo: "#ffffff",
-      },
-      modules: {
-        labels: {
-          road: "#000000",
-          water: "#337fa5",
-        },
-      },
-    },
+export default defineMap({
+  id: "madrid",
+  name: "Madrid",
+  version: 1,
+  extends: streets,
+  themes: { light: streetsThemes.light },
+  defaultTheme: "light",
+  modules: {
+    labels: labels({
+      language: "es",
+      places: "none",
+      roads: "major",
+      water: "major",
+    }),
+    poi: disable(),
+    roads: roads({
+      detail: "major",
+      hierarchy: "strong",
+      weight: "bold",
+      outline: "none",
+      extras: { paths: false },
+    }),
   },
-  maps: {
-    madrid: {
-      basemap: streets(),
-      theme: "light",
-      modules: {
-        labels: labels({
-          language: "es", // "auto" | "local" | language code, e.g. "es" or "en"
-          places: "none", // "none" | "major" | "all"
-          roads: "major", // "none" | "highways" | "major" | "streets" | "all"
-          water: "major", // "none" | "major" | "all"
-        }),
-        poi: poi({ enabled: false }),
-        roads: roads({
-          detail: "major", // "none" | "highways" | "major" | "streets" | "all"
-          hierarchy: "strong", // "subtle" | "clear" | "strong"
-          weight: "bold", // "thin" | "regular" | "bold"
-          outline: "none", // "none" | "subtle" | "strong"
-          extras: {
-            // Optional; each extra defaults to false
-            paths: false, // true | false
-          },
-        }),
-      },
-      view: {
-        center: [-3.7038, 40.4168],
-        zoom: 15,
-      },
-    },
+  view: {
+    center: [-3.7038, 40.4168],
+    zoom: 15,
   },
 });
