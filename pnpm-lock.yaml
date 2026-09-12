@@ -18,14 +18,14 @@ importers:
         specifier: 0.1.0-alpha.24
         version: 0.1.0-alpha.24
       '@tileflow/maps':
-        specifier: 0.1.0-alpha.2
-        version: 0.1.0-alpha.2(@tileflow/core@0.1.0-alpha.24)
+        specifier: 0.1.0-alpha.3
+        version: 0.1.0-alpha.3(@tileflow/core@0.1.0-alpha.24)
       '@tileflow/next':
-        specifier: 0.1.0-alpha.20
-        version: 0.1.0-alpha.20(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        specifier: 0.1.0-alpha.21
+        version: 0.1.0-alpha.21(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@tileflow/react':
-        specifier: 0.1.0-alpha.23
-        version: 0.1.0-alpha.23(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.1.0-alpha.24
+        version: 0.1.0-alpha.24(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       maplibre-gl:
         specifier: ^5.24.0
         version: 5.24.0
@@ -49,8 +49,8 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
       tileflow:
-        specifier: 0.1.0-alpha.3
-        version: 0.1.0-alpha.3(@types/node@25.9.3)
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5(@types/node@25.9.3)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -61,14 +61,14 @@ importers:
         specifier: 0.1.0-alpha.24
         version: 0.1.0-alpha.24
       '@tileflow/maps':
-        specifier: 0.1.0-alpha.2
-        version: 0.1.0-alpha.2(@tileflow/core@0.1.0-alpha.24)
+        specifier: 0.1.0-alpha.3
+        version: 0.1.0-alpha.3(@tileflow/core@0.1.0-alpha.24)
       '@tileflow/react':
-        specifier: 0.1.0-alpha.23
-        version: 0.1.0-alpha.23(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.1.0-alpha.24
+        version: 0.1.0-alpha.24(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tileflow/vite':
-        specifier: 0.1.0-alpha.20
-        version: 0.1.0-alpha.20(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+        specifier: 0.1.0-alpha.21
+        version: 0.1.0-alpha.21(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
       maplibre-gl:
         specifier: ^5.24.0
         version: 5.24.0
@@ -92,8 +92,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
       tileflow:
-        specifier: 0.1.0-alpha.3
-        version: 0.1.0-alpha.3(@types/node@25.9.3)
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5(@types/node@25.9.3)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -436,6 +436,10 @@ packages:
     resolution: {integrity: sha512-rY0o9A5ECsTQRVhv7tL/OyDpGAoUB4tTvLiW1DSzQGq4bvTPhNw1VpSNjDJc5GFZ2XuyOtSWSVN05qOtcD71qQ==}
     engines: {node: '>= 0.6'}
 
+  '@mapbox/jsonlint-lines-primitives@2.0.3':
+    resolution: {integrity: sha512-0SElaV0uMxEnxzBhhX9WTuPyUeMsAN/SS0i16tjuba4/mio63MG9khjC1a0JAiPGXAwvwm4UfHJURCN7nyudQg==}
+    engines: {node: '>= 22'}
+
   '@mapbox/point-geometry@1.1.0':
     resolution: {integrity: sha512-YGcBz1cg4ATXDCM/71L9xveh4dynfGmcLDqufR+nQQy3fKwsAZsWd/x4621/6uJaeB9mwOHE6hPeDgXz9uViUQ==}
 
@@ -461,6 +465,9 @@ packages:
   '@maplibre/geojson-vt@6.1.0':
     resolution: {integrity: sha512-2eIY4gZxeKIVOZVNkAMb+5NgXhgsMQpOveTQAvnp53LYqHGJZDidk7Ew0Tged9PThidpbS+NFTh0g4zivhPDzQ==}
 
+  '@maplibre/geojson-vt@6.1.1':
+    resolution: {integrity: sha512-FVMOcmSP/yqol45t7StApEyTL5/vmqBCuFhH9n+fFuINenhaX+YgHHIt1yJ86S8kln3uJLcMvmEU2cfn6E2eCQ==}
+
   '@maplibre/maplibre-gl-style-spec@24.10.0':
     resolution: {integrity: sha512-lichxSiagMEBBrqHF0trtMQH9RKh+9jUlIJl0qW0QHvt2H/tbvUWdE+ZzI2Jd0/pT7j/iavLonlPu7EQ/ixTOw==}
     hasBin: true
@@ -469,8 +476,15 @@ packages:
     resolution: {integrity: sha512-EzEJmMt6thioRH7GI9LWS7ahXTcAhAPGWCe6oTP2Ps4YnsXOOAfeqx854lZaiDnwURfHmcCKV1mr6oo0i23x6w==}
     hasBin: true
 
+  '@maplibre/maplibre-gl-style-spec@26.4.2':
+    resolution: {integrity: sha512-6J0vZqMZvRAJKtdWJdDGHEh1YJ2ZHG08/GOur8gCArYhO8ZkM//OXqtI2AAEz4jc2G+Wq4MfcePg8qNK5TZ4Kg==}
+    hasBin: true
+
   '@maplibre/mlt@1.1.11':
     resolution: {integrity: sha512-dKvjKdITw9d0y3ndGkSqLUEpWCizMtdq8NB06cHohH/JZ2sJoM7dClR9wzJLUWykjbw9RXDFmhjjNBnNW27mzw==}
+
+  '@maplibre/mlt@1.2.1':
+    resolution: {integrity: sha512-5n5dgolE2EYxwCKgx8vlwURCB8A+kyfJJyThlYimjlGgOcOe2Bhw9VxxnnHC91OC9PgHg+nVdgVPTYPkIo62vg==}
 
   '@maplibre/vt-pbf@4.3.2':
     resolution: {integrity: sha512-j6p0AdjvAR19Z3XaCysle7A4ZSo08tYOzxD0Y9NQylwPAkwJJeYub5b2eVucdeDh7erhv69DahoLOevDRERRUw==}
@@ -640,12 +654,12 @@ packages:
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
 
-  '@tileflow/capture@0.1.0-alpha.21':
-    resolution: {integrity: sha512-/OAM9S0Amj1lBUSbMQtNMLCa6kWcqTEhA54ohmBzoYG5btcPqWuibzQwdAaxdGXIWhvNLdaQHHs8rj1aFNwsjg==}
+  '@tileflow/capture@0.1.0-alpha.22':
+    resolution: {integrity: sha512-htgUUR/JOpg8fNtern4nWp41B3+oxeP5p6QoO8sEpdA3tLN5pGFbbAL/LmJzru51T+gAH/vN7X1jds63xRjyqQ==}
     engines: {node: '>=22'}
 
-  '@tileflow/coordinates-runtime@0.1.0-alpha.0':
-    resolution: {integrity: sha512-vuHWS1oegJmmyHq7gbK9TuV5UQrbdOUPVvT4rwFeJQRjW5uAkw9QenUHLjyIu0rNkO/LujjE4sdMahn52D8r+Q==}
+  '@tileflow/coordinates-runtime@0.1.0-alpha.2':
+    resolution: {integrity: sha512-H+6RTf479wAso0Ag7/hVYE9/zYPsRoz7jWPh81yNVSKJfVi8Xj1bXV6Q+ttO8LYpWzbSVM3IuQWTC8AiL7HL6w==}
     engines: {node: '>=22'}
 
   '@tileflow/coordinates@0.1.0-alpha.0':
@@ -654,41 +668,41 @@ packages:
   '@tileflow/core@0.1.0-alpha.24':
     resolution: {integrity: sha512-s6+dxsZ9M7uDYIwyAK0p5WnoBRxkCKFoEZEZv5kt0XgPRKQF7nkSRl7Yjs/UNWaLi3y8m94+x+jETvontsK9qQ==}
 
-  '@tileflow/dev@0.1.0-alpha.22':
-    resolution: {integrity: sha512-JxIaK45l8BGt8bNF87TwLn2i9ckyimrHQgxne1WHaFveum0dPh7P1dSEu5Puujbu1wfTcAPDiV6aJtisPuA8Ng==}
+  '@tileflow/dev@0.1.0-alpha.23':
+    resolution: {integrity: sha512-ENGjyflRPG/vYoR5L1nx9XYb/dUUxI55SAnM/+KJlWQh+uH0rXMzPg+PRhP8M43Kg/1lxO7oYxp016Cm0Ew+jg==}
     engines: {node: '>=22'}
 
-  '@tileflow/interactions@0.1.0-alpha.2':
-    resolution: {integrity: sha512-bcVMRJ90yFwcmk1nzaPDDvShLH2E4zyl4dnE2VcmKf78I07yDErk+tU2/Rm50ZI3jvSEqm+gWR8zkFNUf48Avw==}
+  '@tileflow/interactions@0.1.0-alpha.3':
+    resolution: {integrity: sha512-yi00ir2/HFOfGLvXlNF+UiOk4NJZFDXDGMiGQ/CPqrurO0rbTlLBB+HWaIZ4y8MW8f6HTRILwL7A8olzB/Dtrw==}
     peerDependencies:
-      maplibre-gl: '>=5 <7'
+      maplibre-gl: '>=6.4.1 <7'
     peerDependenciesMeta:
       maplibre-gl:
         optional: true
 
-  '@tileflow/maps@0.1.0-alpha.2':
-    resolution: {integrity: sha512-Gf8cLJp+beCKhVIWll5x9zSQQlzCs0QeYKqWxCq/TmMODDCKUTXP/4h4S3ZIE7v1QKabOYtlwmvSkWowc+Fj/Q==}
+  '@tileflow/maps@0.1.0-alpha.3':
+    resolution: {integrity: sha512-kcsLvSG1CI2xoGragHGKOOAOWMXasJtmRcz1iP4huN224kzAaXc4kDEfccNFZzoWd+KPKHWCWmVgtL9+Go4uXg==}
     peerDependencies:
       '@tileflow/core': '>=0.1.0-alpha.24 <0.1.0-beta.0'
 
-  '@tileflow/next@0.1.0-alpha.20':
-    resolution: {integrity: sha512-ahel0o+eueVN8sseqGi78Q4jP0iM0oboF0+bk6GATCzT7p4ShQDIdW470Ef+fgmzY7uVAMyJkI5C3HZAJMCO5Q==}
+  '@tileflow/next@0.1.0-alpha.21':
+    resolution: {integrity: sha512-WCegXW+pKx+OApQAP7WxL1KhoQg0CuKklvYDCtousKjCECnFMrL02KMOe2Bynf4IwO344P2ezQbAtAOh5ZBAeg==}
     engines: {node: '>=22'}
     peerDependencies:
       next: '>=14 <17'
 
-  '@tileflow/react@0.1.0-alpha.23':
-    resolution: {integrity: sha512-G8kXaNDJNr7XfgvubH0XSyLatUzet+NG2kLOOqrCOTHG3PpMRAUCdv6u7LBPp4gp6ST8lfeExYS8SB2VMi8ubw==}
+  '@tileflow/react@0.1.0-alpha.24':
+    resolution: {integrity: sha512-/6Duj81lp3EAL8SvHN1zO4WiEQ4wkMPIaIjBhgdRqtVCiy+RNwHDMP8Bvfc7QH3mx0kyLn2JmV0kMqqBZ7uAqA==}
     peerDependencies:
-      maplibre-gl: '>=5 <7'
+      maplibre-gl: '>=6.4.1 <7'
       react: '>=18 <20'
       react-dom: '>=18 <20'
 
   '@tileflow/static@0.1.0-alpha.24':
     resolution: {integrity: sha512-MnuBayVR1LhrxzqBzJNgSsYvIkThkU2sWO7mOB73MsbQwcABuqvDthbdG9TwIW/VAGZgsj8m5TWtf4HfZxJ5Mg==}
 
-  '@tileflow/vite@0.1.0-alpha.20':
-    resolution: {integrity: sha512-BJlUsLc1oIAVyGah5zWSz/qgrZD7XkHGvJnMXAOq1vqy+ieysR0gkHbCanaBJf8928VCiNI8rz+FoXrP0qlzfA==}
+  '@tileflow/vite@0.1.0-alpha.21':
+    resolution: {integrity: sha512-JbJAYuWvemUBdSWj+Da+afQoQXELVIoDB0rucwfHEzEp8552V8/fCr6xAKR9A05R/wJUDC2YeExwSE0SCtYkkw==}
     engines: {node: '>=22'}
     peerDependencies:
       vite: '>=5 <9'
@@ -731,6 +745,9 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  bidi-js@1.1.0:
+    resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
+
   brotli@1.3.3:
     resolution: {integrity: sha512-oTKjJdShmDuGW94SyyaoQvAjf30dZaHnjJ8uAF+u2/vGJkJbJPJAT1gDiOJP5v1Zb6f9KEyW/1HpuaWIXtGHPg==}
 
@@ -764,6 +781,9 @@ packages:
 
   earcut@3.0.2:
     resolution: {integrity: sha512-X7hshQbLyMJ/3RPhyObLARM2sNxxmRALLKx1+NVFFnQ9gKzmCrxm9+uLIAdBcvc8FNLpctqlQ2V6AE92Ol9UDQ==}
+
+  earcut@3.2.3:
+    resolution: {integrity: sha512-vnS4AVwp1KHAF13i1vp1/2D5evWy3k5u/iW/B81QVsUZtV8cv2tU0b2VNFlqvh4kYwrFMDdjPCfAmfyJW9y14Q==}
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -888,6 +908,10 @@ packages:
     resolution: {integrity: sha512-ALyFxgtd5R+65UqZ/++lOqwWcC0SNho9c27fYSyLmG7AfnAul2o46F05aDJGPbFU57wos9dgcIySHs0Xe6ia3A==}
     engines: {node: '>=16.14.0', npm: '>=8.1.0'}
 
+  maplibre-gl@6.9.0:
+    resolution: {integrity: sha512-vFMwMK0Zs+NM/rOMSdtu8bO30DIexhBEVi5KC6f70/XtI+L/K2wC3LsDCAXFZ4s8ik5gAuDugfCNbpllpdJ9bA==}
+    engines: {node: '>=16.14.0', npm: '>=8.1.0'}
+
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
@@ -993,6 +1017,10 @@ packages:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
 
+  require-from-string@2.0.2:
+    resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
+    engines: {node: '>=0.10.0'}
+
   resolve-protobuf-schema@2.1.0:
     resolution: {integrity: sha512-kI5ffTiZWmJaS/huM8wZfEMer1eRd7oJQhDuxeCLe3t7N7mX3z94CN0xPxBQxFYQTSNz9T0i+v6inKqSdK8xrQ==}
 
@@ -1049,8 +1077,8 @@ packages:
   three@0.185.1:
     resolution: {integrity: sha512-5aojFCXKwnjBRZvUnt3WFfEcvUJgkN5LlijRFN95hMy8WVkG4I0QNcJE+OuWvuJ0bOdStrbfXn0pkd6/QyiAlg==}
 
-  tileflow@0.1.0-alpha.3:
-    resolution: {integrity: sha512-06T/8x4mpX32jTdMEH43X89Io5F6BkQkKt2CyaV5LoMH5mtUima2qcAH2OFX4nvfYqgMW1bdj14XDhABU1OFSw==}
+  tileflow@0.1.0-alpha.5:
+    resolution: {integrity: sha512-scA3MTtPJIs1TmaOuavNbgVqNuMnu/xbulOQi1WwYq4PiY/c3vQJNQOW3yJ9C0nDtQIYyxMz/UGvg4wbwtIatw==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1360,6 +1388,8 @@ snapshots:
 
   '@mapbox/jsonlint-lines-primitives@2.0.2': {}
 
+  '@mapbox/jsonlint-lines-primitives@2.0.3': {}
+
   '@mapbox/point-geometry@1.1.0': {}
 
   '@mapbox/tiny-sdf@2.2.0': {}
@@ -1378,11 +1408,15 @@ snapshots:
     dependencies:
       '@mapbox/point-geometry': 1.1.0
       '@types/geojson': 7946.0.16
-      pbf: 5.1.0
+      pbf: 5.1.2
 
   '@mapbox/whoots-js@3.1.0': {}
 
   '@maplibre/geojson-vt@6.1.0':
+    dependencies:
+      kdbush: 4.1.0
+
+  '@maplibre/geojson-vt@6.1.1':
     dependencies:
       kdbush: 4.1.0
 
@@ -1404,7 +1438,20 @@ snapshots:
       quickselect: 3.0.0
       tinyqueue: 3.0.0
 
+  '@maplibre/maplibre-gl-style-spec@26.4.2':
+    dependencies:
+      '@mapbox/jsonlint-lines-primitives': 2.0.3
+      '@mapbox/unitbezier': 1.0.0
+      json-stringify-pretty-compact: 4.0.0
+      minimist: 1.2.8
+      quickselect: 3.0.0
+      tinyqueue: 3.0.0
+
   '@maplibre/mlt@1.1.11':
+    dependencies:
+      '@mapbox/point-geometry': 1.1.0
+
+  '@maplibre/mlt@1.2.1':
     dependencies:
       '@mapbox/point-geometry': 1.1.0
 
@@ -1504,18 +1551,18 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@tileflow/capture@0.1.0-alpha.21(@types/node@25.9.3)':
+  '@tileflow/capture@0.1.0-alpha.22(@types/node@25.9.3)':
     dependencies:
       '@tileflow/core': 0.1.0-alpha.24
-      '@tileflow/dev': 0.1.0-alpha.22(@types/node@25.9.3)
-      maplibre-gl: 5.24.0
+      '@tileflow/dev': 0.1.0-alpha.23(@types/node@25.9.3)
+      maplibre-gl: 6.9.0
       pixelmatch: 7.2.0
       playwright: 1.62.1
       pngjs: 7.0.0
     transitivePeerDependencies:
       - '@types/node'
 
-  '@tileflow/coordinates-runtime@0.1.0-alpha.0':
+  '@tileflow/coordinates-runtime@0.1.0-alpha.2':
     dependencies:
       '@tileflow/coordinates': 0.1.0-alpha.0
       zod: 4.4.3
@@ -1529,7 +1576,7 @@ snapshots:
       '@maplibre/maplibre-gl-style-spec': 24.8.5
       zod: 4.4.3
 
-  '@tileflow/dev@0.1.0-alpha.22(@types/node@25.9.3)':
+  '@tileflow/dev@0.1.0-alpha.23(@types/node@25.9.3)':
     dependencies:
       '@mapbox/vector-tile': 3.0.0
       '@maplibre/maplibre-gl-style-spec': 24.8.5
@@ -1538,7 +1585,7 @@ snapshots:
       fflate: 0.8.3
       fontkit: 2.0.4
       jiti: 2.7.0
-      maplibre-gl: 5.24.0
+      maplibre-gl: 6.9.0
       pbf: 5.1.2
       pmtiles: 4.5.0
       saxes: 6.0.0
@@ -1548,27 +1595,27 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@tileflow/interactions@0.1.0-alpha.2(maplibre-gl@5.24.0)':
+  '@tileflow/interactions@0.1.0-alpha.3(maplibre-gl@5.24.0)':
     dependencies:
       zod: 4.4.3
     optionalDependencies:
       maplibre-gl: 5.24.0
 
-  '@tileflow/maps@0.1.0-alpha.2(@tileflow/core@0.1.0-alpha.24)':
+  '@tileflow/maps@0.1.0-alpha.3(@tileflow/core@0.1.0-alpha.24)':
     dependencies:
       '@tileflow/core': 0.1.0-alpha.24
 
-  '@tileflow/next@0.1.0-alpha.20(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
+  '@tileflow/next@0.1.0-alpha.21(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
-      '@tileflow/dev': 0.1.0-alpha.22(@types/node@25.9.3)
+      '@tileflow/dev': 0.1.0-alpha.23(@types/node@25.9.3)
       next: 16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     transitivePeerDependencies:
       - '@types/node'
 
-  '@tileflow/react@0.1.0-alpha.23(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@tileflow/react@0.1.0-alpha.24(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@tileflow/core': 0.1.0-alpha.24
-      '@tileflow/interactions': 0.1.0-alpha.2(maplibre-gl@5.24.0)
+      '@tileflow/interactions': 0.1.0-alpha.3(maplibre-gl@5.24.0)
       '@tileflow/static': 0.1.0-alpha.24
       maplibre-gl: 5.24.0
       react: 19.2.7
@@ -1578,9 +1625,9 @@ snapshots:
     dependencies:
       zod: 4.4.3
 
-  '@tileflow/vite@0.1.0-alpha.20(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))':
+  '@tileflow/vite@0.1.0-alpha.21(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))':
     dependencies:
-      '@tileflow/dev': 0.1.0-alpha.22(@types/node@25.9.3)
+      '@tileflow/dev': 0.1.0-alpha.23(@types/node@25.9.3)
       vite: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
     transitivePeerDependencies:
       - '@types/node'
@@ -1613,6 +1660,10 @@ snapshots:
 
   baseline-browser-mapping@2.10.43: {}
 
+  bidi-js@1.1.0:
+    dependencies:
+      require-from-string: 2.0.2
+
   brotli@1.3.3:
     dependencies:
       base64-js: 1.5.1
@@ -1636,6 +1687,8 @@ snapshots:
   dfa@1.2.0: {}
 
   earcut@3.0.2: {}
+
+  earcut@3.2.3: {}
 
   fast-deep-equal@3.1.3: {}
 
@@ -1744,6 +1797,27 @@ snapshots:
       quickselect: 3.0.0
       tinyqueue: 3.0.0
 
+  maplibre-gl@6.9.0:
+    dependencies:
+      '@mapbox/point-geometry': 1.1.0
+      '@mapbox/tiny-sdf': 2.2.0
+      '@mapbox/unitbezier': 1.0.0
+      '@mapbox/vector-tile': 3.0.0
+      '@maplibre/geojson-vt': 6.1.1
+      '@maplibre/maplibre-gl-style-spec': 26.4.2
+      '@maplibre/mlt': 1.2.1
+      '@maplibre/vt-pbf': 4.3.2
+      '@types/geojson': 7946.0.16
+      bidi-js: 1.1.0
+      earcut: 3.2.3
+      gl-matrix: 3.4.4
+      kdbush: 4.1.0
+      murmurhash-js: 1.0.0
+      pbf: 5.1.2
+      potpack: 2.1.0
+      quickselect: 3.0.0
+      tinyqueue: 3.0.0
+
   minimist@1.2.8: {}
 
   murmurhash-js@1.0.0: {}
@@ -1836,6 +1910,8 @@ snapshots:
   react@19.2.7: {}
 
   readdirp@4.1.2: {}
+
+  require-from-string@2.0.2: {}
 
   resolve-protobuf-schema@2.1.0:
     dependencies:
@@ -1948,15 +2024,15 @@ snapshots:
 
   three@0.185.1: {}
 
-  tileflow@0.1.0-alpha.3(@types/node@25.9.3):
+  tileflow@0.1.0-alpha.5(@types/node@25.9.3):
     dependencies:
       '@hono/node-server': 2.0.10(hono@4.13.5)
-      '@tileflow/capture': 0.1.0-alpha.21(@types/node@25.9.3)
+      '@tileflow/capture': 0.1.0-alpha.22(@types/node@25.9.3)
       '@tileflow/coordinates': 0.1.0-alpha.0
-      '@tileflow/coordinates-runtime': 0.1.0-alpha.0
+      '@tileflow/coordinates-runtime': 0.1.0-alpha.2
       '@tileflow/core': 0.1.0-alpha.24
-      '@tileflow/dev': 0.1.0-alpha.22(@types/node@25.9.3)
-      '@tileflow/maps': 0.1.0-alpha.2(@tileflow/core@0.1.0-alpha.24)
+      '@tileflow/dev': 0.1.0-alpha.23(@types/node@25.9.3)
+      '@tileflow/maps': 0.1.0-alpha.3(@tileflow/core@0.1.0-alpha.24)
       commander: 15.0.0
       hono: 4.13.5
       picocolors: 1.1.1
