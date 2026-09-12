@@ -14,15 +14,15 @@
   },
   "dependencies": {
     "@tileflow/core": "0.1.0-alpha.24",
-    "@tileflow/maps": "0.1.0-alpha.2",
-    "@tileflow/react": "0.1.0-alpha.23",
-    "@tileflow/vite": "0.1.0-alpha.20",
+    "@tileflow/maps": "0.1.0-alpha.3",
+    "@tileflow/react": "0.1.0-alpha.24",
+    "@tileflow/vite": "0.1.0-alpha.21",
     "maplibre-gl": "^5.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "tileflow": "0.1.0-alpha.3",
+    "tileflow": "0.1.0-alpha.5",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
