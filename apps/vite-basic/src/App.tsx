@@ -37,7 +37,7 @@ export default function App() {
           height="100%"
           onLoad={handleMapLoad}
           renderMarker={() => <span className="tileflow-marker" />}
-          source={{ kind: "tileflow", map: "madrid" }}
+          source={{ map: "madrid" }}
           zoom={initialView.zoom}
         />
       </section>

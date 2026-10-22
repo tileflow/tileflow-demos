@@ -10,7 +10,7 @@ export default defineMap({
   defaultTheme: "light",
   modules: {
     labels: labels({
-      roads: "highways",
+      roads: "major",
       water: "major",
     }),
     poi: poi({
