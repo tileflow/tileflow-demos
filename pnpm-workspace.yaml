@@ -7,16 +7,16 @@ allowBuilds:
 # sdk-sync:start
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - '@tileflow/capture@0.1.0-alpha.33'
+  - '@tileflow/capture@0.1.0-alpha.34'
   - '@tileflow/coordinates@0.1.0-alpha.2'
   - '@tileflow/coordinates-runtime@0.1.0-alpha.5'
-  - '@tileflow/core@0.1.0-alpha.39'
-  - '@tileflow/dev@0.1.0-alpha.36'
+  - '@tileflow/core@0.1.0-alpha.40'
+  - '@tileflow/dev@0.1.0-alpha.37'
   - '@tileflow/interactions@0.1.0-alpha.6'
-  - '@tileflow/maps@0.1.0-alpha.13'
+  - '@tileflow/maps@0.1.0-alpha.14'
   - '@tileflow/next@0.1.0-alpha.25'
-  - '@tileflow/react@0.1.0-alpha.34'
+  - '@tileflow/react@0.1.0-alpha.35'
   - '@tileflow/static@0.1.0-alpha.28'
   - '@tileflow/vite@0.1.0-alpha.25'
-  - 'tileflow@0.1.0-alpha.16'
+  - 'tileflow@0.1.0-alpha.17'
 # sdk-sync:end
