@@ -84,7 +84,9 @@ jobs:
         env:
           CI: 'true'
           NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
-        run: pnpm install --lockfile-only --no-frozen-lockfile
+        # Refresh ranged SDK transitives too; install alone retains older compatible
+        # lockfile entries even when the reviewed alpha closure selects newer ones.
+        run: pnpm update --recursive --lockfile-only --no-save '@tileflow/*' tileflow
 
       - name: Verify generated state
         if: steps.plan.outputs.changed == 'true'
