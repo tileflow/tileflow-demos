@@ -15,17 +15,17 @@ importers:
   apps/next-basic:
     dependencies:
       '@tileflow/core':
-        specifier: 0.1.0-alpha.39
-        version: 0.1.0-alpha.39
+        specifier: 0.1.0-alpha.42
+        version: 0.1.0-alpha.42
       '@tileflow/maps':
-        specifier: 0.1.0-alpha.13
-        version: 0.1.0-alpha.13(@tileflow/core@0.1.0-alpha.39)
+        specifier: 0.1.0-alpha.16
+        version: 0.1.0-alpha.16(@tileflow/core@0.1.0-alpha.42)
       '@tileflow/next':
         specifier: 0.1.0-alpha.25
         version: 0.1.0-alpha.25(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       '@tileflow/react':
-        specifier: 0.1.0-alpha.34
-        version: 0.1.0-alpha.34(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.1.0-alpha.35
+        version: 0.1.0-alpha.35(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       maplibre-gl:
         specifier: ^5.24.0
         version: 5.24.0
@@ -49,8 +49,8 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.17)
       tileflow:
-        specifier: 0.1.0-alpha.16
-        version: 0.1.0-alpha.16(@types/node@25.9.3)
+        specifier: 0.1.0-alpha.18
+        version: 0.1.0-alpha.18(@types/node@25.9.3)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -58,14 +58,14 @@ importers:
   apps/vite-basic:
     dependencies:
       '@tileflow/core':
-        specifier: 0.1.0-alpha.39
-        version: 0.1.0-alpha.39
+        specifier: 0.1.0-alpha.42
+        version: 0.1.0-alpha.42
       '@tileflow/maps':
-        specifier: 0.1.0-alpha.13
-        version: 0.1.0-alpha.13(@tileflow/core@0.1.0-alpha.39)
+        specifier: 0.1.0-alpha.16
+        version: 0.1.0-alpha.16(@tileflow/core@0.1.0-alpha.42)
       '@tileflow/react':
-        specifier: 0.1.0-alpha.34
-        version: 0.1.0-alpha.34(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: 0.1.0-alpha.35
+        version: 0.1.0-alpha.35(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tileflow/vite':
         specifier: 0.1.0-alpha.25
         version: 0.1.0-alpha.25(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
@@ -92,8 +92,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
       tileflow:
-        specifier: 0.1.0-alpha.16
-        version: 0.1.0-alpha.16(@types/node@25.9.3)
+        specifier: 0.1.0-alpha.18
+        version: 0.1.0-alpha.18(@types/node@25.9.3)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -654,8 +654,8 @@ packages:
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
 
-  '@tileflow/capture@0.1.0-alpha.33':
-    resolution: {integrity: sha512-XhuSRE8PoWvqWAMSL6RtHRhpCViHiIMAsaf8tHvwhk8Kwu2lHMEvNHSxYKROmPvaP++2ZrEDIFamxQW9N3J6Pg==}
+  '@tileflow/capture@0.1.0-alpha.35':
+    resolution: {integrity: sha512-M1F5WFi7yzPvE05OhcP/Z5rM9tqSbEpWKN0p8NVEQF2g4/a0cy36bh00cQS/lnZlc/XNk4CYuLa+cydo0gruXA==}
     engines: {node: '>=22'}
 
   '@tileflow/coordinates-runtime@0.1.0-alpha.5':
@@ -665,11 +665,11 @@ packages:
   '@tileflow/coordinates@0.1.0-alpha.2':
     resolution: {integrity: sha512-zZ+5Ly/Y/jXbre5wcUfDQZd+boBXjmPZZCMFt+ZAOOt6syzdYMtCH51x7C9HE0Mndtz2i08YL1ksCVmHFDCI9g==}
 
-  '@tileflow/core@0.1.0-alpha.39':
-    resolution: {integrity: sha512-YqIEMwTbamIASIzGzpuJS136yRUUEGp1AssU+y9nD8ySoHXtOqJ2RwUyBGrHCxjD93Ry8HqyQ75oH8WNBZvZlA==}
+  '@tileflow/core@0.1.0-alpha.42':
+    resolution: {integrity: sha512-Uj/0QN7X1jJXD7uFOcfCPo8RRXiMufc/JkTxPFO1WdkBJ/yyLpYR3B9wA7Gp0i0hiFZFXfRmOMR2L2lcufoYaQ==}
 
-  '@tileflow/dev@0.1.0-alpha.36':
-    resolution: {integrity: sha512-3xufqskMTQ0imLymSivoYMc2sKIUqR0X2812Ej/N5S4E3Q5nFXU+wFgQ3CztEjfrJWVb9orAn2+pg0Q3dWRlNw==}
+  '@tileflow/dev@0.1.0-alpha.38':
+    resolution: {integrity: sha512-o7xf59qaT0HmisdJTYmTmn6hOKkVzjyWf1dKU5k3vXioqOOLlfsXMANbE1AAQ7oOG3SEU+Slkncdj1LVqU+ZbA==}
     engines: {node: '>=22'}
 
   '@tileflow/interactions@0.1.0-alpha.6':
@@ -680,10 +680,10 @@ packages:
       maplibre-gl:
         optional: true
 
-  '@tileflow/maps@0.1.0-alpha.13':
-    resolution: {integrity: sha512-EiRmqkFIDEYc/o9ZuBhGjcnV7QqipZR6bGHwgkcJpdEhg15k9fcKt3+VR+a1AArvwZSZkYYo0Lq+HF4Az31jEg==}
+  '@tileflow/maps@0.1.0-alpha.16':
+    resolution: {integrity: sha512-4I3WbwxnoGqk6WZifKZwrS9G+PFr1TyaH33H7x+FaX+jwir3bkFjpd1/0ZU2sufe2RLidKUIydrpsqtWmTVQ5w==}
     peerDependencies:
-      '@tileflow/core': '>=0.1.0-alpha.39 <0.1.0-beta.0'
+      '@tileflow/core': '>=0.1.0-alpha.42 <0.1.0-beta.0'
 
   '@tileflow/next@0.1.0-alpha.25':
     resolution: {integrity: sha512-g3ceb2Y6iX2TMXZHHwD0827doPiKoUyH6/DTqksNdLMX627R2mul6zfFswnoU42RrTpNVXSe9kUh8gos9Hvkmw==}
@@ -691,8 +691,8 @@ packages:
     peerDependencies:
       next: '>=14 <17'
 
-  '@tileflow/react@0.1.0-alpha.34':
-    resolution: {integrity: sha512-Nkx+UcZEO1Vn3HPhAxR36YM8Sp1FvTlqvjANQ0FrkHEYzp6CqDXA86REETL89xbEUURWugdow32cG7SE3kvr/w==}
+  '@tileflow/react@0.1.0-alpha.35':
+    resolution: {integrity: sha512-C/DGqw6P79Rzy7wnRYsLEUmKPWmT+U9mj65DmTDi05mFoZwLvyoZj7oHzzRYgf7j5W/xxMCtDcC8un+zsCMS7Q==}
     peerDependencies:
       maplibre-gl: '>=6.4.1 <7'
       react: '>=18 <20'
@@ -1080,8 +1080,8 @@ packages:
   three@0.185.1:
     resolution: {integrity: sha512-5aojFCXKwnjBRZvUnt3WFfEcvUJgkN5LlijRFN95hMy8WVkG4I0QNcJE+OuWvuJ0bOdStrbfXn0pkd6/QyiAlg==}
 
-  tileflow@0.1.0-alpha.16:
-    resolution: {integrity: sha512-g3SoUzBplnRnuZR2TSUTl5/gnMEMVOZzBta/a9eH1+YZmip6dCwhDJyPYwxRoW5gXMaD/qH4RY/iyBR+5Wnb1g==}
+  tileflow@0.1.0-alpha.18:
+    resolution: {integrity: sha512-iHR+6In5GildH2XFLO4aw7F2aUnMffdhMzU9kFfZyrXbNlTXE1gw4In9AQqek30Hzzk/N44VXWGBIqEP3/sk6w==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1434,7 +1434,7 @@ snapshots:
 
   '@maplibre/maplibre-gl-style-spec@24.8.5':
     dependencies:
-      '@mapbox/jsonlint-lines-primitives': 2.0.2
+      '@mapbox/jsonlint-lines-primitives': 2.0.3
       '@mapbox/unitbezier': 0.0.1
       json-stringify-pretty-compact: 4.0.0
       minimist: 1.2.8
@@ -1554,10 +1554,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@tileflow/capture@0.1.0-alpha.33(@types/node@25.9.3)':
+  '@tileflow/capture@0.1.0-alpha.35(@types/node@25.9.3)':
     dependencies:
-      '@tileflow/core': 0.1.0-alpha.39
-      '@tileflow/dev': 0.1.0-alpha.36(@types/node@25.9.3)
+      '@tileflow/core': 0.1.0-alpha.42
+      '@tileflow/dev': 0.1.0-alpha.38(@types/node@25.9.3)
       maplibre-gl: 6.13.0
       pixelmatch: 7.2.0
       playwright: 1.62.1
@@ -1574,16 +1574,16 @@ snapshots:
     dependencies:
       zod: 4.4.3
 
-  '@tileflow/core@0.1.0-alpha.39':
+  '@tileflow/core@0.1.0-alpha.42':
     dependencies:
       '@maplibre/maplibre-gl-style-spec': 24.8.5
       zod: 4.4.3
 
-  '@tileflow/dev@0.1.0-alpha.36(@types/node@25.9.3)':
+  '@tileflow/dev@0.1.0-alpha.38(@types/node@25.9.3)':
     dependencies:
       '@mapbox/vector-tile': 3.0.0
       '@maplibre/maplibre-gl-style-spec': 26.4.4
-      '@tileflow/core': 0.1.0-alpha.39
+      '@tileflow/core': 0.1.0-alpha.42
       chokidar: 4.0.3
       fontkit: 2.0.4
       jiti: 2.7.0
@@ -1604,20 +1604,20 @@ snapshots:
     optionalDependencies:
       maplibre-gl: 5.24.0
 
-  '@tileflow/maps@0.1.0-alpha.13(@tileflow/core@0.1.0-alpha.39)':
+  '@tileflow/maps@0.1.0-alpha.16(@tileflow/core@0.1.0-alpha.42)':
     dependencies:
-      '@tileflow/core': 0.1.0-alpha.39
+      '@tileflow/core': 0.1.0-alpha.42
 
   '@tileflow/next@0.1.0-alpha.25(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
-      '@tileflow/dev': 0.1.0-alpha.36(@types/node@25.9.3)
+      '@tileflow/dev': 0.1.0-alpha.38(@types/node@25.9.3)
       next: 16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     transitivePeerDependencies:
       - '@types/node'
 
-  '@tileflow/react@0.1.0-alpha.34(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@tileflow/react@0.1.0-alpha.35(maplibre-gl@5.24.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
-      '@tileflow/core': 0.1.0-alpha.39
+      '@tileflow/core': 0.1.0-alpha.42
       '@tileflow/interactions': 0.1.0-alpha.6(maplibre-gl@5.24.0)
       '@tileflow/static': 0.1.0-alpha.28
       maplibre-gl: 5.24.0
@@ -1630,7 +1630,7 @@ snapshots:
 
   '@tileflow/vite@0.1.0-alpha.25(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))':
     dependencies:
-      '@tileflow/dev': 0.1.0-alpha.36(@types/node@25.9.3)
+      '@tileflow/dev': 0.1.0-alpha.38(@types/node@25.9.3)
       vite: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
     transitivePeerDependencies:
       - '@types/node'
@@ -2029,15 +2029,15 @@ snapshots:
 
   three@0.185.1: {}
 
-  tileflow@0.1.0-alpha.16(@types/node@25.9.3):
+  tileflow@0.1.0-alpha.18(@types/node@25.9.3):
     dependencies:
       '@hono/node-server': 2.1.3(hono@4.13.13)
-      '@tileflow/capture': 0.1.0-alpha.33(@types/node@25.9.3)
+      '@tileflow/capture': 0.1.0-alpha.35(@types/node@25.9.3)
       '@tileflow/coordinates': 0.1.0-alpha.2
       '@tileflow/coordinates-runtime': 0.1.0-alpha.5
-      '@tileflow/core': 0.1.0-alpha.39
-      '@tileflow/dev': 0.1.0-alpha.36(@types/node@25.9.3)
-      '@tileflow/maps': 0.1.0-alpha.13(@tileflow/core@0.1.0-alpha.39)
+      '@tileflow/core': 0.1.0-alpha.42
+      '@tileflow/dev': 0.1.0-alpha.38(@types/node@25.9.3)
+      '@tileflow/maps': 0.1.0-alpha.16(@tileflow/core@0.1.0-alpha.42)
       commander: 15.0.0
       hono: 4.13.13
       picocolors: 1.1.1
