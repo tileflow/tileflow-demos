@@ -668,10 +668,6 @@ packages:
   '@tileflow/core@0.1.0-alpha.42':
     resolution: {integrity: sha512-Uj/0QN7X1jJXD7uFOcfCPo8RRXiMufc/JkTxPFO1WdkBJ/yyLpYR3B9wA7Gp0i0hiFZFXfRmOMR2L2lcufoYaQ==}
 
-  '@tileflow/dev@0.1.0-alpha.36':
-    resolution: {integrity: sha512-3xufqskMTQ0imLymSivoYMc2sKIUqR0X2812Ej/N5S4E3Q5nFXU+wFgQ3CztEjfrJWVb9orAn2+pg0Q3dWRlNw==}
-    engines: {node: '>=22'}
-
   '@tileflow/dev@0.1.0-alpha.38':
     resolution: {integrity: sha512-o7xf59qaT0HmisdJTYmTmn6hOKkVzjyWf1dKU5k3vXioqOOLlfsXMANbE1AAQ7oOG3SEU+Slkncdj1LVqU+ZbA==}
     engines: {node: '>=22'}
@@ -1583,25 +1579,6 @@ snapshots:
       '@maplibre/maplibre-gl-style-spec': 24.8.5
       zod: 4.4.3
 
-  '@tileflow/dev@0.1.0-alpha.36(@types/node@25.9.3)':
-    dependencies:
-      '@mapbox/vector-tile': 3.0.0
-      '@maplibre/maplibre-gl-style-spec': 26.4.4
-      '@tileflow/core': 0.1.0-alpha.42
-      chokidar: 4.0.3
-      fontkit: 2.0.4
-      jiti: 2.7.0
-      maplibre-gl: 6.13.0
-      meshoptimizer: 1.3.0
-      pbf: 5.1.2
-      pmtiles: 4.5.0
-      saxes: 6.0.0
-      three: 0.185.1
-    optionalDependencies:
-      sharp: 0.35.5(@types/node@25.9.3)
-    transitivePeerDependencies:
-      - '@types/node'
-
   '@tileflow/dev@0.1.0-alpha.38(@types/node@25.9.3)':
     dependencies:
       '@mapbox/vector-tile': 3.0.0
@@ -1633,7 +1610,7 @@ snapshots:
 
   '@tileflow/next@0.1.0-alpha.25(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
-      '@tileflow/dev': 0.1.0-alpha.36(@types/node@25.9.3)
+      '@tileflow/dev': 0.1.0-alpha.38(@types/node@25.9.3)
       next: 16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     transitivePeerDependencies:
       - '@types/node'
@@ -1653,7 +1630,7 @@ snapshots:
 
   '@tileflow/vite@0.1.0-alpha.25(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))':
     dependencies:
-      '@tileflow/dev': 0.1.0-alpha.36(@types/node@25.9.3)
+      '@tileflow/dev': 0.1.0-alpha.38(@types/node@25.9.3)
       vite: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
     transitivePeerDependencies:
       - '@types/node'
