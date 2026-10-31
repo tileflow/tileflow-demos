@@ -16,7 +16,7 @@
     "@tileflow/maps": "0.1.0-alpha.16",
     "@tileflow/next": "0.1.0-alpha.25",
     "@tileflow/react": "0.1.0-alpha.35",
-    "maplibre-gl": "^5.24.0",
+    "maplibre-gl": "6.16.0",
     "next": "^16.2.7",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
