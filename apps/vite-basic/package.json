@@ -13,16 +13,16 @@
     "preview:prod": "pnpm run build && pnpm run preview"
   },
   "dependencies": {
-    "@tileflow/core": "0.1.0-alpha.44",
-    "@tileflow/maps": "0.1.0-alpha.17",
-    "@tileflow/react": "0.1.0-alpha.36",
+    "@tileflow/core": "0.1.0-alpha.47",
+    "@tileflow/maps": "0.1.0-alpha.19",
+    "@tileflow/react": "0.1.0-alpha.37",
     "@tileflow/vite": "0.1.0-alpha.26",
     "maplibre-gl": "6.16.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "tileflow": "0.1.0-alpha.19",
+    "tileflow": "0.1.0-alpha.22",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

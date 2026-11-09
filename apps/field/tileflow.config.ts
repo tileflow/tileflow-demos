@@ -12,7 +12,6 @@ export default defineMap({
   extends: streets,
   themes: { light: streetsThemes.light },
   defaultTheme: "light",
-  terrain: "hillshade",
   modules: { poi: disable(), roads: roads({ extras: { paths: true } }) },
   view,
   scenes: {
