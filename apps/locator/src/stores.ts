@@ -2,6 +2,7 @@ import { distanceKm, type Coordinate } from "@tileflow-demos/shared/geo";
 
 export const amenities = ["Refill", "Terrace", "Step-free"] as const;
 export type Amenity = typeof amenities[number];
+export const nearbyRadiusKm = 50;
 
 export interface Store {
   id: string;
@@ -18,11 +19,15 @@ export const stores: Store[] = [
   { id: "estufa", name: "Estufa Café", district: "Príncipe Real", point: [-9.1489, 38.7166], hours: "08:00–19:00", amenities: ["Terrace", "Step-free"] },
   { id: "oficina", name: "Oficina Roastery", district: "Santos", point: [-9.1559, 38.7078], hours: "08:30–18:00", amenities: ["Refill", "Step-free"] },
   { id: "jardim", name: "Jardim Kiosk", district: "Estrela", point: [-9.16, 38.7153], hours: "09:00–17:30", amenities: ["Terrace"] },
-  { id: "mercado", name: "Mercado Bar", district: "Campo de Ourique", point: [-9.1657, 38.7165], hours: "07:00–16:00", amenities: ["Refill"] },
+  { id: "mercado", name: "Linha Marmelo", district: "Campo de Ourique", point: [-9.1657, 38.7165], hours: "07:00–16:00", amenities: ["Refill"] },
 ];
 
 function normalize(text: string) {
   return text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+}
+
+export function hasNearbyStore(position: Coordinate) {
+  return stores.some((store) => distanceKm(position, store.point) <= nearbyRadiusKm);
 }
 
 export function findStores(query: string, amenity: Amenity | null, origin: Coordinate | null) {
