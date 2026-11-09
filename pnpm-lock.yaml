@@ -15,6 +15,113 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  apps/field:
+    dependencies:
+      '@tileflow-demos/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.44
+        version: 0.1.0-alpha.44
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.17
+        version: 0.1.0-alpha.17(@tileflow/core@0.1.0-alpha.44)
+      '@tileflow/react':
+        specifier: 0.1.0-alpha.36
+        version: 0.1.0-alpha.36(maplibre-gl@6.16.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.26
+        version: 0.1.0-alpha.26(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@tileflow/elevation':
+        specifier: 0.1.0-alpha.1
+        version: 0.1.0-alpha.1
+      '@tileflow/routing':
+        specifier: 0.1.0-alpha.1
+        version: 0.1.0-alpha.1
+      '@types/node':
+        specifier: ^25.9.2
+        version: 25.9.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.2
+        version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      tileflow:
+        specifier: 0.1.0-alpha.19
+        version: 0.1.0-alpha.19(@types/node@25.9.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
+  apps/locator:
+    dependencies:
+      '@tileflow-demos/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.44
+        version: 0.1.0-alpha.44
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.17
+        version: 0.1.0-alpha.17(@tileflow/core@0.1.0-alpha.44)
+      '@tileflow/react':
+        specifier: 0.1.0-alpha.36
+        version: 0.1.0-alpha.36(maplibre-gl@6.16.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.26
+        version: 0.1.0-alpha.26(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@tileflow/search':
+        specifier: 0.1.0-alpha.6
+        version: 0.1.0-alpha.6
+      '@types/node':
+        specifier: ^25.9.2
+        version: 25.9.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.2
+        version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      tileflow:
+        specifier: 0.1.0-alpha.19
+        version: 0.1.0-alpha.19(@types/node@25.9.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
   apps/next-basic:
     dependencies:
       '@tileflow/core':
@@ -58,6 +165,55 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  apps/territories:
+    dependencies:
+      '@tileflow-demos/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.44
+        version: 0.1.0-alpha.44
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.17
+        version: 0.1.0-alpha.17(@tileflow/core@0.1.0-alpha.44)
+      '@tileflow/react':
+        specifier: 0.1.0-alpha.36
+        version: 0.1.0-alpha.36(maplibre-gl@6.16.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.26
+        version: 0.1.0-alpha.26(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.2
+        version: 25.9.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.2
+        version: 6.0.2(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      tileflow:
+        specifier: 0.1.0-alpha.19
+        version: 0.1.0-alpha.19(@types/node@25.9.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
   apps/vite-basic:
     dependencies:
       '@tileflow/core':
@@ -100,6 +256,22 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
+  shared:
+    dependencies:
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.2
+        version: 25.9.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
       vite:
         specifier: ^8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
@@ -654,6 +826,9 @@ packages:
     resolution: {integrity: sha512-1QtYm6uBNkwqOSeHA8NV3KHGIbDfHXhThx2JF+0tBCeQp2lOo8W3MxSEUGcyMPz9HsWMfmJYe+CZpE3VYl0Ijw==}
     engines: {node: '>=22'}
 
+  '@tileflow/elevation@0.1.0-alpha.1':
+    resolution: {integrity: sha512-s4JV2bXtTW0OMO9B9DfufVncpN7yLu807YsA/EHFl/WblFi17VNicuAzklh1yAaG3e4crUa+VGPvNohX14WXNw==}
+
   '@tileflow/interactions@0.1.0-alpha.7':
     resolution: {integrity: sha512-bc52TTOzj/nM06Gf/EK4NjHfTgfuyHRnyJwFURZBhsqwRqeHJ1D/ExcaIIJJBonNylHOXauTif7e+posqI1eww==}
     peerDependencies:
@@ -679,6 +854,12 @@ packages:
       maplibre-gl: 6.16.0
       react: '>=18 <20'
       react-dom: '>=18 <20'
+
+  '@tileflow/routing@0.1.0-alpha.1':
+    resolution: {integrity: sha512-0azdB5FZYrMqGdQZ0QflAWy5VUbhlxLOWvXuab2g1OWLvGoEbOmiJx55YAWm2aUKvO8zcpqdKHz+hpiww82CkA==}
+
+  '@tileflow/search@0.1.0-alpha.6':
+    resolution: {integrity: sha512-kdvjVZgm+/TyvFL+F6EyV0P+Ib2NOt20lsmp6k3e+2dBHUVzl3Ao2Tyzgr5ktqExBr+gT9sC4687JqvSgMCAjg==}
 
   '@tileflow/static@0.1.0-alpha.29':
     resolution: {integrity: sha512-JHXwfjluSHkgKK8AU93X/MbTIiNYiC55Eqw6F0C9H8VE+cBk+DPVfmHzVJjesdE0QDlTCAUmGD3Fv71Ia/mTlA==}
@@ -1538,6 +1719,10 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@tileflow/elevation@0.1.0-alpha.1':
+    dependencies:
+      zod: 4.6.7
+
   '@tileflow/interactions@0.1.0-alpha.7(maplibre-gl@6.16.0)':
     dependencies:
       zod: 4.6.7
@@ -1563,6 +1748,14 @@ snapshots:
       maplibre-gl: 6.16.0
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
+
+  '@tileflow/routing@0.1.0-alpha.1':
+    dependencies:
+      zod: 4.6.7
+
+  '@tileflow/search@0.1.0-alpha.6':
+    dependencies:
+      zod: 4.6.7
 
   '@tileflow/static@0.1.0-alpha.29':
     dependencies:

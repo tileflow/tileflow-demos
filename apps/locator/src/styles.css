@@ -1,0 +1,10 @@
+.locator { --ink: #38251f; --accent: #963e24; --tint: #f4e6d8; --mark: #f5b785; --muted: #685951; --surface: #fffbf5; }
+.locator .brand-mark { border-radius: 65% 35% 65% 35%; transform: rotate(-18deg); box-shadow: inset -7px 0 0 #c1794b; }
+.locator h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; }
+.shop-number, .shop-pin { display: inline-grid; place-items: center; font: 600 12px/1 monospace; border-radius: 50%; }
+.shop-number { min-width: 31px; height: 31px; color: var(--accent); border: 1px solid #ceab94; }
+.shop-pin { width: 32px; height: 32px; color: white; background: var(--accent); border: 2px solid #fffaf2; box-shadow: 0 2px 7px #45261160; }
+.shop-pin[data-selected=true] { background: var(--ink); outline: 3px solid #efaa72; }
+.store-amenities { padding: 0 9px 11px 48px; background: var(--tint); font-size: 12px; }
+.shop-popup { color: #38251f; font: 14px/1.45 system-ui; display: grid; gap: 2px; padding: 4px; }
+.shop-popup button { justify-self: start; margin-top: 5px; background: white; border: 1px solid #c9b6a5; border-radius: 4px; }

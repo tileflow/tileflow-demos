@@ -1,0 +1,21 @@
+{
+  "name": "@tileflow-demos/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./ui": "./ui.tsx",
+    "./geo": "./geo.ts",
+    "./local-service": "./local-service.ts",
+    "./styles.css": "./styles.css",
+    "./service-client": "./service-client.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
+    "vite": "^8.0.16"
+  }
+}

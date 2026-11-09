@@ -1,5 +1,6 @@
 packages:
   - 'apps/*'
+  - 'shared'
 
 allowBuilds:
   sharp: true
@@ -12,10 +13,13 @@ minimumReleaseAgeExclude:
   - '@tileflow/coordinates-runtime@0.1.0-alpha.6'
   - '@tileflow/core@0.1.0-alpha.44'
   - '@tileflow/dev@0.1.0-alpha.40'
+  - '@tileflow/elevation@0.1.0-alpha.1'
   - '@tileflow/interactions@0.1.0-alpha.7'
   - '@tileflow/maps@0.1.0-alpha.17'
   - '@tileflow/next@0.1.0-alpha.25'
   - '@tileflow/react@0.1.0-alpha.36'
+  - '@tileflow/routing@0.1.0-alpha.1'
+  - '@tileflow/search@0.1.0-alpha.6'
   - '@tileflow/static@0.1.0-alpha.29'
   - '@tileflow/vite@0.1.0-alpha.26'
   - 'tileflow@0.1.0-alpha.19'
