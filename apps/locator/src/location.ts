@@ -1,6 +1,5 @@
-import type { Coordinate } from "@tileflow-demos/shared/geo";
+import type { Coordinate, Credit } from "@tileflow-demos/shared/geo";
 import { requestLive } from "@tileflow-demos/shared/service-client";
-import type { Credit } from "@tileflow-demos/shared/ui";
 
 export interface SearchOrigin { label: string; point: Coordinate }
 export interface AddressResult { place: SearchOrigin | null; credits: Credit[] }

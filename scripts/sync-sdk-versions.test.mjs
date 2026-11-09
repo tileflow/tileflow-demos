@@ -208,11 +208,13 @@ test('synchronizes the server-side SDK clients used by solution demos', async ()
     const names = ['@tileflow/search', '@tileflow/routing', '@tileflow/elevation'];
     await writeJson(join(root, 'apps/locator/package.json'), {devDependencies: {[names[0]]: alpha14}});
     await writeJson(join(root, 'apps/field/package.json'), {devDependencies: {[names[1]]: alpha14, [names[2]]: alpha14}});
+    await writeJson(join(root, 'shared/package.json'), {dependencies: {'@tileflow/core': alpha14}});
     const clients = Object.fromEntries(names.map((name) => [name, metadata(name, alpha16, {
       [alpha16]: packageVersion(name, alpha16),
     })]));
 
     const plan = await createSyncPlan({repositoryRoot: root, getPackageMetadata: registry(clients)});
+    assert.ok(plan.changedFiles.includes('shared/package.json'));
     for (const name of names) {
       assert.ok(plan.updates.some((update) => update.name === name && update.target === alpha16));
       assert.ok(plan.requiredVersions.some((pin) => pin.name === name && pin.version === alpha16));

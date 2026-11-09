@@ -1,7 +1,7 @@
 import { defineMap, disable, labels } from "@tileflow/core";
 import { streets, streetsThemes } from "@tileflow/maps";
 
-const view = { center: [-9.1483, 38.7206] as [number, number], zoom: 12.7 };
+const view = { center: [-9.1483, 38.7206] as [number, number], zoom: 12.3 };
 
 export default defineMap({
   id: "locator",

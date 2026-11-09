@@ -1,6 +1,6 @@
 import { tileflowGroundBeforeId } from "@tileflow/core/browser";
 import type { GeoJSONSource, Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
-import { regionFeatures, type Metric } from "./regions";
+import { regionBounds, regionFeatures, type Metric } from "./regions";
 
 const sourceId = "dispatch-territories";
 const fillId = "territory-fill";
@@ -14,6 +14,7 @@ export function paintRegions(map: MapLibreMap, metric: Metric) {
     return;
   }
 
+  map.fitBounds(regionBounds, { padding: 42, duration: 0 });
   map.addSource(sourceId, { type: "geojson", data, attribution: "Dispatch areas by Tileflow (CC0)" });
   const before = tileflowGroundBeforeId(map);
   map.addLayer({ id: fillId, type: "fill", source: sourceId,

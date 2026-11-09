@@ -127,9 +127,9 @@ async function smokeDemo({
     if (captureDirectory) {
       const output = resolve(captureDirectory, mapId);
       await mkdir(output, {recursive: true});
-      const args = ['capture', mapId + '-desktop', '--app-origin', origin, '--out-dir', output, '--json'];
+      const captureArgs = ['capture', mapId + '-desktop', '--app-origin', origin, '--out-dir', output, '--json'];
       try {
-        const {stdout} = await promisify(execFile)(join(cwd, 'node_modules/.bin/tileflow'), args, {cwd});
+        const {stdout} = await promisify(execFile)(join(cwd, 'node_modules/.bin/tileflow'), captureArgs, {cwd});
         console.log(stdout);
       } catch (error) {
         const diagnostics = error.stdout + error.stderr;

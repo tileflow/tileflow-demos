@@ -1,5 +1,4 @@
-import { distanceKm, type Coordinate } from "@tileflow-demos/shared/geo";
-import type { Credit } from "@tileflow-demos/shared/ui";
+import { distanceKm, type Coordinate, type Credit } from "@tileflow-demos/shared/geo";
 
 interface Stop { index: number; name: string; note: string }
 export interface Trail {

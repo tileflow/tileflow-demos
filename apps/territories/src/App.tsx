@@ -1,8 +1,6 @@
-import { Map } from "@tileflow/react";
-import type { Map as MapLibreMap } from "maplibre-gl";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DemoHeader, MapPanel } from "@tileflow-demos/shared/ui";
-import { highlightRegion, listenForRegion, paintRegions } from "./region-layer";
+import { TerritoryMap } from "./TerritoryMap";
 import { bands, formatCount, metricNames, metricValue, percentage, regionColor, regions, type Metric } from "./regions";
 import "./styles.css";
 
@@ -12,19 +10,8 @@ const onTime = regions.reduce((sum, region) => sum + region.onTime, 0);
 export default function App() {
   const [metric, setMetric] = useState<Metric>("deliveries");
   const [id, setId] = useState<string | null>("pearl");
-  const [map, setMap] = useState<MapLibreMap | null>(null);
   const selected = regions.find((region) => region.id === id);
   const ranked = [...regions].sort((a, b) => metricValue(b, metric) - metricValue(a, metric));
-
-  useEffect(() => {
-    if (map) paintRegions(map, metric);
-  }, [map, metric]);
-  useEffect(() => {
-    if (map) highlightRegion(map, id);
-  }, [map, id]);
-  useEffect(() => {
-    if (map) return listenForRegion(map, setId);
-  }, [map]);
 
   const legend = (
     <>
@@ -79,7 +66,7 @@ export default function App() {
           </section>
         </section>
         <MapPanel label="Portland delivery territories" legend={legend}>
-          <Map source={{ map: "territories" }} height="100%" viewMode="2d" captureId="territories" onLoad={setMap} />
+          <TerritoryMap metric={metric} id={id} select={setId} />
         </MapPanel>
       </main>
     </div>

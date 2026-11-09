@@ -140,7 +140,7 @@ jobs:
             );
             if (deletedOutput) throw new Error(`SDK Sync may not delete files: ${deletedOutput.replaceAll('\0', ', ')}`);
             const changedFiles = changedOutput.split('\0').filter(Boolean).sort();
-            const allowedPath = /^(?:pnpm-(?:lock|workspace)\.yaml|apps\/[^/]+\/package\.json)$/;
+            const allowedPath = /^(?:pnpm-(?:lock|workspace)\.yaml|(?:apps\/[^/]+|shared)\/package\.json)$/;
             if (changedFiles.length === 0) throw new Error('Expected generated SDK changes.');
             for (const path of changedFiles) {
               if (!allowedPath.test(path)) throw new Error(`Unexpected SDK Sync output: ${path}`);
