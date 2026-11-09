@@ -1,6 +1,8 @@
 import { defineMap, disable, roads } from "@tileflow/core";
 import { streets, streetsThemes } from "@tileflow/maps";
 
+const view = { center: [-122.5318, 37.8276] as [number, number], zoom: 13 };
+
 export default defineMap({
   id: "field",
   name: "Marin Headlands walks",
@@ -10,5 +12,13 @@ export default defineMap({
   defaultTheme: "light",
   terrain: "hillshade",
   modules: { poi: disable(), roads: roads({ extras: { paths: true } }) },
-  view: { center: [-122.5318, 37.8276], zoom: 13 },
+  view,
+  scenes: {
+    "field-desktop": {
+      theme: "light",
+      camera: { type: "bounds", bounds: [-122.5406, 37.8313, -122.5258, 37.8394], padding: 48 },
+      viewport: { width: 1024, height: 720, dpr: 1 },
+      target: { kind: "application", path: "/", captureId: "field", frame: "viewport" },
+    },
+  },
 });

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
-import {spawn} from 'node:child_process';
+import {execFile, spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {createServer} from 'node:net';
-import {join} from 'node:path';
+import {mkdir, writeFile} from 'node:fs/promises';
+import {join, resolve} from 'node:path';
+import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
 
 const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -76,17 +78,17 @@ async function stopServer(child) {
   }
 }
 
-async function validateAssets({assetBase, name, origin}) {
+async function validateAssets({assetBase, mapId, name, origin}) {
   const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
   assert.equal(manifest.version, 1, `${name} manifest version changed unexpectedly.`);
-  const styleUrl = manifest.maps?.madrid?.themes?.light?.styleUrl;
+  const styleUrl = manifest.maps?.[mapId]?.themes?.light?.styleUrl;
   assert.equal(
     typeof styleUrl,
     'string',
-    `${name} manifest does not expose Madrid's light Style URL.`,
+    `${name} manifest does not expose the light style for ${mapId}.`,
   );
   const styleLocation = new URL(styleUrl, origin);
-  assert.equal(styleLocation.origin, origin, `${name} points Madrid at another origin.`);
+  assert.equal(styleLocation.origin, origin, `${name} points ${mapId} at another origin.`);
 
   const style = await requestJson(styleLocation);
   assert.equal(style.version, 8, `${name} did not serve a MapLibre v8 style.`);
@@ -96,6 +98,8 @@ async function validateAssets({assetBase, name, origin}) {
 async function smokeDemo({
   name,
   executable,
+  mapId,
+  captureDirectory,
   arguments: args,
   cwd,
   origin,
@@ -118,28 +122,61 @@ async function smokeDemo({
     const html = await requestText(origin);
     assert.match(html, /<html/u, `${name} did not serve an HTML document.`);
 
-    for (const assetBase of assetBases) await validateAssets({assetBase, name, origin});
+    for (const assetBase of assetBases) await validateAssets({assetBase, mapId, name, origin});
     console.log(`Validated ${name} at ${origin}.`);
+    if (captureDirectory) {
+      const output = resolve(captureDirectory, mapId);
+      await mkdir(output, {recursive: true});
+      const args = ['capture', mapId + '-desktop', '--app-origin', origin, '--out-dir', output, '--json'];
+      try {
+        const {stdout} = await promisify(execFile)(join(cwd, 'node_modules/.bin/tileflow'), args, {cwd});
+        console.log(stdout);
+      } catch (error) {
+        const diagnostics = error.stdout + error.stderr;
+        await writeFile(join(output, 'diagnostics.txt'), diagnostics);
+        throw new Error(`Capture failed for ${name}.\n${diagnostics}`, {cause: error});
+      }
+    }
   } finally {
     await stopServer(child);
   }
 }
 
-const vitePort = await reserveFreePort();
-await smokeDemo({
-  name: 'Vite demo',
-  executable: join(repositoryRoot, 'apps/vite-basic/node_modules/.bin/vite'),
-  arguments: ['preview', '--host', '127.0.0.1', '--port', vitePort.toString(), '--strictPort'],
-  cwd: join(repositoryRoot, 'apps/vite-basic'),
-  origin: `http://127.0.0.1:${vitePort}`,
-});
+const captureDirectory = process.env.DEMO_CAPTURE_DIR;
+const viteDemos = [
+  ['vite-basic', 'madrid'],
+  ['locator', 'locator'],
+  ['field', 'field'],
+  ['territories', 'territories'],
+];
 
-const nextPort = await reserveFreePort();
-await smokeDemo({
-  name: 'Next demo static assets',
-  executable: join(repositoryRoot, 'apps/next-basic/node_modules/.bin/next'),
-  arguments: ['start', '--hostname', '127.0.0.1', '--port', nextPort.toString()],
-  cwd: join(repositoryRoot, 'apps/next-basic'),
-  origin: `http://127.0.0.1:${nextPort}`,
-  assetBases: ['/tileflow', '/api/tileflow'],
-});
+for (const [name, mapId] of viteDemos) {
+  if (captureDirectory && name === 'vite-basic') continue;
+  const port = await reserveFreePort();
+  const cwd = join(repositoryRoot, 'apps', name);
+  try {
+    await smokeDemo({
+      name, mapId, cwd, captureDirectory,
+      executable: join(cwd, 'node_modules/.bin/vite'),
+      arguments: ['preview', '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
+      origin: `http://127.0.0.1:${port}`,
+    });
+  } catch (error) {
+    if (!captureDirectory) throw error;
+    console.error(error.message);
+    process.exitCode = 1;
+  }
+}
+
+if (!captureDirectory) {
+  const nextPort = await reserveFreePort();
+  await smokeDemo({
+    name: 'Next demo static assets',
+    mapId: 'madrid',
+    executable: join(repositoryRoot, 'apps/next-basic/node_modules/.bin/next'),
+    arguments: ['start', '--hostname', '127.0.0.1', '--port', nextPort.toString()],
+    cwd: join(repositoryRoot, 'apps/next-basic'),
+    origin: `http://127.0.0.1:${nextPort}`,
+    assetBases: ['/tileflow', '/api/tileflow'],
+  });
+}

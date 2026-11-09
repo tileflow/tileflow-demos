@@ -10,6 +10,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      capture_solutions:
+        description: Capture the three solution apps with the published basemap.
+        required: false
+        default: false
+        type: boolean
       sdk_sync_mode:
         description: Empty for an operator run; pull-request or main for SDK Sync.
         required: false
@@ -118,3 +123,18 @@ jobs:
 
       - name: Verify every demo
         run: pnpm check
+
+      - name: Capture solution apps
+        if: github.event_name == 'workflow_dispatch' && inputs.capture_solutions
+        env:
+          DEMO_CAPTURE_DIR: ${{ runner.temp }}/solution-captures
+        run: pnpm smoke:runtime
+
+      - name: Save captures, receipts and diagnostics
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.capture_solutions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: solution-captures
+          path: ${{ runner.temp }}/solution-captures
+          if-no-files-found: ignore
+          retention-days: 3

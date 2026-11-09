@@ -1,0 +1,14 @@
+.territories { --ink: #1c2945; --accent: #354a91; --surface: #fafbfe; --tint: #eaf0fc; --edge: #d4dce8; --muted: #536176; --mark: #a9c5fa; }
+.territories .brand-mark { clip-path: polygon(0 8%, 70% 8%, 70% 35%, 100% 35%, 100% 92%, 30% 92%, 30% 65%, 0 65%); }
+.territories h1 { font-size: clamp(38px, 3.9vw, 56px); }
+.totals dd { font-size: 29px; }
+.region-detail { margin-top: 18px; background: var(--tint); border-left: 3px solid var(--accent); padding: 13px 15px; }
+.region-detail .metric-grid { gap: 8px 22px; margin: 12px 0 7px; }
+.region-detail .metric dd { font-size: 20px; }
+.link-button { border: 0; color: var(--accent); background: transparent; font-size: 12px; text-decoration: underline; }
+.region-dot { width: 12px; height: 12px; flex: none; border-radius: 3px; }
+.region-value { font: 13px/1 monospace; }
+.territories .entry { min-height: 42px; padding-inline: 7px; }
+.swatches { display: flex; gap: 9px; padding: 0; margin: 6px 0 0; list-style: none; }
+.swatches li { display: grid; gap: 3px; min-width: 38px; color: var(--ink); font: 11px/1.4 monospace; }
+.swatches i { height: 7px; border-radius: 2px; }

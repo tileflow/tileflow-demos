@@ -202,6 +202,26 @@ test('tracks the canonical unscoped CLI and its scoped package graph', async () 
   }
 });
 
+test('synchronizes the server-side SDK clients used by solution demos', async () => {
+  const root = await createFixture();
+  try {
+    const names = ['@tileflow/search', '@tileflow/routing', '@tileflow/elevation'];
+    await writeJson(join(root, 'apps/locator/package.json'), {devDependencies: {[names[0]]: alpha14}});
+    await writeJson(join(root, 'apps/field/package.json'), {devDependencies: {[names[1]]: alpha14, [names[2]]: alpha14}});
+    const clients = Object.fromEntries(names.map((name) => [name, metadata(name, alpha16, {
+      [alpha16]: packageVersion(name, alpha16),
+    })]));
+
+    const plan = await createSyncPlan({repositoryRoot: root, getPackageMetadata: registry(clients)});
+    for (const name of names) {
+      assert.ok(plan.updates.some((update) => update.name === name && update.target === alpha16));
+      assert.ok(plan.requiredVersions.some((pin) => pin.name === name && pin.version === alpha16));
+    }
+  } finally {
+    await rm(root, {force: true, recursive: true});
+  }
+});
+
 test('fails closed on a registry rollback or a competing range version', async () => {
   const root = await createFixture();
   try {
