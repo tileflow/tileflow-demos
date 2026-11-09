@@ -76,11 +76,11 @@ h2 { font-size: 18px; letter-spacing: -.035em; }
 .status-box { padding: 15px; background: var(--tint); border-radius: 7px; font-size: 14px; line-height: 1.5; }
 .map-panel { position: relative; min-width: 0; overflow: hidden; isolation: isolate; background: #e7e9df; }
 .map-loading, .map-error {
-  display: none; position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
+  position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%);
   border: 1px solid var(--edge); padding: 12px 17px; border-radius: 8px; background: var(--surface);
   box-shadow: 0 5px 20px #10181017; text-align: center; font-size: 14px;
 }
-.map-panel:has([data-tileflow-state=loading]) .map-loading { display: block; }
+.map-error, .map-panel:has([data-tileflow-state=error]) .map-loading { display: none; }
 .map-panel:has([data-tileflow-state=error]) .map-error { display: grid; gap: 9px; }
 .map-legend {
   position: absolute; left: 14px; bottom: 34px; max-width: calc(100% - 28px); background: var(--surface);

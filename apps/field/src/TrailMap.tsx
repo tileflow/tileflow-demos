@@ -9,9 +9,10 @@ interface Props {
   walk: WalkData;
   stopId: string | null;
   selectStop: (id: string | null) => void;
+  onLoad: () => void;
 }
 
-export function TrailMap({ trail, walk, stopId, selectStop }: Props) {
+export function TrailMap({ trail, walk, stopId, selectStop, onLoad }: Props) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const annotations = useMemo(() => trail.stops.map(({ index, name, note }) => ({
     id: `stop-${index}`, kind: "marker" as const, coordinate: pointAt(trail, index), ariaLabel: name,
@@ -23,7 +24,10 @@ export function TrailMap({ trail, walk, stopId, selectStop }: Props) {
   }, [map, walk.coordinates]);
 
   return (
-    <Map source={{ map: "field" }} captureId="field" height="100%" onLoad={setMap}
+    <Map source={{ map: "field" }} captureId="field" height="100%" onLoad={(loadedMap) => {
+      setMap(loadedMap);
+      onLoad();
+    }}
       annotations={annotations} interactionState={{ popup: stopId ? { kind: "annotation", id: stopId } : null }}
       onInteractionStateChange={({ popup }) => selectStop(popup?.kind === "annotation" ? popup.id : null)} />
   );
