@@ -124,6 +124,63 @@ jobs:
       - name: Verify every demo
         run: pnpm check
 
+      - name: Prepare sandboxed Chromium
+        if: github.event_name == 'workflow_dispatch' && inputs.capture_solutions
+        working-directory: apps/locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -f -- /etc/apt/sources.list.d/google-chrome*.list /etc/apt/sources.list.d/google-chrome*.sources
+
+          playwright_cli=$(node -p '
+            const {createRequire} = require("node:module");
+            const {dirname, resolve} = require("node:path");
+            const cli = createRequire(require.resolve("tileflow/package.json"));
+            const capture = createRequire(cli.resolve("@tileflow/capture"));
+            const manifest = capture.resolve("playwright/package.json");
+            resolve(dirname(manifest), require(manifest).bin.playwright)
+          ')
+          ldconfig -p | awk '/ => / {print $1}' | sort -u > "$RUNNER_TEMP/chromium-libraries-before"
+          node "$playwright_cli" install-deps chromium
+          # The Tileflow setup command also launches Chromium. Download its shell before authorizing it.
+          node "$playwright_cli" install --only-shell chromium
+
+          browser_cache="$HOME/.cache/ms-playwright"
+          find "$browser_cache" -type f -name chrome-headless-shell -print0 > "$RUNNER_TEMP/tileflow-chromium-paths"
+          mapfile -d '' -t browsers < "$RUNNER_TEMP/tileflow-chromium-paths"
+          if (( ${#browsers[@]} != 1 )); then
+            printf 'Expected one chrome-headless-shell in %s, found %d.\n' "$browser_cache" "${#browsers[@]}" >&2
+            exit 1
+          fi
+
+          chromium=${browsers[0]}
+          sudo chown -R root:root -- "$browser_cache"
+          sudo chmod -R go-w -- "$browser_cache"
+          if [[ ! -x "$chromium" ]]; then
+            printf 'Chromium is not executable: %s\n' "$chromium" >&2
+            exit 1
+          fi
+
+          ldd "$chromium" | awk '$2 == "=>" && $3 ~ /^\/(usr\/)?lib(64)?\// {print $1}' | sort -u > "$RUNNER_TEMP/chromium-linked-libraries"
+          echo 'Newly available system libraries linked by Chromium:'
+          comm -23 "$RUNNER_TEMP/chromium-linked-libraries" "$RUNNER_TEMP/chromium-libraries-before"
+          if DEBUG=pw:browser pnpm exec tileflow setup capture --no-browser-install --json > "$RUNNER_TEMP/chromium-before-profile.log" 2>&1; then
+            echo 'Chromium started before the AppArmor profile was loaded.'
+          else
+            cat "$RUNNER_TEMP/chromium-before-profile.log"
+          fi
+
+          profile=/etc/apparmor.d/tileflow-playwright-chromium
+          sudo tee "$profile" >/dev/null <<PROFILE
+          abi <abi/4.0>,
+          include <tunables/global>
+
+          profile tileflow-playwright-chromium "$chromium" flags=(unconfined) {
+            userns,
+          }
+          PROFILE
+          sudo apparmor_parser -r "$profile"
+
       - name: Capture solution apps
         if: github.event_name == 'workflow_dispatch' && inputs.capture_solutions
         env:
