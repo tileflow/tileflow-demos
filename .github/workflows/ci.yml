@@ -140,12 +140,15 @@ jobs:
             const manifest = capture.resolve("playwright/package.json");
             resolve(dirname(manifest), require(manifest).bin.playwright)
           ')
-          ldconfig -p | awk '/ => / {print $1}' | sort -u > "$RUNNER_TEMP/chromium-libraries-before"
           node "$playwright_cli" install-deps chromium
           # The Tileflow setup command also launches Chromium. Download its shell before authorizing it.
           node "$playwright_cli" install --only-shell chromium
 
           browser_cache="$HOME/.cache/ms-playwright"
+          if [[ ! -d "$browser_cache" ]]; then
+            printf 'Chromium installation did not create %s.\n' "$browser_cache" >&2
+            exit 1
+          fi
           find "$browser_cache" -type f -name chrome-headless-shell -print0 > "$RUNNER_TEMP/tileflow-chromium-paths"
           mapfile -d '' -t browsers < "$RUNNER_TEMP/tileflow-chromium-paths"
           if (( ${#browsers[@]} != 1 )); then
@@ -159,15 +162,6 @@ jobs:
           if [[ ! -x "$chromium" ]]; then
             printf 'Chromium is not executable: %s\n' "$chromium" >&2
             exit 1
-          fi
-
-          ldd "$chromium" | awk '$2 == "=>" && $3 ~ /^\/(usr\/)?lib(64)?\// {print $1}' | sort -u > "$RUNNER_TEMP/chromium-linked-libraries"
-          echo 'Newly available system libraries linked by Chromium:'
-          comm -23 "$RUNNER_TEMP/chromium-linked-libraries" "$RUNNER_TEMP/chromium-libraries-before"
-          if DEBUG=pw:browser pnpm exec tileflow setup capture --no-browser-install --json > "$RUNNER_TEMP/chromium-before-profile.log" 2>&1; then
-            echo 'Chromium started before the AppArmor profile was loaded.'
-          else
-            cat "$RUNNER_TEMP/chromium-before-profile.log"
           fi
 
           profile=/etc/apparmor.d/tileflow-playwright-chromium
