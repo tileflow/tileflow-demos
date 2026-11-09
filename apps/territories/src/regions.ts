@@ -1,4 +1,4 @@
-import type { Coordinate } from "@tileflow-demos/shared/geo";
+import { boundsOf, type Coordinate } from "@tileflow-demos/shared/geo";
 
 export type Metric = "deliveries" | "onTime";
 
@@ -39,6 +39,8 @@ export const regions: Region[] = [
   { id: "hawthorne", name: "Hawthorne", deliveries: 365, onTime: 354, riders: 9,
     ring: [lowerRiver, southRiver, southEast, lowerEast, lowerRiver] },
 ];
+
+export const regionBounds = boundsOf(regions.flatMap((region) => region.ring));
 
 const number = new Intl.NumberFormat("en-US");
 export const formatCount = (count: number) => number.format(count);

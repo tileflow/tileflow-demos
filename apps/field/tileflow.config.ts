@@ -1,3 +1,5 @@
+import { boundsOf } from "@tileflow-demos/shared/geo";
+import { trails } from "./src/trails";
 import { defineMap, disable, roads } from "@tileflow/core";
 import { streets, streetsThemes } from "@tileflow/maps";
 
@@ -16,7 +18,7 @@ export default defineMap({
   scenes: {
     "field-desktop": {
       theme: "light",
-      camera: { type: "bounds", bounds: [-122.5406, 37.8313, -122.5258, 37.8394], padding: 48 },
+      camera: { type: "bounds", bounds: boundsOf(trails[0].track), padding: 48 },
       viewport: { width: 1024, height: 720, dpr: 1 },
       target: { kind: "application", path: "/", captureId: "field", frame: "viewport" },
     },

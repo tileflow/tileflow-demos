@@ -156,9 +156,11 @@ export async function discoverManifestPaths(repositoryRoot) {
   const root = resolve(repositoryRoot);
   const entries = await readdir(join(root, 'apps'), {withFileTypes: true});
   const paths = ['package.json'];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
-    const path = `apps/${entry.name}/package.json`;
+  const appManifests = entries
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .map((entry) => `apps/${entry.name}/package.json`);
+
+  for (const path of ['shared/package.json', ...appManifests]) {
     try {
       await readFile(join(root, path), 'utf8');
       paths.push(path);

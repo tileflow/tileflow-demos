@@ -1,3 +1,4 @@
+import type { Credit } from "./geo";
 import { Fragment, useState, type ReactNode } from "react";
 
 export function DemoHeader({ brand, section, place }: { brand: string; section: string; place: string }) {
@@ -28,8 +29,6 @@ export function MapPanel({ label, children, legend }: { label: string; children:
     </section>
   );
 }
-
-export interface Credit { label: string; url?: string }
 
 export function Credits({ entries }: { entries: Credit[] }) {
   if (entries.length === 0) return null;

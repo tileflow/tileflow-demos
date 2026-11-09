@@ -1,11 +1,10 @@
-import { Map } from "@tileflow/react";
-import type { Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Credits, DemoHeader, MapPanel } from "@tileflow-demos/shared/ui";
-import { requestLive, useLiveService } from "@tileflow-demos/shared/service-client";
+import { useLiveService } from "@tileflow-demos/shared/service-client";
 import { ElevationChart } from "./ElevationChart";
-import { showRoute } from "./route-layer";
-import { pointAt, savedWalk, trails, type WalkData } from "./trails";
+import { fetchWalk } from "./walk-service";
+import { TrailMap } from "./TrailMap";
+import { savedWalk, trails, type WalkData } from "./trails";
 import "./styles.css";
 
 export default function App() {
@@ -13,21 +12,12 @@ export default function App() {
   const saved = useMemo(() => savedWalk(trail), [trail]);
   const [liveWalk, setLiveWalk] = useState<WalkData | null>(null);
   const walk = liveWalk ?? saved;
-  const [map, setMap] = useState<MapLibreMap | null>(null);
   const [stopId, setStopId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const liveEnabled = useLiveService();
   const pending = useRef<AbortController | null>(null);
 
-  const annotations = useMemo(() => trail.stops.map(({ index, name, note }) => ({
-    id: `stop-${index}`, kind: "marker" as const, coordinate: pointAt(trail, index), ariaLabel: name,
-    marker: { color: "#38563a" }, popup: { content: { kind: "text" as const, text: name + " · " + note } },
-  })), [trail]);
-
-  useEffect(() => {
-    if (map) showRoute(map, walk.coordinates);
-  }, [map, walk.coordinates]);
   useEffect(() => () => pending.current?.abort(), []);
 
   async function recalculate() {
@@ -37,7 +27,7 @@ export default function App() {
     setNotice("");
     setBusy(true);
     try {
-      const result = await requestLive<WalkData | null>(trail.id, controller.signal);
+      const result = await fetchWalk(trail.id, controller.signal);
       if (!controller.signal.aborted) {
         setLiveWalk(result);
         if (!result) setNotice("No walking route found. Showing the saved walk.");
@@ -103,9 +93,7 @@ export default function App() {
           <p className="status" role="status">{notice}</p>
         </section>
         <MapPanel label="Headlands trail map">
-          <Map source={{ map: "field" }} captureId="field" height="100%" onLoad={setMap}
-            annotations={annotations} interactionState={{ popup: stopId ? { kind: "annotation", id: stopId } : null }}
-            onInteractionStateChange={({ popup }) => setStopId(popup?.kind === "annotation" ? popup.id : null)} />
+          <TrailMap trail={trail} walk={walk} stopId={stopId} selectStop={setStopId} />
         </MapPanel>
       </main>
     </div>

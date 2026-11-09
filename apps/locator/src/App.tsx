@@ -1,6 +1,7 @@
+import type { Credit } from "@tileflow-demos/shared/geo";
 import { Map } from "@tileflow/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Credits, DemoHeader, MapPanel, type Credit } from "@tileflow-demos/shared/ui";
+import { Credits, DemoHeader, MapPanel } from "@tileflow-demos/shared/ui";
 import { useLiveService } from "@tileflow-demos/shared/service-client";
 import { currentLocation, findAddress, type SearchOrigin } from "./location";
 import { amenities, findStores, storeNumber, stores, type Amenity } from "./stores";
@@ -39,6 +40,8 @@ export default function App() {
     const controller = new AbortController();
     pending.current = controller;
     setBusy(true);
+    setOrigin(null);
+    setCredits([]);
 
     try {
       const result = source === "device"
