@@ -8,9 +8,10 @@ interface Props {
   metric: Metric;
   id: string | null;
   select: (id: string | null) => void;
+  onLoad: () => void;
 }
 
-export function TerritoryMap({ metric, id, select }: Props) {
+export function TerritoryMap({ metric, id, select, onLoad }: Props) {
   const [map, setMap] = useState<MapLibreMap | null>(null);
 
   useEffect(() => {
@@ -25,5 +26,8 @@ export function TerritoryMap({ metric, id, select }: Props) {
     if (map) return listenForRegion(map, select);
   }, [map, select]);
 
-  return <Map source={{ map: "territories" }} height="100%" viewMode="2d" captureId="territories" onLoad={setMap} />;
+  return <Map source={{ map: "territories" }} height="100%" viewMode="2d" captureId="territories" onLoad={(loadedMap) => {
+    setMap(loadedMap);
+    onLoad();
+  }} />;
 }

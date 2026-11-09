@@ -113,7 +113,7 @@ export default function App() {
           </section>
         </section>
         <MapPanel label="Coffee shop map">
-          <Map source={{ map: "locator" }} height="100%" viewMode="2d" captureId="locator"
+          {(onLoad) => <Map source={{ map: "locator" }} height="100%" viewMode="2d" captureId="locator" onLoad={onLoad}
             center={selected?.point} zoom={selected ? 14.6 : undefined}
             annotations={annotations} interactionState={{ popup: selected ? { kind: "annotation", id: selected.id } : null }}
             onInteractionStateChange={({ popup }) => setSelectedId(popup?.kind === "annotation" ? popup.id : null)}
@@ -121,7 +121,7 @@ export default function App() {
               {storeNumber(annotation.id)}</span>}
             renderPopup={({ annotation, close }) => <div className="shop-popup">
               <strong>{annotation.data.name}</strong><span>{annotation.data.district}</span>
-              <span>Daily {annotation.data.hours}</span><button onClick={close}>Close</button></div>} />
+              <span>Daily {annotation.data.hours}</span><button onClick={close}>Close</button></div>} />}
         </MapPanel>
       </main>
     </div>

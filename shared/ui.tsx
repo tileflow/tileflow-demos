@@ -1,5 +1,5 @@
 import type { Credit } from "./geo";
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useState, type ReactNode } from "react";
 
 export function DemoHeader({ brand, section, place }: { brand: string; section: string; place: string }) {
   return (
@@ -14,17 +14,27 @@ export function DemoHeader({ brand, section, place }: { brand: string; section: 
   );
 }
 
-export function MapPanel({ label, children, legend }: { label: string; children: ReactNode; legend?: ReactNode }) {
+interface MapPanelProps {
+  label: string;
+  children: (onLoad: () => void) => ReactNode;
+  legend?: ReactNode;
+}
+
+export function MapPanel({ label, children, legend }: MapPanelProps) {
   const [attempt, setAttempt] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  const onLoad = useCallback(() => setLoaded(true), []);
 
   return (
     <section className="map-panel" aria-label={label}>
-      <Fragment key={attempt}>{children}</Fragment>
-      <p className="map-loading" role="status">Loading map…</p>
-      <div className="map-error" role="status">
-        <strong>Map unavailable</strong>
-        <button type="button" onClick={() => setAttempt(attempt + 1)}>Retry map</button>
-      </div>
+      <Fragment key={attempt}>{children(onLoad)}</Fragment>
+      {!loaded && <>
+        <p className="map-loading" role="status">Loading map…</p>
+        <div className="map-error" role="status">
+          <strong>Map unavailable</strong>
+          <button type="button" onClick={() => setAttempt(count => count + 1)}>Retry map</button>
+        </div>
+      </>}
       {legend && <div className="map-legend">{legend}</div>}
     </section>
   );

@@ -93,7 +93,7 @@ export default function App() {
           <p className="status" role="status">{notice}</p>
         </section>
         <MapPanel label="Headlands trail map">
-          <TrailMap trail={trail} walk={walk} stopId={stopId} selectStop={setStopId} />
+          {(onLoad) => <TrailMap trail={trail} walk={walk} stopId={stopId} selectStop={setStopId} onLoad={onLoad} />}
         </MapPanel>
       </main>
     </div>

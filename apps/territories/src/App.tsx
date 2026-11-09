@@ -66,7 +66,7 @@ export default function App() {
           </section>
         </section>
         <MapPanel label="Portland delivery territories" legend={legend}>
-          <TerritoryMap metric={metric} id={id} select={setId} />
+          {(onLoad) => <TerritoryMap metric={metric} id={id} select={setId} onLoad={onLoad} />}
         </MapPanel>
       </main>
     </div>
