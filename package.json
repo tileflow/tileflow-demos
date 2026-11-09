@@ -12,8 +12,14 @@
     "preview:vite-basic": "pnpm --filter @tileflow-demos/vite-basic preview",
     "smoke:runtime": "node scripts/smoke-built-demos.mjs",
     "test:sdk-sync": "node --test scripts/sync-sdk-versions.test.mjs",
-    "validate:configs": "pnpm --filter @tileflow-demos/vite-basic exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/next-basic exec tileflow validate -c tileflow.config.ts",
-    "typecheck": "pnpm --recursive --if-present run typecheck"
+    "validate:configs": "pnpm --workspace-concurrency=1 --filter \"./apps/*\" exec tileflow validate -c tileflow.config.ts",
+    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "dev:locator": "pnpm --filter @tileflow-demos/locator dev",
+    "preview:locator": "pnpm --filter @tileflow-demos/locator preview",
+    "dev:field": "pnpm --filter @tileflow-demos/field dev",
+    "preview:field": "pnpm --filter @tileflow-demos/field preview",
+    "dev:territories": "pnpm --filter @tileflow-demos/territories dev",
+    "preview:territories": "pnpm --filter @tileflow-demos/territories preview"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
