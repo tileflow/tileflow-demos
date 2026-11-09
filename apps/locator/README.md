@@ -1,6 +1,6 @@
 # Linha Coffee
 
-Search six Lisbon shops by name or neighborhood, filter their amenities, or select a shop on the map. **Near me** asks the browser for your location and sorts the directory by straight-line distance. Your position stays on your device.
+Search six Lisbon shops by name or neighborhood, filter their amenities, or select a shop on the map. **Near me** shows your position with the three nearest matching shops and calculates distances on your device. If every shop is over 50 km away, the map stays in place.
 
 From the repository root, run `pnpm install`, then `pnpm dev:locator`. To look up a street in the Lisbon area, set `TILEFLOW_DEMO_SEARCH_KEY` in the server environment before starting Vite on localhost. The **Find near this address** action uses Tileflow Search with a server credential that grants `geocoding:read`. Returned attributions appear with the results. A static build uses the included directory.
 

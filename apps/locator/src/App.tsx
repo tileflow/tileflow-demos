@@ -1,17 +1,19 @@
 import type { Credit } from "@tileflow-demos/shared/geo";
-import { Map } from "@tileflow/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Credits, DemoHeader, MapPanel } from "@tileflow-demos/shared/ui";
 import { useLiveService } from "@tileflow-demos/shared/service-client";
 import { currentLocation, findAddress, type SearchOrigin } from "./location";
-import { amenities, findStores, storeNumber, stores, type Amenity } from "./stores";
+import { ShopMap } from "./ShopMap";
+import { amenities, findStores, hasNearbyStore, nearbyRadiusKm, storeNumber, stores, type Amenity } from "./stores";
 import "./styles.css";
+
+type OriginKind = "device" | "address";
 
 export default function App() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Amenity | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [origin, setOrigin] = useState<SearchOrigin | null>(null);
+  const [origin, setOrigin] = useState<(SearchOrigin & { kind: OriginKind }) | null>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [credits, setCredits] = useState<Credit[]>([]);
@@ -20,12 +22,6 @@ export default function App() {
 
   const results = useMemo(() => findStores(query, filter, origin?.point ?? null), [query, filter, origin]);
   const selected = results.find(({ store }) => store.id === selectedId)?.store;
-  const annotations = useMemo(() => results.map(({ store }) => ({
-    id: store.id, kind: "marker" as const, coordinate: store.point, ariaLabel: store.name,
-    marker: { content: { kind: "view" as const, name: "shop" } },
-    popup: { content: { kind: "view" as const, name: "hours" } },
-    data: { name: store.name, district: store.district, hours: store.hours },
-  })), [results]);
 
   useEffect(() => () => pending.current?.abort(), []);
 
@@ -35,7 +31,7 @@ export default function App() {
     setNotice("");
   }
 
-  async function locate(source: "device" | "address") {
+  async function locate(source: OriginKind) {
     cancelLookup();
     const controller = new AbortController();
     pending.current = controller;
@@ -55,7 +51,12 @@ export default function App() {
         setNotice("No address found. Try another street or neighborhood.");
         return;
       }
-      setOrigin(result.place);
+      if (source === "device" && !hasNearbyStore(result.place.point)) {
+        setNotice(`There are no shops within ${nearbyRadiusKm} km of your location. Our shops are in Lisbon.`);
+        return;
+      }
+
+      setOrigin({ ...result.place, kind: source });
       setQuery("");
       setSelectedId(null);
     } catch (error) {
@@ -73,6 +74,7 @@ export default function App() {
         <section className="sidebar" aria-label="Store directory">
           <p className="eyebrow">Lisbon coffee shops</p>
           <h1>Find a shop.</h1>
+          <p className="small muted">These shops are fictional.</p>
           <label className="form-label" htmlFor="shop-search">Shop or neighborhood</label>
           <input id="shop-search" className="input" type="search" placeholder="Try Graça or Estufa" value={query}
             onChange={(event) => { cancelLookup(); setQuery(event.target.value); setSelectedId(null); }} />
@@ -113,15 +115,8 @@ export default function App() {
           </section>
         </section>
         <MapPanel label="Coffee shop map">
-          {(onLoad) => <Map source={{ map: "locator" }} height="100%" viewMode="2d" captureId="locator" onLoad={onLoad}
-            center={selected?.point} zoom={selected ? 14.6 : undefined}
-            annotations={annotations} interactionState={{ popup: selected ? { kind: "annotation", id: selected.id } : null }}
-            onInteractionStateChange={({ popup }) => setSelectedId(popup?.kind === "annotation" ? popup.id : null)}
-            renderMarker={({ annotation }) => <span className="shop-pin" data-selected={selected?.id === annotation.id}>
-              {storeNumber(annotation.id)}</span>}
-            renderPopup={({ annotation, close }) => <div className="shop-popup">
-              <strong>{annotation.data.name}</strong><span>{annotation.data.district}</span>
-              <span>Daily {annotation.data.hours}</span><button onClick={close}>Close</button></div>} />}
+          {(onLoad) => <ShopMap results={results} selected={selected} select={setSelectedId} onLoad={onLoad}
+            position={origin?.kind === "device" ? origin.point : null} />}
         </MapPanel>
       </main>
     </div>

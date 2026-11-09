@@ -20,7 +20,7 @@ export function currentLocation(): Promise<SearchOrigin> {
       (error) => reject(new Error(error.code === 1
         ? "Location access was declined. Search by neighborhood instead."
         : "Your location could not be found. Try again or search by neighborhood.")),
-      { maximumAge: 60000, timeout: 8000 },
+      { maximumAge: 0, timeout: 8000 },
     );
   });
 }

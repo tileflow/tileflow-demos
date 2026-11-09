@@ -83,7 +83,7 @@ h2 { font-size: 18px; letter-spacing: -.035em; }
 .map-error, .map-panel:has([data-tileflow-state=error]) .map-loading { display: none; }
 .map-panel:has([data-tileflow-state=error]) .map-error { display: grid; gap: 9px; }
 .map-legend {
-  position: absolute; left: 14px; bottom: 34px; max-width: calc(100% - 28px); background: var(--surface);
+  position: absolute; left: 14px; top: 14px; max-width: calc(100% - 28px); background: var(--surface);
   padding: 11px 15px; border: 1px solid var(--edge); border-radius: 7px; box-shadow: 0 3px 14px #2222;
 }
 .legend-title { color: var(--muted); font-size: 10px; }
@@ -95,7 +95,7 @@ h2 { font-size: 18px; letter-spacing: -.035em; }
   .map-panel { grid-row: 1; height: clamp(250px, 38svh, 360px); }
   .sidebar { overflow: visible; padding: 22px 19px 35px; }
   h1 { font-size: 44px; }
-  .map-legend { bottom: 27px; left: 9px; padding: 6px 9px; }
+  .map-legend { top: 9px; left: 9px; padding: 6px 9px; }
 }
 @media (max-width: 360px) {
   .masthead-section { display: none; }

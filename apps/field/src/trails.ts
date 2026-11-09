@@ -15,7 +15,7 @@ export const trails: Trail[] = [
   {
     id: "lagoon", name: "Lagoon to the coast", terrain: "Coastal trail",
     description: "Skirt Rodeo Lagoon, then climb the bluff above the Pacific.",
-    minutes: 55,
+    minutes: 30,
     track: [
       [-122.5258, 37.8313, 9], [-122.5283, 37.8319, 12], [-122.5311, 37.8316, 8],
       [-122.5333, 37.8313, 7], [-122.5353, 37.8319, 8], [-122.5366, 37.8340, 20],
@@ -31,7 +31,7 @@ export const trails: Trail[] = [
   {
     id: "ridge", name: "The ridge traverse", terrain: "Ridgeline trail",
     description: "Follow the ridge from the old battery to the Hawk Hill overlook.",
-    minutes: 65,
+    minutes: 35,
     track: [
       [-122.5076, 37.8281, 146], [-122.5057, 37.8280, 151], [-122.5037, 37.8275, 168],
       [-122.5015, 37.8278, 177], [-122.4994, 37.8285, 170], [-122.4986, 37.8273, 164],

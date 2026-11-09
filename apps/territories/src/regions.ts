@@ -36,7 +36,7 @@ export const regions: Region[] = [
     ring: [upperRiver, lowerRiver, lowerEast, upperEast, upperRiver] },
   { id: "west-end", name: "West End", deliveries: 262, onTime: 257, riders: 7,
     ring: [lowerWest, southWest, southRiver, lowerRiver, lowerWest] },
-  { id: "hawthorne", name: "Hawthorne", deliveries: 365, onTime: 354, riders: 9,
+  { id: "hawthorne", name: "Hawthorne", deliveries: 365, onTime: 353, riders: 9,
     ring: [lowerRiver, southRiver, southEast, lowerEast, lowerRiver] },
 ];
 
