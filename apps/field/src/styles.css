@@ -1,0 +1,21 @@
+.field { --ink: #293a28; --accent: #4c6634; --surface: #f9f9ef; --tint: #e8edda; --edge: #d6dbc9; --mark: #cbd68b; }
+.field .brand-mark { clip-path: polygon(0 94%, 34% 23%, 50% 49%, 69% 8%, 100% 94%); }
+.field-workspace { grid-template-rows: auto minmax(0, 1fr); }
+.walk-heading, .walk-details { min-width: 0; padding-inline: clamp(22px, 2.5vw, 38px); }
+.walk-heading { padding-top: 24px; padding-bottom: 17px; border-bottom: 1px solid var(--edge); }
+.walk-heading h1 { font: 500 clamp(35px, 3.5vw, 50px)/1.05 Georgia, serif; letter-spacing: -.055em; margin: 0; }
+.walk-heading .form-label { margin-top: 12px; }
+.walk-details { grid-area: 2 / 1; padding-top: 20px; padding-bottom: 25px; overflow-y: auto; }
+.walk-name { font-size: 25px; line-height: 1.12; margin: 6px 0; }
+.field .map-panel { grid-area: 1 / 2 / 3 / 3; }
+.profile { margin: 18px 0 0; padding: 13px 14px 9px; background: #edf1df; border-radius: 6px; }
+.profile figcaption, .profile-axis { display: flex; justify-content: space-between; color: #44593c; font-size: 12px; }
+.profile svg { width: 100%; height: 83px; display: block; }
+.profile-axis { font: 11px monospace; }
+.waypoint-index { flex: none; display: grid; place-items: center; border-radius: 50%; width: 26px; height: 26px; border: 1px solid #8d9d78; font: 12px monospace; }
+@media (max-width: 720px) {
+  .field-workspace { grid-template-rows: auto auto auto; }
+  .walk-heading { padding: 18px 19px 15px; }
+  .field .map-panel { grid-area: 2 / 1; }
+  .walk-details { grid-area: 3 / 1; padding: 20px 19px 32px; overflow: visible; }
+}

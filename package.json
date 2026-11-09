@@ -4,8 +4,8 @@
   "private": true,
   "packageManager": "pnpm@11.13.1",
   "scripts": {
-    "build": "pnpm --recursive --if-present run build",
-    "check": "pnpm run test:sdk-sync && pnpm run typecheck && pnpm run build && pnpm run validate:configs && pnpm run smoke:runtime",
+    "build": "pnpm --recursive --workspace-concurrency=1 --if-present run build",
+    "check": "pnpm run test:sdk-sync && pnpm run test:local-services && pnpm run typecheck && pnpm run build && pnpm run validate:configs && pnpm run smoke:runtime",
     "dev:next-basic": "pnpm --filter @tileflow-demos/next-basic dev",
     "dev:vite-basic": "pnpm --filter @tileflow-demos/vite-basic dev",
     "start:next-basic": "pnpm --filter @tileflow-demos/next-basic start",
@@ -13,13 +13,14 @@
     "smoke:runtime": "node scripts/smoke-built-demos.mjs",
     "test:sdk-sync": "node --test scripts/sync-sdk-versions.test.mjs",
     "validate:configs": "pnpm --workspace-concurrency=1 --filter \"./apps/*\" exec tileflow validate -c tileflow.config.ts",
-    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "typecheck": "pnpm --recursive --workspace-concurrency=1 --if-present run typecheck",
     "dev:locator": "pnpm --filter @tileflow-demos/locator dev",
     "preview:locator": "pnpm --filter @tileflow-demos/locator preview",
     "dev:field": "pnpm --filter @tileflow-demos/field dev",
     "preview:field": "pnpm --filter @tileflow-demos/field preview",
     "dev:territories": "pnpm --filter @tileflow-demos/territories dev",
-    "preview:territories": "pnpm --filter @tileflow-demos/territories preview"
+    "preview:territories": "pnpm --filter @tileflow-demos/territories preview",
+    "test:local-services": "node --test scripts/local-service.test.mjs"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
