@@ -5,6 +5,7 @@ import {execFile, spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {createServer} from 'node:net';
 import {mkdir, writeFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
 import {join, resolve} from 'node:path';
 import {promisify} from 'node:util';
 import {fileURLToPath} from 'node:url';
@@ -78,9 +79,10 @@ async function stopServer(child) {
   }
 }
 
-async function validateAssets({assetBase, mapId, name, origin}) {
-  const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
-  assert.equal(manifest.version, 1, `${name} manifest version changed unexpectedly.`);
+async function validateAssets({assetBase, cwd, mapId, name, origin}) {
+  const requireDemo = createRequire(join(cwd, 'package.json'));
+  const {parseTileflowRuntimeManifest} = requireDemo('@tileflow/core/manifest');
+  const manifest = parseTileflowRuntimeManifest(await requestJson(`${origin}${assetBase}/manifest.json`));
   const styleUrl = manifest.maps?.[mapId]?.themes?.light?.styleUrl;
   assert.equal(
     typeof styleUrl,
@@ -122,7 +124,7 @@ async function smokeDemo({
     const html = await requestText(origin);
     assert.match(html, /<html/u, `${name} did not serve an HTML document.`);
 
-    for (const assetBase of assetBases) await validateAssets({assetBase, mapId, name, origin});
+    for (const assetBase of assetBases) await validateAssets({assetBase, cwd, mapId, name, origin});
     console.log(`Validated ${name} at ${origin}.`);
     if (captureDirectory) {
       const output = resolve(captureDirectory, mapId);
