@@ -6,4 +6,4 @@ From the repository root, run `pnpm install`, then `pnpm dev:locator`. To look u
 
 ## Data
 
-Tileflow created the fictional shops, locations, hours and amenities in `src/stores.ts` and dedicates them to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). The shared Tileflow basemap displays its own attribution.
+Tileflow created the fictional shops, locations, hours and amenities in `src/stores.ts`. This fictional data is published under the repository [license](../../LICENSE). The shared Tileflow basemap displays its own attribution.

@@ -6,4 +6,4 @@ From the repository root, run `pnpm install`, then `pnpm dev:territories`. All a
 
 ## Data
 
-Tileflow created the fictional dispatch boundaries, delivery counts and rider counts in `src/regions.ts` and dedicates them to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). These service areas are illustrative. The shared Tileflow basemap displays its own attribution.
+Tileflow created the fictional dispatch boundaries, delivery counts and rider counts in `src/regions.ts`. This fictional data is published under the repository [license](../../LICENSE). These service areas are illustrative. The shared Tileflow basemap displays its own attribution.
