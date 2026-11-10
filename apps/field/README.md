@@ -6,4 +6,4 @@ From the repository root, run `pnpm install`, then `pnpm dev:field`. To enable *
 
 ## Data
 
-Tileflow created the illustrative paths, waypoint notes, walking times and sample heights in `src/trails.ts` and dedicates them to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). The tracks are illustrative and unsuitable for navigation. Live results display their routing and elevation attribution. The shared Tileflow basemap displays its own attribution.
+Tileflow created the illustrative paths, waypoint notes, walking times and sample heights in `src/trails.ts`. This fictional data is published under the repository [license](../../LICENSE). The tracks are illustrative and unsuitable for navigation. Live results display their routing and elevation attribution. The shared Tileflow basemap displays its own attribution.

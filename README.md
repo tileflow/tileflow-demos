@@ -45,3 +45,9 @@ manual dependency update is part of this repository's normal path.
 `main` represents the latest verified source for every demo. This repository does not currently
 have a Pages site or another deployment target, so merging does not claim that a hosted demo was
 deployed. Add a deployment workflow and receipt before describing `main` as hosted production.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). This covers the code and the
+fictional sample data in every demo. The Tileflow basemap and live services display their own
+attribution.
