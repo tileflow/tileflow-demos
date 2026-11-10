@@ -62,7 +62,7 @@ export default function App() {
                   ? formatCount(region.deliveries) : metricValue(region, metric).toFixed(1) + "%"}</span>
               </button>
             </li>)}</ul>
-            <p className="credits">Illustrative service areas and weekly totals · Tileflow, CC0</p>
+            <p className="credits">Illustrative service areas and weekly totals · Tileflow</p>
           </section>
         </section>
         <MapPanel label="Portland delivery territories" legend={legend}>
