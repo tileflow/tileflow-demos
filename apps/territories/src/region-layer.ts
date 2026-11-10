@@ -15,7 +15,7 @@ export function paintRegions(map: MapLibreMap, metric: Metric) {
   }
 
   map.fitBounds(regionBounds, { padding: 42, duration: 0 });
-  map.addSource(sourceId, { type: "geojson", data, attribution: "Dispatch areas by Tileflow (CC0)" });
+  map.addSource(sourceId, { type: "geojson", data, attribution: "Dispatch areas by Tileflow" });
   const before = tileflowGroundBeforeId(map);
   map.addLayer({ id: fillId, type: "fill", source: sourceId,
     paint: { "fill-color": ["get", "color"], "fill-opacity": 0.78 } }, before);

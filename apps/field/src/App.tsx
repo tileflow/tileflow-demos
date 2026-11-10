@@ -86,7 +86,7 @@ export default function App() {
               </li>)}
             </ol>
           </div>
-          <p className="credits">{liveWalk ? "Live walking route and terrain profile." : "Illustrative track and elevation by Tileflow · CC0"}</p>
+          <p className="credits">{liveWalk ? "Live walking route and terrain profile." : "Illustrative track and elevation by Tileflow"}</p>
           <Credits entries={walk.credits} />
           {liveEnabled && <div className="actions"><button className="action" disabled={busy} onClick={() => void recalculate()}>
             {busy ? "Calculating…" : "Calculate live walk"}</button></div>}
