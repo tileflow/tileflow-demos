@@ -10,6 +10,11 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      capture_solutions:
+        description: Capture the three solution apps with the published basemap.
+        required: false
+        default: false
+        type: boolean
       sdk_sync_mode:
         description: Empty for an operator run; pull-request or main for SDK Sync.
         required: false
@@ -118,3 +123,69 @@ jobs:
 
       - name: Verify every demo
         run: pnpm check
+
+      - name: Prepare sandboxed Chromium
+        if: github.event_name == 'workflow_dispatch' && inputs.capture_solutions
+        working-directory: apps/locator
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -f -- /etc/apt/sources.list.d/google-chrome*.list /etc/apt/sources.list.d/google-chrome*.sources
+
+          playwright_cli=$(node -p '
+            const {createRequire} = require("node:module");
+            const {dirname, resolve} = require("node:path");
+            const cli = createRequire(require.resolve("tileflow/package.json"));
+            const capture = createRequire(cli.resolve("@tileflow/capture"));
+            const manifest = capture.resolve("playwright/package.json");
+            resolve(dirname(manifest), require(manifest).bin.playwright)
+          ')
+          node "$playwright_cli" install-deps chromium
+          # The Tileflow setup command also launches Chromium. Download its shell before authorizing it.
+          node "$playwright_cli" install --only-shell chromium
+
+          browser_cache="$HOME/.cache/ms-playwright"
+          if [[ ! -d "$browser_cache" ]]; then
+            printf 'Chromium installation did not create %s.\n' "$browser_cache" >&2
+            exit 1
+          fi
+          find "$browser_cache" -type f -name chrome-headless-shell -print0 > "$RUNNER_TEMP/tileflow-chromium-paths"
+          mapfile -d '' -t browsers < "$RUNNER_TEMP/tileflow-chromium-paths"
+          if (( ${#browsers[@]} != 1 )); then
+            printf 'Expected one chrome-headless-shell in %s, found %d.\n' "$browser_cache" "${#browsers[@]}" >&2
+            exit 1
+          fi
+
+          chromium=${browsers[0]}
+          sudo chown -R root:root -- "$browser_cache"
+          sudo chmod -R go-w -- "$browser_cache"
+          if [[ ! -x "$chromium" ]]; then
+            printf 'Chromium is not executable: %s\n' "$chromium" >&2
+            exit 1
+          fi
+
+          profile=/etc/apparmor.d/tileflow-playwright-chromium
+          sudo tee "$profile" >/dev/null <<PROFILE
+          abi <abi/4.0>,
+          include <tunables/global>
+
+          profile tileflow-playwright-chromium "$chromium" flags=(unconfined) {
+            userns,
+          }
+          PROFILE
+          sudo apparmor_parser -r "$profile"
+
+      - name: Capture solution apps
+        if: github.event_name == 'workflow_dispatch' && inputs.capture_solutions
+        env:
+          DEMO_CAPTURE_DIR: ${{ runner.temp }}/solution-captures
+        run: pnpm smoke:runtime
+
+      - name: Save captures, receipts and diagnostics
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.capture_solutions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: solution-captures
+          path: ${{ runner.temp }}/solution-captures
+          if-no-files-found: ignore
+          retention-days: 3
