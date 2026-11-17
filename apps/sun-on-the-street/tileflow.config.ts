@@ -1,5 +1,10 @@
-import {buildings, defineMap, labels, poi} from '@tileflow/core';
+import {defineMap, labels, poi} from '@tileflow/core';
 import {streets} from '@tileflow/maps';
+
+// Streets' own buildings, colours and materials included, without their shadows: the app draws the
+// exact ground shadows itself, and the map's would add a second, shorter set.
+const buildings = streets.modules.buildings as unknown as {renderStack: Record<string, unknown>};
+const {flatShadow, shadowSoft, shadowCore, ...renderStack} = buildings.renderStack;
 
 export default defineMap({
   id: 'sun-streets',
@@ -10,8 +15,8 @@ export default defineMap({
   modules: {
     labels: labels({places: 'major', roads: 'major', water: 'none'}),
     poi: poi({categories: []}),
-    // the app draws exact ground shadows itself; the map's own would add a second, shorter set
-    buildings: buildings({threeDimensional: {shadows: false}}),
+    buildings: {...buildings, renderStack} as typeof streets.modules.buildings,
   },
-  view: {center: [-73.9803, 40.7575], zoom: 15.6, pitch: 0, bearing: 29},
+  // Lower Manhattan and Brooklyn Heights, tilted
+  view: {center: [-74.0065, 40.7072], zoom: 13.7, pitch: 40, bearing: 20},
 });

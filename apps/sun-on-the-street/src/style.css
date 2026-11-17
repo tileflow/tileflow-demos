@@ -31,7 +31,7 @@ html, body { margin: 0; height: 100%; background: #111; color: var(--ink); font:
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
 /* soft paper behind the text, only where the text is */
-.veil { position: fixed; pointer-events: none; transition: background 0.8s; }
+.veil { position: fixed; pointer-events: none; transition: background 0.8s, opacity 0.7s ease; }
 .veil.top { left: 0; top: 0; width: 520px; height: 360px; background: radial-gradient(ellipse at 0 0, rgb(var(--paper) / 0.94) 38%, rgb(var(--paper) / 0) 72%); }
 .veil.bottom { left: 0; bottom: 0; width: 720px; height: 340px; background: radial-gradient(ellipse at 0 100%, rgb(var(--paper) / 0.95) 40%, rgb(var(--paper) / 0) 72%); }
 
@@ -39,7 +39,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 #head { position: fixed; left: 32px; top: 24px; max-width: calc(100vw - 64px); pointer-events: none; }
 .brand { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 18px; }
 .brand b { font-weight: 600; letter-spacing: -0.01em; }
-.logo { width: 18px; height: 18px; border-radius: 5px; background: conic-gradient(from 200deg, #f5a100, #ffd166, #4263eb, #f5a100); }
+.logo { width: 16px; height: 16px; color: var(--ink); }
 #big { font-size: 96px; font-weight: 600; letter-spacing: -0.05em; line-height: 0.85; font-variant-numeric: tabular-nums; }
 #line { font-size: 22px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.3; margin: 12px 0 0; max-width: 360px; }
 #line mark { white-space: nowrap; padding: 0 8px; border-radius: 6px; color: #171717; background: var(--sun); }
@@ -109,3 +109,33 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .months .hit { fill: transparent; }
 .months .bar:hover .track { fill: color-mix(in srgb, var(--ink) 16%, transparent); }
 .spot-tip { min-height: 2.8em; }
+
+/* The Tileflow symbol: six tiles on a 16-unit grid */
+.symbol { position: relative; display: inline-block; flex: none; }
+.symbol i { position: absolute; left: var(--x); top: var(--y); width: 25%; height: 25%; background: currentColor; }
+
+/* Loading: the symbol's wave, over the paper, until the map and the first sidewalks are in */
+#loader { position: fixed; inset: 0; display: grid; place-items: center; background: rgb(var(--paper)); color: var(--ink); transition: opacity 0.6s ease, visibility 0s linear 0.6s; z-index: 10; }
+#loader .symbol { width: 40px; height: 40px; }
+@media (prefers-reduced-motion: no-preference) {
+  #loader .symbol i { animation: desfase-loop 1500ms cubic-bezier(0.22, 1, 0.36, 1) var(--d) infinite both; }
+}
+@keyframes desfase-loop {
+  0%, 46%, 100% { transform: translate(0, 0) rotate(0) scale(1); }
+  13% { transform: translate(75%, -60%) rotate(-12deg) scale(0.84); }
+  29% { transform: translate(-20%, 15%) rotate(4deg) scale(1.06); }
+}
+html:not(.loading) #loader { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* Hidden while loading; then the map, the paper and the text come in, one after the other */
+html.loading #map, html.loading .veil, html.loading #head, html.loading #chart, html.loading .maplibregl-ctrl { opacity: 0; }
+#map, #head > *, #chart, .maplibregl-ctrl { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+html.loading #head > *, html.loading #chart { transform: translateY(10px); }
+html:not(.loading) #head > :nth-child(2) { transition-delay: 0.08s; }
+html:not(.loading) #head > :nth-child(3) { transition-delay: 0.16s; }
+html:not(.loading) #head > :nth-child(n + 4) { transition-delay: 0.24s; }
+html:not(.loading) #chart { transition-delay: 0.3s; }
+html:not(.loading) .maplibregl-ctrl { transition-delay: 0.36s; }
+@media (prefers-reduced-motion: reduce) {
+  #map, .veil, #head > *, #chart, .maplibregl-ctrl, #loader { transition-duration: 0.01s; transition-delay: 0s !important; transform: none !important; }
+}

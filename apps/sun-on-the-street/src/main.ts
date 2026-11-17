@@ -414,9 +414,22 @@ const RAMP_LABELS = '<div class="ramp"></div><div class="ramp-labels" style="pos
     .map(([t, at]) => `<span style="position:absolute;left:${at}%;transform:translateX(-${at}%)">${t}</span>`)
     .join('') + '</div>';
 
+/**
+ * The page shows the loader until the map has drawn and the first sidewalks are in (or, zoomed out,
+ * as soon as the map has drawn); a slow network never holds it longer than a few seconds.
+ */
+let mapDrawn = false;
+function reveal(force = false) {
+  const root = document.documentElement;
+  if (!root.classList.contains('loading')) return;
+  if (force || (mapDrawn && (share.total > 0 || (map && map.getZoom() < MIN_ZOOM)))) root.classList.remove('loading');
+}
+setTimeout(() => reveal(true), 12000);
+
 /** The headline: what share of the sidewalks in view is in the sun, or gets almost none. */
 function renderShare() {
   if (share.dirty) measureShare();
+  reveal();
   const say = (big: string, line: string, sub = '') => {
     bigEl.textContent = big;
     lineEl.innerHTML = line;
@@ -625,7 +638,7 @@ function showSpot(r: PointResult) {
 // Start on the sidewalks while the map is still loading: the first view is already known
 function warmStart() {
   const v = params.get('view')?.split(',').map(Number);
-  const [lng, lat, zoom] = v && v.length >= 3 ? v : [-73.9803, 40.7575, 15.6];
+  const [lng, lat, zoom] = v && v.length >= 3 ? v : [-74.0065, 40.7072, 13.7];
   if (zoom < MIN_ZOOM) return;
   center = [lng, lat];
   timeZone = tzlookup(lat, lng);
@@ -717,6 +730,10 @@ controller.ready.then((m) => {
 
   layer.setMode(scope === 'hour' ? 'now' : 'day');
   m.on('rotate', () => chartView.update(view()));
+  m.once('idle', () => {
+    mapDrawn = true;
+    reveal();
+  });
 });
 
 // ------------------------------------------------------------------------------------------------

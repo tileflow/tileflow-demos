@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="loading">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,11 +22,12 @@
   </head>
   <body>
     <div id="map"></div>
+    <div id="loader" role="status" aria-label="Loading the map"><span class="symbol" aria-hidden="true"><i style="--x:0.00%;--y:0.00%;--d:0ms"></i><i style="--x:37.50%;--y:0.00%;--d:45ms"></i><i style="--x:18.75%;--y:37.50%;--d:90ms"></i><i style="--x:56.25%;--y:37.50%;--d:135ms"></i><i style="--x:37.50%;--y:75.00%;--d:180ms"></i><i style="--x:75.00%;--y:75.00%;--d:225ms"></i></span></div>
     <div class="veil top" aria-hidden="true"></div>
     <div class="veil bottom" aria-hidden="true"></div>
 
     <header id="head" aria-live="polite">
-      <div class="brand"><i class="logo" aria-hidden="true"></i><b>Sun on the street</b></div>
+      <div class="brand"><span class="symbol logo" aria-hidden="true"><i style="--x:0.00%;--y:0.00%;--d:0ms"></i><i style="--x:37.50%;--y:0.00%;--d:45ms"></i><i style="--x:18.75%;--y:37.50%;--d:90ms"></i><i style="--x:56.25%;--y:37.50%;--d:135ms"></i><i style="--x:37.50%;--y:75.00%;--d:180ms"></i><i style="--x:75.00%;--y:75.00%;--d:225ms"></i></span><b>Sun on the street</b></div>
       <div id="big">—</div>
       <p id="line">Following the sun…</p>
       <div id="sub"></div>
