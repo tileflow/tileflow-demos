@@ -2,7 +2,8 @@
 <html lang="en" class="loading">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="rgb(245 240 229)" />
     <title>Sun on the street</title>
     <meta name="description" content="How much of every sidewalk is in the sun, every five minutes of every day of the year, shaded by buildings and street trees." />
     <link rel="canonical" href="https://maps.tileflow.dev/sun-on-the-street/" />
@@ -36,7 +37,7 @@
 
     <section id="chart" aria-label="When">
       <div class="row">
-        <button id="play" type="button" aria-label="Play"><svg viewBox="0 0 8 10" aria-hidden="true"><path d="M1 .5v9L7.5 5z" /></svg></button>
+        <button id="play" type="button" data-play aria-label="Play"><svg viewBox="0 0 8 10" aria-hidden="true"><path d="M1 .5v9L7.5 5z" /></svg></button>
         <b id="chart-title">Height of the sun</b>
         <span class="by">by</span>
         <span class="scopes" role="radiogroup" aria-label="What the map adds up">
@@ -49,6 +50,20 @@
       <svg id="bars" role="slider" tabindex="0" aria-label="Time"></svg>
       <svg id="strip" role="slider" tabindex="0" aria-label="Month and day"></svg>
       <div id="tip" hidden></div>
+    </section>
+
+    <section id="phone" aria-label="When">
+      <div id="months" hidden></div>
+      <svg id="ruler" role="slider" tabindex="0" aria-label="Time"></svg>
+      <div class="row">
+        <button id="m-play" type="button" data-play aria-label="Play"><svg viewBox="0 0 8 10" aria-hidden="true"><path d="M1 .5v9L7.5 5z" /></svg></button>
+        <div class="menu-wrap">
+          <button id="m-scope" class="chip" type="button" aria-haspopup="true" aria-expanded="false">Hour <svg class="caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg></button>
+          <div id="scope-menu" hidden></div>
+        </div>
+        <button id="m-date" class="chip" type="button" aria-expanded="false">17 Nov <svg class="caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" /></svg></button>
+        <svg id="m-compass" viewBox="0 0 40 40" aria-hidden="true"></svg>
+      </div>
     </section>
     <script type="module" src="/src/main.ts"></script>
   </body>

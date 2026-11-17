@@ -18,8 +18,8 @@ export type When = {
   bearing: number;
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const NS = 'http://www.w3.org/2000/svg';
 const BAR_H = 64;
 
@@ -50,10 +50,10 @@ function daylight(date: string, lat: number, lon: number, timeZone: string) {
   return up;
 }
 
-type Series = {values: number[]; selected: number; ticks: Record<number, string>; label: string};
+export type Series = {values: number[]; selected: number; ticks: Record<number, string>; label: string};
 const cache = new Map<string, number[]>();
 
-function series(w: When): Series {
+export function series(w: When): Series {
   const month = Number(w.date.slice(5, 7)) - 1;
   const day = Number(w.date.slice(8, 10));
   const where = `${w.lat.toFixed(1)},${w.lon.toFixed(1)},${w.timeZone}`;
@@ -169,7 +169,7 @@ function drawStrip(svg: SVGSVGElement, w: When, hover: number) {
   });
 }
 
-function drawCompass(svg: SVGSVGElement, w: When) {
+export function drawCompass(svg: SVGSVGElement, w: When) {
   svg.classList.toggle('off', w.scope !== 'hour');
   svg.replaceChildren();
   const c = 20, r = 15;

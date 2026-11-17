@@ -26,6 +26,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #111; color: var(--ink); font: 14px/1.4 'Geist', system-ui, -apple-system, 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; }
 #map { position: fixed; inset: 0; }
+body > [class*='maplibregl-ctrl-'] { position: fixed; z-index: 3; }
 /* 2D or 3D, under the zoom buttons */
 .view-control button { font: 600 12px/1 'Geist', system-ui, sans-serif; color: #333; letter-spacing: 0.01em; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -71,13 +72,55 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 #bars text, #strip text { font-family: inherit; }
 #tip { position: absolute; padding: 3px 9px; border-radius: 6px; background: var(--ink); color: rgb(var(--paper)); font-size: 12px; font-weight: 600; transform: translate(-50%, -100%); pointer-events: none; white-space: nowrap; }
 
+/* The phone's chart lives only on a phone */
+#phone { display: none; }
+
+/* A phone: the headline on top, the ruler and one row of buttons at the bottom, the credit under them */
 @media (max-width: 640px) {
-  #head { left: 16px; top: 16px; }
-  #big { font-size: 64px; }
-  #line { font-size: 18px; }
-  #chart { left: 16px; bottom: 12px; }
-  .veil.top { width: 100vw; height: 300px; }
-  .veil.bottom { width: 100vw; }
+  .veil.top { width: 100vw; height: calc(env(safe-area-inset-top) + 240px); background: linear-gradient(rgb(var(--paper) / 0.94) 55%, rgb(var(--paper) / 0)); }
+  .veil.bottom { width: 100vw; height: calc(env(safe-area-inset-bottom) + 270px); background: linear-gradient(rgb(var(--paper) / 0), rgb(var(--paper) / 0.9) 45%); }
+  #head { left: 20px; top: calc(env(safe-area-inset-top) + 14px); max-width: min(290px, calc(100vw - 96px)); }
+  .brand { font-size: 13px; margin-bottom: 10px; gap: 7px; }
+  .logo { width: 13px; height: 13px; }
+  #big { font-size: 56px; line-height: 0.88; }
+  #line { font-size: 18px; margin-top: 8px; }
+  #sub { font-size: 14px; margin-top: 6px; }
+  .ramp, .ramp-labels { width: 230px; }
+  #chart { display: none; }
+
+  #phone { display: block; position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom) + 30px); }
+  #ruler { display: block; width: 100%; height: 112px; touch-action: none; outline: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); }
+  #ruler text { font-family: inherit; }
+  #phone .row { display: flex; align-items: center; gap: 8px; padding: 0 20px; margin-top: 10px; }
+  #m-play { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--sun); display: grid; place-items: center; }
+  #m-play svg { width: 13px; height: 15px; fill: #171717; }
+  #m-play.on svg { display: none; }
+  #m-play.on::before { content: ''; width: 10px; height: 12px; border-left: 3.5px solid #171717; border-right: 3.5px solid #171717; }
+  #phone .chip { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 15px; border-radius: 22px; background: rgb(var(--paper) / 0.92);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14); font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--ink); }
+  #phone .chip.on, #months .chip[aria-pressed='true'] { background: var(--ink); color: rgb(var(--paper)); }
+  .caret { width: 10px; height: 6px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  #m-date[aria-expanded='true'] .caret { transform: rotate(180deg); }
+  #m-compass { width: 40px; height: 40px; margin-left: auto; flex: none; overflow: visible; }
+  #m-compass.off { visibility: hidden; }
+  .menu-wrap { position: relative; }
+  #scope-menu { position: absolute; left: 0; bottom: 52px; display: grid; min-width: 132px; padding: 6px; border-radius: 16px; background: rgb(var(--paper) / 0.97); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18); }
+  #scope-menu[hidden], #months[hidden] { display: none; }
+  #scope-menu button { height: 44px; padding: 0 14px; border-radius: 11px; text-align: left; font-size: 15px; font-weight: 500; }
+  #scope-menu button[aria-pressed='true'] { background: color-mix(in srgb, var(--ink) 8%, transparent); font-weight: 650; }
+  #months { display: flex; gap: 8px; overflow-x: auto; padding: 4px 20px 22px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  #months::-webkit-scrollbar { display: none; }
+  #months .chip { flex: none; width: 58px; justify-content: center; padding: 0; scroll-snap-align: center; font-weight: 500; }
+
+  /* the map: pinch zooms, so only the compass and 2D/3D stay, at a thumb's size, under the status bar */
+  .maplibregl-ctrl-top-right { top: env(safe-area-inset-top); }
+  .maplibregl-ctrl-zoom-in, .maplibregl-ctrl-zoom-out { display: none !important; }
+  .maplibregl-ctrl-group button { width: 44px; height: 44px; }
+  /* the credit at the very bottom, beside the logo, where it gets in the way least */
+  .maplibregl-ctrl-bottom-right, .maplibregl-ctrl-bottom-left { bottom: env(safe-area-inset-bottom); }
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib { background: none; font-size: 10.5px; margin: 0 6px 4px 0; }
+  .spot { width: min(288px, calc(100vw - 72px)); }
 }
 
 /* The card of a clicked sidewalk */
@@ -128,13 +171,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 html:not(.loading) #loader { opacity: 0; visibility: hidden; pointer-events: none; }
 
 /* Hidden while loading; then the map, the paper and the text come in, one after the other */
-html.loading #map, html.loading .veil, html.loading #head, html.loading #chart, html.loading .maplibregl-ctrl { opacity: 0; }
-#map, #head > *, #chart, .maplibregl-ctrl { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-html.loading #head > *, html.loading #chart { transform: translateY(10px); }
+html.loading #map, html.loading .veil, html.loading #head, html.loading #chart, html.loading #phone, html.loading .maplibregl-ctrl { opacity: 0; }
+#map, #head > *, #chart, #phone, .maplibregl-ctrl { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+html.loading #head > *, html.loading #chart, html.loading #phone { transform: translateY(10px); }
 html:not(.loading) #head > :nth-child(2) { transition-delay: 0.08s; }
 html:not(.loading) #head > :nth-child(3) { transition-delay: 0.16s; }
 html:not(.loading) #head > :nth-child(n + 4) { transition-delay: 0.24s; }
-html:not(.loading) #chart { transition-delay: 0.3s; }
+html:not(.loading) #chart, html:not(.loading) #phone { transition-delay: 0.3s; }
 html:not(.loading) .maplibregl-ctrl { transition-delay: 0.36s; }
 @media (prefers-reduced-motion: reduce) {
   #map, .veil, #head > *, #chart, .maplibregl-ctrl, #loader { transition-duration: 0.01s; transition-delay: 0s !important; transform: none !important; }

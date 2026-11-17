@@ -4,7 +4,8 @@ import {createTileflowMap} from '@tileflow/dom';
 import tzlookup from '@photostructure/tz-lookup';
 import {Popup, type Map as MapLibreMap, type MapMouseEvent} from 'maplibre-gl';
 import {localInstant, solarPosition} from './sun';
-import {chart, clock12, monthName, withDay, withMonth, type Scope} from './when';
+import {chart, type ChartHandlers, clock12, monthName, withDay, withMonth, type Scope, type When} from './when';
+import {phoneChart} from './phone';
 import {SunLayer, type SunLayerColors} from './sun-layer';
 import {bindSpot, spotCard, spotLoading, type SpotRank} from './spot';
 import {Z, type BuildingsResult, type PointResult, type SidewalksResult, type WorkerRequest} from './worker';
@@ -275,6 +276,8 @@ function setPaper(position = blendPosition()) {
   const rgb = useBlend ? a.map((c, n) => Math.round(c + (b[n] - c) * f)) : GROUND[LOOKS[lookAt()].theme];
   const root = document.documentElement;
   root.style.setProperty('--paper', rgb.join(' '));
+  // the browser's own bar on a phone takes the same colour, so the top of the page runs into it
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', `rgb(${rgb.join(' ')})`);
   const ink = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255 < 0.5 ? 'light' : 'dark';
   if (ink !== shownInk) {
     shownInk = ink;
@@ -320,7 +323,7 @@ function applyTime() {
   chartView.update(view());
 }
 
-const chartView = chart(document.getElementById('chart')!, {
+const chartHandlers: ChartHandlers = {
   scope: (s) => setScope(s),
   minutes: (m) => {
     minutesNow = m;
@@ -328,7 +331,10 @@ const chartView = chart(document.getElementById('chart')!, {
   },
   date: (d) => setDate(d),
   play: () => togglePlay(),
-});
+};
+/** The chart, drawn for both layouts: the bars on a wide screen, the sliding ruler on a phone. */
+const chartViews = [chart(document.getElementById('chart')!, chartHandlers), phoneChart(document.getElementById('phone')!, chartHandlers)];
+const chartView = {update: (w: When) => chartViews.forEach((c) => c.update(w))};
 const view = () => ({scope, date, minutes: minutes(), lat: center[1], lon: center[0], timeZone, sun: sunNow(), bearing: map?.getBearing() ?? 0});
 
 // ------------------------------------------------------------------------------------------------
@@ -701,6 +707,9 @@ controller.ready.then((m) => {
   m.on('styledata', () => placeSpot(m));
   hoverSpots(m);
   m.addControl(viewControl(m), 'top-right');
+  // the map's buttons and credit sit above the paper behind the text, not under it (on a phone the
+  // paper runs the full width); MapLibre keeps its own references, so they go on working
+  for (const corner of m.getContainer().querySelectorAll('.maplibregl-control-container > div')) document.body.append(corner);
 
   applyTime();
   m.on('click', (e) => clickSpot(m, e));
@@ -797,21 +806,25 @@ function setScope(s: Scope) {
   applyTime();
 }
 
-const playButton = document.getElementById('play')!;
+const playButtons = [...document.querySelectorAll<HTMLElement>('[data-play]')];
 let stepping = 0;
 function stopPlay() {
   if (playing) cancelAnimationFrame(playing);
   if (stepping) clearInterval(stepping);
   playing = stepping = 0;
-  playButton.classList.remove('on');
-  playButton.setAttribute('aria-label', 'Play');
+  for (const b of playButtons) {
+    b.classList.remove('on');
+    b.setAttribute('aria-label', 'Play');
+  }
 }
 
 /** At the hour, the day runs in about twenty seconds; by day or month, it steps once each is computed. */
 function togglePlay() {
   if (playing || stepping) return stopPlay();
-  playButton.classList.add('on');
-  playButton.setAttribute('aria-label', 'Pause');
+  for (const b of playButtons) {
+    b.classList.add('on');
+    b.setAttribute('aria-label', 'Pause');
+  }
   if (scope !== 'hour') {
     let last = performance.now();
     stepping = window.setInterval(() => {
