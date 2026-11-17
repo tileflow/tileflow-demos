@@ -1,0 +1,16 @@
+{
+  // maps.tileflow.dev: one folder per map (maps.tileflow.dev/<map-name>/), static files only.
+  // `node sites/maps/build.mjs` writes ./dist; the Deploy maps workflow publishes it. The account
+  // comes from CLOUDFLARE_ACCOUNT_ID.
+  "name": "tileflow-maps",
+  "compatibility_date": "2026-07-15",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "routes": [{"pattern": "maps.tileflow.dev", "custom_domain": true}],
+  "observability": {"enabled": true}
+}

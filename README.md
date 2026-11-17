@@ -6,6 +6,8 @@ Public demos for Tileflow packages.
 
 - `apps/vite-basic`: React + Vite map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/vite`.
 - `apps/next-basic`: React + Next.js map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/next`.
+- `apps/sun-on-the-street`: sun and shade on every sidewalk, a MapLibre custom layer over a Tileflow
+  map shown with `@tileflow/dom`. Published at <https://maps.tileflow.dev/sun-on-the-street/>.
 
 ## Run
 
@@ -31,6 +33,6 @@ change protected `main`. Fix the affected demo or publish a compatible SDK corre
 next scheduled run replace and retest the proposal. No npm token, release tag, manual Changeset, or
 manual dependency update is part of this repository's normal path.
 
-`main` represents the latest verified source for every demo. This repository does not currently
-have a Pages site or another deployment target, so merging does not claim that a hosted demo was
-deployed. Add a deployment workflow and receipt before describing `main` as hosted production.
+`main` represents the latest verified source for every demo. Merging deploys nothing. Maps listed in
+`sites/maps` are published to `maps.tileflow.dev` only when the `Deploy maps` workflow is run by hand
+from `main` (see `sites/maps/README.md`).
