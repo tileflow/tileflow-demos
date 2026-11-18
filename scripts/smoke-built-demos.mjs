@@ -76,17 +76,17 @@ async function stopServer(child) {
   }
 }
 
-async function validateAssets({assetBase, name, origin}) {
+async function validateAssets({assetBase, map, name, origin}) {
   const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
-  assert.equal(manifest.version, 1, `${name} manifest version changed unexpectedly.`);
-  const styleUrl = manifest.maps?.madrid?.themes?.light?.styleUrl;
+  assert.equal(manifest.version, 3, `${name} manifest version changed unexpectedly.`);
+  const styleUrl = manifest.maps?.[map]?.themes?.light?.styleUrl;
   assert.equal(
     typeof styleUrl,
     'string',
-    `${name} manifest does not expose Madrid's light Style URL.`,
+    `${name} manifest does not expose the light Style URL of ${map}.`,
   );
   const styleLocation = new URL(styleUrl, origin);
-  assert.equal(styleLocation.origin, origin, `${name} points Madrid at another origin.`);
+  assert.equal(styleLocation.origin, origin, `${name} points ${map} at another origin.`);
 
   const style = await requestJson(styleLocation);
   assert.equal(style.version, 8, `${name} did not serve a MapLibre v8 style.`);
@@ -100,6 +100,7 @@ async function smokeDemo({
   cwd,
   origin,
   assetBases = ['/tileflow'],
+  map = 'madrid',
 }) {
   let output = '';
   const child = spawn(executable, args, {
@@ -118,7 +119,7 @@ async function smokeDemo({
     const html = await requestText(origin);
     assert.match(html, /<html/u, `${name} did not serve an HTML document.`);
 
-    for (const assetBase of assetBases) await validateAssets({assetBase, name, origin});
+    for (const assetBase of assetBases) await validateAssets({assetBase, map, name, origin});
     console.log(`Validated ${name} at ${origin}.`);
   } finally {
     await stopServer(child);
@@ -142,4 +143,14 @@ await smokeDemo({
   cwd: join(repositoryRoot, 'apps/next-basic'),
   origin: `http://127.0.0.1:${nextPort}`,
   assetBases: ['/tileflow', '/api/tileflow'],
+});
+
+const sunPort = await reserveFreePort();
+await smokeDemo({
+  name: 'Sun on the street',
+  executable: join(repositoryRoot, 'apps/sun-on-the-street/node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', sunPort.toString(), '--strictPort'],
+  cwd: join(repositoryRoot, 'apps/sun-on-the-street'),
+  origin: `http://127.0.0.1:${sunPort}`,
+  map: 'sun-streets',
 });

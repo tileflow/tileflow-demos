@@ -1,0 +1,49 @@
+name: Deploy maps
+run-name: Deploy maps.tileflow.dev ${{ github.sha }}
+
+# Publishes sites/maps to maps.tileflow.dev from main, by hand only. Needs the `maps` environment
+# with the CLOUDFLARE_API_TOKEN (Workers Scripts and Routes: Edit) and CLOUDFLARE_ACCOUNT_ID secrets.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-maps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: maps
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.13.1 --activate
+
+      - name: Install exact dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the maps
+        run: node sites/maps/build.mjs
+
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.110.0 deploy --config sites/maps/wrangler.jsonc

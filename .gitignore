@@ -8,3 +8,4 @@ apps/*/public/tileflow
 .env
 .env.*
 !.env.example
+sites/maps/dist

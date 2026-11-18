@@ -12,6 +12,7 @@ export const publicPackageNames = new Set(
     '@tileflow/coordinates-runtime',
     '@tileflow/core',
     '@tileflow/dev',
+    '@tileflow/dom',
     '@tileflow/geoip',
     '@tileflow/interactions',
     '@tileflow/maps',
