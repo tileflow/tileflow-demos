@@ -36,3 +36,8 @@ manual dependency update is part of this repository's normal path.
 `main` represents the latest verified source for every demo. Merging deploys nothing. Maps listed in
 `sites/maps` are published to `maps.tileflow.dev` only when the `Deploy maps` workflow is run by hand
 from `main` (see `sites/maps/README.md`).
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE). Redistributions and derived works must keep
+[NOTICE](NOTICE). "Tileflow" and its logo are trademarks of Tileflow.
