@@ -1,0 +1,5 @@
+# Content-addressed files never change
+/:map/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/:map/tileflow/generations/*
+  Cache-Control: public, max-age=31536000, immutable
