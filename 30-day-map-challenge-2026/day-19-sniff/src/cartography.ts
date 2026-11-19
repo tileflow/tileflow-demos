@@ -1,12 +1,9 @@
 import type { ExpressionSpecification, FilterSpecification, LineLayerSpecification, Map as MapLibreMap } from 'maplibre-gl';
 
-const rippleId = 'sniff-water-ripples';
-const overviewRoadColors = new Map([
- ['track', '#e2ddd0'], ['service', '#e0ddd3'], ['minor', '#d7d9d0'],
- ['tertiary', '#bcc9cb'], ['secondary', '#a9bdc3'], ['primary', '#92aab4'],
- ['trunk', '#94a8b2'], ['motorway', '#94a8b2'], ['highzoom-major', '#94a8b2'],
-]);
+import {roadPalette} from './road-palette';
 
+const overviewRoadColors = new Map(Object.entries(roadPalette.overview));
+const rippleId = 'sniff-water-ripples';
 function ripplePattern() {
  const canvas = document.createElement('canvas');
  const size = canvas.width = canvas.height = 256;
@@ -88,8 +85,8 @@ export function styleCartography(map: MapLibreMap) {
 
  for (const layer of layers) {
   if (layer.type === 'symbol' && /^tileflow-label-road-network-/.test(layer.id)) {
-   map.setPaintProperty(layer.id, 'text-color', ['step', ['zoom'], '#274353', 16.35, '#fff5df']);
-   map.setPaintProperty(layer.id, 'text-halo-color', ['step', ['zoom'], '#fff7e6', 16.35, '#36434b']);
+   map.setPaintProperty(layer.id, 'text-color', ['step', ['zoom'], '#274353', 16.35, roadPalette.label]);
+   map.setPaintProperty(layer.id, 'text-halo-color', ['step', ['zoom'], '#fff7e6', 16.35, roadPalette.halo]);
   }
   if (layer.type !== 'line') continue;
   const tone = roadTint(layer);

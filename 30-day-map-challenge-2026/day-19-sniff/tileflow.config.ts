@@ -1,5 +1,6 @@
 import {buildings, defineMap, defineTheme, disable, refine, token, zoom} from '@tileflow/core';
 import {streets, streetsThemes} from '@tileflow/maps';
+import {roadPalette} from './src/road-palette';
 
 // Chalk curbs, graphite-blue streets and green parks separate play surfaces at a glance.
 const adventure=defineTheme(streetsThemes.dawn,{
@@ -12,7 +13,7 @@ const adventure=defineTheme(streetsThemes.dawn,{
   'buildings.fill':'#e9dfce','buildings.outline':'#a0907c',
   'roads.default':'#4d5e68','roads.minor':'#435363','roads.tertiary':'#405163',
   'roads.secondary':'#3d4e5d','roads.primary':'#384858','roads.trunk':'#364554','roads.motorway':'#334351',
-  'roads.city.minor':'#d7d9d0','roads.city.tertiary':'#bcc9cb','roads.city.secondary':'#a9bdc3','roads.city.primary':'#92aab4',
+  'roads.city.minor':roadPalette.overview.minor,'roads.city.tertiary':roadPalette.overview.tertiary,'roads.city.secondary':roadPalette.overview.secondary,'roads.city.primary':roadPalette.overview.primary,
   'roads.casing':'#ccaf87','roads.default.casing':'#ccaf87','roads.detail.casing':'#ede2cf',
   'roads.city.casing':'#ccaf87','roads.motorway.casing':'#bda680','roads.trunk.casing':'#bda680',
   'roads.marking':'#f9e2ad',
@@ -29,7 +30,7 @@ const adventure=defineTheme(streetsThemes.dawn,{
   'hydro.water':'#77bfcd','hydro.ocean':'#6fcde4','hydro.waterway':'#6bb6cc',
   'hydro.water.overview':'#9de3f3','hydro.water.regional':'#74d4e7',
   'labels.water':'#176a91',
-  'labels.road':'#fff5df','labels.roadHalo':'#36434b',
+  'labels.road':roadPalette.label,'labels.roadHalo':roadPalette.halo,
  }},
 });
 
