@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 
 /** Map name → the app that builds it. */
 const maps = {
+  sniff: 'apps/sniff',
   'sun-on-the-street': 'apps/sun-on-the-street',
 };
 

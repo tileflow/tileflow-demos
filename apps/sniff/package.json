@@ -1,0 +1,31 @@
+{
+  "name": "@tileflow-demos/sniff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5187 --strictPort",
+    "build": "tsc --noEmit && vite build && node scripts/check-built-map.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 4187 --strictPort",
+    "test": "node --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mapbox/vector-tile": "3.0.0",
+    "@tileflow/core": "0.1.0-alpha.55",
+    "@tileflow/dom": "0.1.0-alpha.5",
+    "@tileflow/maps": "0.1.0-alpha.25",
+    "maplibre-gl": "6.16.0",
+    "pbf": "5.1.2",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@tileflow/vite": "0.1.0-alpha.28",
+    "@types/geojson": "7946.0.16",
+    "@types/three": "0.180.0",
+    "tileflow": "0.1.0-alpha.28",
+    "typescript": "5.9.3",
+    "vite": "8.0.16"
+  },
+  "license": "Apache-2.0"
+}

@@ -8,6 +8,8 @@ Public demos for Tileflow packages.
 - `apps/next-basic`: React + Next.js map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/next`.
 - `apps/sun-on-the-street`: sun and shade on every sidewalk, a MapLibre custom layer over a Tileflow
   map shown with `@tileflow/dom`. Published at <https://maps.tileflow.dev/sun-on-the-street/>.
+- `apps/sniff`: follow scents and find food on real streets in a 3D arcade map for Day 19 of the
+  30 Day Map Challenge. [Play SNIFF!](https://maps.tileflow.dev/sniff/)
 
 ## Run
 

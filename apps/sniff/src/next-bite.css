@@ -1,0 +1,122 @@
+.bites-desktop-title,.next-bite,#tasting-count,.ingredient-name{display:none}
+
+@media(min-width:701px) and (hover:hover) and (pointer:fine){
+ .bites-mobile-title,.order-board .star-count,.order-board .score-line,
+ body[data-mode=play] .scent-guide{display:none}
+ .bites-desktop-title{display:inline}
+ .order-board{
+  width:clamp(275px,25vw,330px);
+  padding-bottom:10px;
+ }
+ #tasting-count{
+  display:block;
+  color:#ffe095;
+  font-size:13px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+ }
+ .next-bite{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  margin-top:11px;
+  padding:8px 9px;
+  border:1.5px solid #ad9b7e;
+  border-radius:8px;
+  background:#fffaee;
+  color:var(--game-ink);
+  text-align:left;
+ }
+ .next-bite:hover{background:#fff6d9;filter:none}
+ .next-bite:disabled{opacity:1;cursor:default}
+ .next-bite-copy{
+  display:grid;
+  align-content:center;
+  gap:2px;
+  min-width:0;
+ }
+ #next-bite-status{
+  color:#436159;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.075em;
+  line-height:1.15;
+  text-transform:uppercase;
+ }
+ #next-bite-venue{
+  display:-webkit-box;
+  overflow:hidden;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow-wrap:anywhere;
+  font-size:17px;
+  font-weight:900;
+  line-height:1.08;
+ }
+ #next-bite-direction{display:flex;align-items:center;gap:5px;white-space:nowrap}
+ #next-bite-arrow{
+  display:grid;
+  place-items:center;
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--bite-trace) 23%,#fff4dc);
+  color:var(--game-ink);
+  font-size:17px;
+  line-height:1;
+ }
+ #next-bite-distance{font-size:24px;line-height:1.1;font-weight:900;font-variant-numeric:tabular-nums}
+ .order-board .ingredient-model{height:52px}
+ .order-board .ingredient-count{display:none}
+ .ingredient-name{
+  display:block;
+  padding:0 3px 5px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--game-ink);
+  text-align:center;
+  font-size:clamp(11px,.95vw,13px);
+  font-weight:900;
+  line-height:1.15;
+ }
+ .order-board .ingredient.is-next{
+  overflow:visible;
+  border-color:var(--game-teal);
+  box-shadow:inset 0 0 0 1px var(--game-teal);
+ }
+ .order-board .ingredient.is-next::after{
+  content:"";
+  position:absolute;
+  left:calc(50% - 4px);
+  bottom:-5px;
+  width:8px;
+  height:8px;
+  border-right:1.5px solid var(--game-teal);
+  border-bottom:1.5px solid var(--game-teal);
+  background:color-mix(in srgb,var(--slot) 53%,#fff3db);
+  transform:rotate(45deg);
+ }
+}
+
+@media(min-width:701px) and (hover:hover) and (pointer:fine) and (max-height:520px){
+ .order-board{top:77px}
+ .order-board .order-title{margin-bottom:5px;padding-block:4px}
+ .order-board .order-title h2{font-size:16px}
+ .next-bite{gap:8px;padding-block:5px}
+ #next-bite-venue{font-size:15px}
+ #next-bite-distance{font-size:18px}
+ #next-bite-arrow{width:18px;height:18px;font-size:14px}
+ .order-board .ingredient-model{height:35px}
+}
+
+@media(min-width:701px) and (hover:hover) and (pointer:fine) and (max-height:420px){
+ .order-board{padding-bottom:6px}
+ .order-board .order-title{height:auto;min-height:24px;margin-bottom:4px}
+ .next-bite{gap:7px;padding-block:4px}
+ #next-bite-venue{display:block;white-space:nowrap;text-overflow:ellipsis}
+ .order-board .ingredient-model{height:29px}
+ .ingredient-name{padding-bottom:4px;font-size:11px}
+}
