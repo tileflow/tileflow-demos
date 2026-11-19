@@ -149,9 +149,9 @@ await smokeDemo({
 const sunPort = await reserveFreePort();
 await smokeDemo({
   name: 'Sun on the street',
-  executable: join(repositoryRoot, '30-day-map-challenge-2026/sun-on-the-street/node_modules/.bin/vite'),
+  executable: join(repositoryRoot, '30-day-map-challenge-2026/day-17-sun-on-the-street/node_modules/.bin/vite'),
   arguments: ['preview', '--host', '127.0.0.1', '--port', sunPort.toString(), '--strictPort'],
-  cwd: join(repositoryRoot, '30-day-map-challenge-2026/sun-on-the-street'),
+  cwd: join(repositoryRoot, '30-day-map-challenge-2026/day-17-sun-on-the-street'),
   origin: `http://127.0.0.1:${sunPort}`,
   map: 'sun-streets',
 });
@@ -159,9 +159,9 @@ await smokeDemo({
 const sniffPort = await reserveFreePort();
 await smokeDemo({
   name: 'SNIFF!',
-  executable: join(repositoryRoot, '30-day-map-challenge-2026/sniff/node_modules/.bin/vite'),
+  executable: join(repositoryRoot, '30-day-map-challenge-2026/day-19-sniff/node_modules/.bin/vite'),
   arguments: ['preview', '--host', '127.0.0.1', '--port', sniffPort.toString(), '--strictPort'],
-  cwd: join(repositoryRoot, '30-day-map-challenge-2026/sniff'),
+  cwd: join(repositoryRoot, '30-day-map-challenge-2026/day-19-sniff'),
   origin: `http://127.0.0.1:${sniffPort}`,
   map: 'scent-trail',
   theme: 'dawn',
