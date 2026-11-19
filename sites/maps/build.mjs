@@ -9,8 +9,8 @@ import {fileURLToPath} from 'node:url';
 
 /** Map name → the app that builds it. */
 const maps = {
-  sniff: '30-day-map-challenge-2026/sniff',
-  'sun-on-the-street': '30-day-map-challenge-2026/sun-on-the-street',
+  sniff: '30-day-map-challenge-2026/day-19-sniff',
+  'sun-on-the-street': '30-day-map-challenge-2026/day-17-sun-on-the-street',
 };
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
