@@ -76,14 +76,14 @@ async function stopServer(child) {
   }
 }
 
-async function validateAssets({assetBase, map, name, origin}) {
+async function validateAssets({assetBase, map, name, origin, theme}) {
   const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
   assert.equal(manifest.version, 3, `${name} manifest version changed unexpectedly.`);
-  const styleUrl = manifest.maps?.[map]?.themes?.light?.styleUrl;
+  const styleUrl = manifest.maps?.[map]?.themes?.[theme]?.styleUrl;
   assert.equal(
     typeof styleUrl,
     'string',
-    `${name} manifest does not expose the light Style URL of ${map}.`,
+    `${name} manifest does not expose the ${theme} Style URL of ${map}.`,
   );
   const styleLocation = new URL(styleUrl, origin);
   assert.equal(styleLocation.origin, origin, `${name} points ${map} at another origin.`);
@@ -101,6 +101,7 @@ async function smokeDemo({
   origin,
   assetBases = ['/tileflow'],
   map = 'madrid',
+  theme = 'light',
 }) {
   let output = '';
   const child = spawn(executable, args, {
@@ -119,7 +120,7 @@ async function smokeDemo({
     const html = await requestText(origin);
     assert.match(html, /<html/u, `${name} did not serve an HTML document.`);
 
-    for (const assetBase of assetBases) await validateAssets({assetBase, map, name, origin});
+    for (const assetBase of assetBases) await validateAssets({assetBase, map, name, origin, theme});
     console.log(`Validated ${name} at ${origin}.`);
   } finally {
     await stopServer(child);
@@ -153,4 +154,15 @@ await smokeDemo({
   cwd: join(repositoryRoot, 'apps/sun-on-the-street'),
   origin: `http://127.0.0.1:${sunPort}`,
   map: 'sun-streets',
+});
+
+const sniffPort = await reserveFreePort();
+await smokeDemo({
+  name: 'SNIFF!',
+  executable: join(repositoryRoot, 'apps/sniff/node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', sniffPort.toString(), '--strictPort'],
+  cwd: join(repositoryRoot, 'apps/sniff'),
+  origin: `http://127.0.0.1:${sniffPort}`,
+  map: 'scent-trail',
+  theme: 'dawn',
 });

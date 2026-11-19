@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createWalkSurface} from '../src/walking.mjs';
+import {createFollowCamera} from '../src/camera.mjs';
+const road={points:[[0,0],[100,0]],width:12};
+test('a direction change reverses immediately between graph nodes',()=>{const s=createWalkSurface([road]);const p=s.move([2.2,0],[1,0],.65);const reversed=s.move(p,[-1,0],.65);assert.ok(Math.abs(reversed[0]-2.2)<1e-8);});
+test('walks across a street and connected intersection without selecting a graph branch',()=>{const s=createWalkSurface([road,{points:[[50,-40],[50,40]],width:12}]);let p=s.move([45,0],[1,0],5);p=s.move(p,[0,-1],30);assert.ok(Math.abs(p[0]-50)<1e-8&&Math.abs(p[1]+30)<1e-8);});
+test('holding into a dead end stops without bouncing backwards',()=>{const s=createWalkSurface([{points:[[0,0],[10,0]],width:4}]);let p=[9,0];for(let i=0;i<120;i++){const next=s.move(p,[1,0],.65);assert.ok(next[0]>=p[0]);p=next;}assert.ok(p[0]<=12.001);});
+test('running cannot tunnel through a thin building and slides alongside façades',()=>{const ring=[[20,-3],[21,-3],[21,3],[20,3],[20,-3]],s=createWalkSurface([road],[{ring}]);const p=s.move([10,0],[1,0],25);assert.ok(p[0]<19.5);const slide=s.move([19.4,0],[1,1],3);assert.ok(slide[0]<19.5&&slide[1]>1);});
+test('diagonal movement has the same speed as straight movement',()=>{const s=createWalkSurface([{points:[[-100,0],[100,0]],width:100}]);const p=s.move([0,0],[1,1],13);assert.ok(Math.abs(Math.hypot(...p)-13)<1e-8);});
+test('mapped pedestrian areas are walkable while their holes remain excluded',()=>{const outer=[[0,0],[30,0],[30,30],[0,30],[0,0]],hole=[[10,10],[20,10],[20,20],[10,20],[10,10]],s=createWalkSurface([],[],[[outer,hole]]);assert.equal(s.canStand([5,5]),true);assert.equal(s.canStand([15,15]),false);});
+test('manual walking keeps bearing stable while the follow camera tracks position',()=>{const cam=createFollowCamera([0,0],24,35);for(let i=0;i<120;i++)cam.step(1/60,[i*13/60,0],Math.PI/2,true,35,false);assert.equal(cam.state.bearing,24);assert.ok(cam.state.center[0]>20);});
+test('open-ground exploration crosses medians and plazas without invisible road borders',()=>{const s=createWalkSurface([{points:[[0,0],[100,0]],width:4}],[],[],{center:[0,0],radius:600});const p=s.move([0,0],[0,1],80);assert.ok(Math.abs(p[1]-80)<1e-8);assert.equal(s.canStand([601,0]),false);});
+test('water blocks open-ground movement while a mapped bridge remains usable',()=>{const water=[[[[10,-30],[30,-30],[30,30],[10,30],[10,-30]]]],s=createWalkSurface([{points:[[0,0],[40,0]],width:5}],[],[],{center:[0,0],radius:600},water);assert.equal(s.canStand([20,12]),false);assert.equal(s.canStand([20,0]),true);assert.ok(s.move([0,12],[1,0],35)[0]<10);});
