@@ -15,7 +15,44 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  30-day-map-challenge-2026/sniff:
+  30-day-map-challenge-2026/day-17-sun-on-the-street:
+    dependencies:
+      '@mapbox/vector-tile':
+        specifier: 2.0.4
+        version: 2.0.4
+      '@photostructure/tz-lookup':
+        specifier: 11.2.0
+        version: 11.2.0
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.55
+        version: 0.1.0-alpha.55
+      '@tileflow/dom':
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5(maplibre-gl@6.16.0)
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.25
+        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+      pbf:
+        specifier: 4.0.1
+        version: 4.0.1
+    devDependencies:
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      tileflow:
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
+  30-day-map-challenge-2026/day-19-sniff:
     dependencies:
       '@mapbox/vector-tile':
         specifier: 3.0.0
@@ -56,43 +93,6 @@ importers:
         version: 5.9.3
       vite:
         specifier: 8.0.16
-        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
-
-  30-day-map-challenge-2026/sun-on-the-street:
-    dependencies:
-      '@mapbox/vector-tile':
-        specifier: 2.0.4
-        version: 2.0.4
-      '@photostructure/tz-lookup':
-        specifier: 11.2.0
-        version: 11.2.0
-      '@tileflow/core':
-        specifier: 0.1.0-alpha.55
-        version: 0.1.0-alpha.55
-      '@tileflow/dom':
-        specifier: 0.1.0-alpha.5
-        version: 0.1.0-alpha.5(maplibre-gl@6.16.0)
-      '@tileflow/maps':
-        specifier: 0.1.0-alpha.25
-        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
-      maplibre-gl:
-        specifier: 6.16.0
-        version: 6.16.0
-      pbf:
-        specifier: 4.0.1
-        version: 4.0.1
-    devDependencies:
-      '@tileflow/vite':
-        specifier: 0.1.0-alpha.28
-        version: 0.1.0-alpha.28(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
-      tileflow:
-        specifier: 0.1.0-alpha.28
-        version: 0.1.0-alpha.28(@types/node@25.9.3)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vite:
-        specifier: ^8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
 
   apps/next-basic:

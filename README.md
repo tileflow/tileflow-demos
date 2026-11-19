@@ -9,10 +9,10 @@ Public demos for Tileflow packages.
 
 ## 30 Day Map Challenge 2026
 
-- [Sun on the street](30-day-map-challenge-2026/sun-on-the-street) shows when each sidewalk
+- Day 17 · [Sun on the street](30-day-map-challenge-2026/day-17-sun-on-the-street) shows when each sidewalk
   gets sunlight. [Explore the map](https://maps.tileflow.dev/sun-on-the-street/).
-- [SNIFF!](30-day-map-challenge-2026/sniff) is the Day 19 smell challenge. Follow scents to
-  find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
+- Day 19 · [SNIFF!](30-day-map-challenge-2026/day-19-sniff) challenges players to follow scents
+  and find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
 
 ## Run
 
