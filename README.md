@@ -6,10 +6,13 @@ Public demos for Tileflow packages.
 
 - `apps/vite-basic`: React + Vite map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/vite`.
 - `apps/next-basic`: React + Next.js map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/next`.
-- `apps/sun-on-the-street`: sun and shade on every sidewalk, a MapLibre custom layer over a Tileflow
-  map shown with `@tileflow/dom`. Published at <https://maps.tileflow.dev/sun-on-the-street/>.
-- `apps/sniff`: follow scents and find food on real streets in a 3D arcade map for Day 19 of the
-  30 Day Map Challenge. [Play SNIFF!](https://maps.tileflow.dev/sniff/)
+
+## 30 Day Map Challenge 2026
+
+- [Sun on the street](30-day-map-challenge-2026/sun-on-the-street) shows when each sidewalk
+  gets sunlight. [Explore the map](https://maps.tileflow.dev/sun-on-the-street/).
+- [SNIFF!](30-day-map-challenge-2026/sniff) is the Day 19 smell challenge. Follow scents to
+  find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
 
 ## Run
 

@@ -104,7 +104,7 @@ async function createFixture() {
     },
     devDependencies: {tileflow: alpha14},
   });
-  await writeJson(join(root, 'apps/next/package.json'), {
+  await writeJson(join(root, '30-day-map-challenge-2026/next/package.json'), {
     name: '@tileflow-demos/next',
     private: true,
     dependencies: {
@@ -114,7 +114,7 @@ async function createFixture() {
     },
     devDependencies: {tileflow: alpha8},
   });
-  await writeFile(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n");
+  await writeFile(join(root, 'pnpm-workspace.yaml'), "packages:\n  - 'apps/*'\n  - '30-day-map-challenge-2026/*'\n");
   return root;
 }
 
@@ -133,7 +133,7 @@ test('updates every demo to the public alpha and resolves the transitive SDK gra
   try {
     const plan = await createSyncPlan({repositoryRoot: root, getPackageMetadata: registry()});
     assert.deepEqual(plan.changedFiles, [
-      'apps/next/package.json',
+      '30-day-map-challenge-2026/next/package.json',
       'apps/vite/package.json',
       'pnpm-workspace.yaml',
     ]);
@@ -156,7 +156,7 @@ test('updates every demo to the public alpha and resolves the transitive SDK gra
     );
     assert.equal(summarizePlan(plan).changed, true);
     await applySyncPlan(root, plan);
-    const next = JSON.parse(await readFile(join(root, 'apps/next/package.json'), 'utf8'));
+    const next = JSON.parse(await readFile(join(root, '30-day-map-challenge-2026/next/package.json'), 'utf8'));
     assert.equal(next.dependencies['@tileflow/core'], alpha16);
     assert.equal(next.devDependencies.tileflow, alpha16);
     const workspace = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8');

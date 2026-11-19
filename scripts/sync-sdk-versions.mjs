@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from 'node:assert/strict';
-import {readdir, readFile, writeFile} from 'node:fs/promises';
+import {glob, readFile, writeFile} from 'node:fs/promises';
 import {join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -152,18 +152,10 @@ async function resolvePublishedDependency({name, range, getPackageMetadata, labe
 }
 
 export async function discoverManifestPaths(repositoryRoot) {
-  const root = resolve(repositoryRoot);
-  const entries = await readdir(join(root, 'apps'), {withFileTypes: true});
+  const patterns = ['apps/*/package.json', '30-day-map-challenge-2026/*/package.json'];
   const paths = ['package.json'];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
-    const path = `apps/${entry.name}/package.json`;
-    try {
-      await readFile(join(root, path), 'utf8');
-      paths.push(path);
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
+  for await (const path of glob(patterns, {cwd: resolve(repositoryRoot)})) {
+    paths.push(path);
   }
   return paths.sort();
 }
