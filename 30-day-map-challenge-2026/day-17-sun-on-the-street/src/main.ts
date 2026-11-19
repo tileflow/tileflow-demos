@@ -8,7 +8,8 @@ import {chart, type ChartHandlers, clock12, monthName, withDay, withMonth, type 
 import {phoneChart} from './phone';
 import {SunLayer, type SunLayerColors} from './sun-layer';
 import {bindSpot, spotCard, spotLoading, type SpotRank} from './spot';
-import {Z, type BuildingsResult, type PointResult, type SidewalksResult, type WorkerRequest} from './worker';
+import type {BuildingsResult, PointResult, SidewalksResult, WorkerRequest} from './worker';
+import {EARTH, TILE_ZOOM, latOfMercY, mercX, mercY} from './mercator';
 
 const params = new URLSearchParams(location.search);
 const MIN_ZOOM = Number(params.get('minzoom') ?? 13);
@@ -156,7 +157,7 @@ function renderStatus() {
 let map: MapLibreMap | undefined;
 
 function tilesInView(m: MapLibreMap): {key: string; x: number; y: number; d: number}[] {
-  const n = 2 ** Z;
+  const n = 2 ** TILE_ZOOM;
   const {clientWidth: w, clientHeight: h} = m.getContainer();
   // at a steep pitch the top of the screen reaches the horizon; stop at 80 % of the height
   const top = m.getPitch() > 50 ? h * 0.25 : 0;
@@ -166,8 +167,8 @@ function tilesInView(m: MapLibreMap): {key: string; x: number; y: number; d: num
     [w, h],
     [0, h],
   ].map(([x, y]) => m.unproject([x, y]));
-  const tx = (lon: number) => ((lon + 180) / 360) * n;
-  const ty = (lat: number) => ((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2) * n;
+  const tx = (lon: number) => mercX(lon) * n;
+  const ty = (lat: number) => mercY(lat) * n;
   const c = m.getCenter();
   const cx = tx(c.lng), cy = ty(c.lat);
   const out: {key: string; x: number; y: number; d: number}[] = [];
@@ -340,7 +341,6 @@ const view = () => ({scope, date, minutes: minutes(), lat: center[1], lon: cente
 // ------------------------------------------------------------------------------------------------
 // The share: sidewalk length inside the visible screen, not whole tiles
 
-const EARTH = 40075016.68557849;
 /** Per five-minute slot, metres of sidewalk in view in the sun; and the totals. */
 const share = {lit: new Float64Array(289), total: 0, underThirty: 0, dirty: true};
 
@@ -348,8 +348,8 @@ const share = {lit: new Float64Array(289), total: 0, underThirty: 0, dirty: true
 function viewQuad(m: MapLibreMap): [number, number][] {
   const {clientWidth: w, clientHeight: h} = m.getContainer();
   const top = m.getPitch() > 50 ? h * 0.25 : 0;
-  const ox = (origin![0] + 180) / 360;
-  const oy = (1 - Math.asinh(Math.tan((origin![1] * Math.PI) / 180)) / Math.PI) / 2;
+  const ox = mercX(origin![0]);
+  const oy = mercY(origin![1]);
   return [
     [0, top],
     [w, top],
@@ -357,7 +357,7 @@ function viewQuad(m: MapLibreMap): [number, number][] {
     [0, h],
   ].map(([x, y]) => {
     const p = m.unproject([x, y]);
-    return [((p.lng + 180) / 360 - ox) * EARTH, ((1 - Math.asinh(Math.tan((p.lat * Math.PI) / 180)) / Math.PI) / 2 - oy) * EARTH];
+    return [(mercX(p.lng) - ox) * EARTH, (mercY(p.lat) - oy) * EARTH];
   });
 }
 
@@ -460,9 +460,9 @@ let popup: Popup | undefined;
 let spot: {job: number; date: string; rank: SpotRank} | undefined;
 
 function lngLatOf(u: number, v: number): [number, number] {
-  const mx = u / EARTH + (origin![0] + 180) / 360;
-  const my = v / EARTH + (1 - Math.asinh(Math.tan((origin![1] * Math.PI) / 180)) / Math.PI) / 2;
-  return [mx * 360 - 180, (Math.atan(Math.sinh(Math.PI * (1 - 2 * my))) * 180) / Math.PI];
+  const mx = u / EARTH + mercX(origin![0]);
+  const my = v / EARTH + mercY(origin![1]);
+  return [mx * 360 - 180, latOfMercY(my)];
 }
 
 type Hit = {key: string; piece: number; u: number; v: number; d: number};
@@ -470,10 +470,10 @@ type Hit = {key: string; piece: number; u: number; v: number; d: number};
 /** The sidewalk piece within a dozen pixels of a point on the map, if any. */
 function nearestPiece(m: MapLibreMap, lng: number, lat: number): Hit | undefined {
   if (!origin || m.getZoom() < MIN_ZOOM) return undefined;
-  const ox = (origin[0] + 180) / 360;
-  const oy = (1 - Math.asinh(Math.tan((origin[1] * Math.PI) / 180)) / Math.PI) / 2;
-  const cu = ((lng + 180) / 360 - ox) * EARTH;
-  const cv = ((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2 - oy) * EARTH;
+  const ox = mercX(origin[0]);
+  const oy = mercY(origin[1]);
+  const cu = (mercX(lng) - ox) * EARTH;
+  const cv = (mercY(lat) - oy) * EARTH;
   const reach = (EARTH / (512 * 2 ** m.getZoom())) * 12;
   let best: Hit | undefined;
   for (const key of visible) {
@@ -649,10 +649,10 @@ function warmStart() {
   center = [lng, lat];
   timeZone = tzlookup(lat, lng);
   origin = [lng, lat];
-  const n = 2 ** Z;
-  const cx = ((lng + 180) / 360) * n;
-  const cy = ((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2) * n;
-  const reach = Math.hypot(innerWidth, innerHeight) / 2 / (512 * 2 ** (zoom - Z)) + 0.5;
+  const n = 2 ** TILE_ZOOM;
+  const cx = mercX(lng) * n;
+  const cy = mercY(lat) * n;
+  const reach = Math.hypot(innerWidth, innerHeight) / 2 / (512 * 2 ** (zoom - TILE_ZOOM)) + 0.5;
   const near: {x: number; y: number; d: number}[] = [];
   for (let x = Math.floor(cx - reach); x <= Math.floor(cx + reach); x++)
     for (let y = Math.floor(cy - reach); y <= Math.floor(cy + reach); y++) {
@@ -690,14 +690,14 @@ controller.ready.then((m) => {
     }
     // the faint copy over the buildings: added once, under the first labels above the 3D scene
     if (!params.has('nothrough') && !m.getLayer(layer.through.id) && m.getLayer('tileflow-buildings-scene-3d')) {
-      const order = (m as unknown as {style: {_order: string[]}}).style._order;
+      const order = m.getLayersOrder();
       const after = order.slice(order.indexOf('tileflow-buildings-scene-3d') + 1);
       m.addLayer(layer.through, after.find((id) => m.getLayer(id)?.type === 'symbol'));
     }
     if (m.getLayer(layer.id) && m.getLayer('tileflow-buildings-scene-3d')) {
       // below the 3D scene is enough: other layers (the SDK's sky haze) also sit right under it,
       // and insisting on the exact slot makes the two move each other on every style change
-      const order = (m as unknown as {style: {_order: string[]}}).style._order;
+      const order = m.getLayersOrder();
       if (order.indexOf(layer.id) > order.indexOf('tileflow-buildings-scene-3d')) m.moveLayer(layer.id, 'tileflow-buildings-scene-3d');
     }
   };
