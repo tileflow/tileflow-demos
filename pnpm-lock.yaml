@@ -15,50 +15,7 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  apps/next-basic:
-    dependencies:
-      '@tileflow/core':
-        specifier: 0.1.0-alpha.55
-        version: 0.1.0-alpha.55
-      '@tileflow/maps':
-        specifier: 0.1.0-alpha.25
-        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
-      '@tileflow/next':
-        specifier: 0.1.0-alpha.27
-        version: 0.1.0-alpha.27(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
-      '@tileflow/react':
-        specifier: 0.1.0-alpha.43
-        version: 0.1.0-alpha.43(maplibre-gl@6.16.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      maplibre-gl:
-        specifier: 6.16.0
-        version: 6.16.0
-      next:
-        specifier: ^16.2.7
-        version: 16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react:
-        specifier: ^19.2.7
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.2.7
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@types/node':
-        specifier: ^25.9.2
-        version: 25.9.3
-      '@types/react':
-        specifier: ^19.2.17
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.17)
-      tileflow:
-        specifier: 0.1.0-alpha.28
-        version: 0.1.0-alpha.28(@types/node@25.9.3)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-
-  apps/sniff:
+  30-day-map-challenge-2026/sniff:
     dependencies:
       '@mapbox/vector-tile':
         specifier: 3.0.0
@@ -101,7 +58,7 @@ importers:
         specifier: 8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
 
-  apps/sun-on-the-street:
+  30-day-map-challenge-2026/sun-on-the-street:
     dependencies:
       '@mapbox/vector-tile':
         specifier: 2.0.4
@@ -137,6 +94,49 @@ importers:
       vite:
         specifier: ^8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
+  apps/next-basic:
+    dependencies:
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.55
+        version: 0.1.0-alpha.55
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.25
+        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
+      '@tileflow/next':
+        specifier: 0.1.0-alpha.27
+        version: 0.1.0-alpha.27(@types/node@25.9.3)(next@16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+      '@tileflow/react':
+        specifier: 0.1.0-alpha.43
+        version: 0.1.0-alpha.43(maplibre-gl@6.16.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+      next:
+        specifier: ^16.2.7
+        version: 16.2.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@types/node':
+        specifier: ^25.9.2
+        version: 25.9.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      tileflow:
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   apps/vite-basic:
     dependencies:
