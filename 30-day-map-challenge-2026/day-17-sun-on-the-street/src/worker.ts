@@ -13,9 +13,8 @@ import {VectorTile} from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import {localInstant, solarPosition, zoneOffsetMinutes} from './sun';
 import {marchOnGpu} from './gpu-march';
+import {EARTH, TILE_ZOOM, latOfMercY, mercX, mercY} from './mercator';
 
-export const Z = 15;
-const EARTH = 40075016.68557849; // metres round the equator: one Mercator unit
 const CELL = 2; // Mercator metres per height-raster cell
 const SAMPLE = 3; // real metres between sidewalk samples
 const STEP_MINUTES = 5;
@@ -85,20 +84,24 @@ const TREE_ROW_SPACING = 7;
 /** Half the width of the roadway, kerb to kerb, in real metres: sidewalks never cross it. */
 const CARRIAGEWAY: Record<string, number> = {motorway: 11, trunk: 10, primary: 9, secondary: 8, tertiary: 5, street: 4, service: 2.5};
 
-const n = 2 ** Z;
+const n = 2 ** TILE_ZOOM;
 const tileCache = new Map<string, Promise<ParsedTile>>();
 let templatePromise: Promise<string> | undefined;
 
 function template(): Promise<string> {
   templatePromise ??= fetch('https://api.tileflow.dev/tiles/world/tiles.json')
-    .then((r) => r.json())
-    .then((j) => j.tiles[0] as string);
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`TileJSON request failed (${response.status})`);
+      const {tiles} = await response.json();
+      if (typeof tiles?.[0] !== 'string' || !tiles[0]) throw new Error('TileJSON has no tile URL');
+      return tiles[0] as string;
+    })
+    .catch((error) => {
+      templatePromise = undefined;
+      throw error;
+    });
   return templatePromise;
 }
-
-const mercX = (lon: number) => (lon + 180) / 360;
-const mercY = (lat: number) => (1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2;
-const latOfMercY = (y: number) => (Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180) / Math.PI;
 
 /** Clip a polyline (tile coordinates) to the tile square; returns the inside pieces. */
 function clipLine(line: {x: number; y: number}[], extent: number): {x: number; y: number}[][] {
@@ -139,7 +142,7 @@ function loadTile(x: number, y: number): Promise<ParsedTile> {
   let promise = tileCache.get(key);
   if (!promise) {
     promise = (async () => {
-      const url = (await template()).replace('{z}', String(Z)).replace('{x}', String(x)).replace('{y}', String(y));
+      const url = (await template()).replace('{z}', String(TILE_ZOOM)).replace('{x}', String(x)).replace('{y}', String(y));
       const res = await fetch(url);
       if (!res.ok) throw new Error(`World tile ${key}: HTTP ${res.status}`);
       const tile = new VectorTile(new Pbf(new Uint8Array(await res.arrayBuffer())));

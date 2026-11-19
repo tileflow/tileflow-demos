@@ -5,6 +5,47 @@ import {pointInRing,segmentProjection,type createWalkSurface} from './walking.mj
 type Surface = ReturnType<typeof createWalkSurface>;
 type StreetNode = {id:string;p:number[]};
 
+// Build once per placement pass. Barriers and the walk surface can change between passes.
+export function createVenueNodeLookup(nodes: Iterable<StreetNode>, canStand: (point: number[]) => boolean) {
+ const radius = 100;
+ const cellSize = 50;
+ const cellReach = Math.ceil(radius / cellSize);
+ const cells = new Map<string, StreetNode[]>();
+ const walkable = new Map<StreetNode, boolean>();
+ for (const node of nodes) {
+  const key = `${Math.floor(node.p[0] / cellSize)},${Math.floor(node.p[1] / cellSize)}`;
+  const cell = cells.get(key);
+  if (cell) cell.push(node);
+  else cells.set(key, [node]);
+ }
+
+ return (point: number[]) => {
+  const x = Math.floor(point[0] / cellSize);
+  const z = Math.floor(point[1] / cellSize);
+  const nearby: {node: StreetNode; gap: number}[] = [];
+  for (let dx = -cellReach; dx <= cellReach; dx++) {
+   for (let dz = -cellReach; dz <= cellReach; dz++) {
+    for (const node of cells.get(`${x + dx},${z + dz}`) ?? []) {
+     const gap = distance(node.p, point);
+     if (gap < radius) nearby.push({node, gap});
+    }
+   }
+  }
+
+  const result: StreetNode[] = [];
+  for (const {node} of nearby.sort((a, b) => a.gap - b.gap)) {
+   let reachable = walkable.get(node);
+   if (reachable === undefined) {
+    reachable = canStand(node.p);
+    walkable.set(node, reachable);
+   }
+   if (reachable) result.push(node);
+   if (result.length === 12) break;
+  }
+  return result;
+ };
+}
+
 function closestWall(point:number[],ring:number[][]){
  let wall;
  for(let i=1;i<ring.length;i++){
