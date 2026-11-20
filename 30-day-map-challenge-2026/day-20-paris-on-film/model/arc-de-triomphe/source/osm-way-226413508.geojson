@@ -1,0 +1,130 @@
+{
+  "type": "Feature",
+  "properties": {
+    "source": "OpenStreetMap",
+    "license": "ODbL",
+    "way": 226413508,
+    "version": 56,
+    "fetched": "2026-10-19",
+    "tags": {
+      "alt_name": "Arc de triomphe de l’Étoile",
+      "architect": "Jean-François Chalgrin",
+      "building": "triumphal_arch",
+      "building:architecture": "neoclassicism",
+      "building:levels": "13",
+      "building:levels:underground": "1",
+      "charge": "12 EUR/person",
+      "fee": "yes",
+      "fee:description": "full:12;discount:9;group 9;school_group 30;school_group_zep 20",
+      "height": "50",
+      "heritage": "2",
+      "heritage:operator": "mhs",
+      "historic": "monument",
+      "image": "http://upload.wikimedia.org/wikipedia/commons/e/e9/Arc_de_triomphe_Paris.jpg",
+      "mhs:inscription_date": "1896-02-06",
+      "name": "Arc de Triomphe",
+      "name:ar": "قوس النصر باريس الشانزليزية",
+      "name:ca": "Arc de triomf de l’Étoile",
+      "name:cs": "Vítězný oblouk",
+      "name:da": "Triumfbuen",
+      "name:de": "Triumphbogen",
+      "name:el": "Αψίδα του Θριάμβου",
+      "name:en": "Arc de Triomphe",
+      "name:eo": "Triumfa Arko",
+      "name:es": "Arco de Triunfo",
+      "name:fi": "Riemukaari",
+      "name:he": "שער הניצחון בפריז",
+      "name:hi": "विजय स्मारक",
+      "name:id": "Gapura Kemenangan",
+      "name:it": "Arco di Trionfo",
+      "name:ja": "凱旋門",
+      "name:ko": "에투알 개선문",
+      "name:pl": "Łuk Triumfalny",
+      "name:pt": "Arco do Triunfo",
+      "name:ru": "Триумфальная арка",
+      "name:sk": "Víťazný oblúk",
+      "name:vi": "Khải Hoàn Môn",
+      "name:zh": "凯旋门",
+      "opening_hours": "Apr 02-Jan 31: Mo-Su 10:00-22:30; Apr 01,Sep 30: Mo-Su 10:00-23:00; Oct 01,Dec 31: Mo-Su 10:00-22:30; Jan 01,May 01,May 08,Jul 14,Nov 11,Dec 25: off",
+      "operator": "Centre des monuments nationaux",
+      "ref:FR:RNB": "SDS3W86Z2R14",
+      "ref:mhs": "PA00088804",
+      "roof:levels": "1",
+      "roof:shape": "many",
+      "source": "cadastre-dgi-fr source : Direction générale des impôts - Cadastre. Mise à jour : 2010",
+      "source:architect": "data.gouv.fr:Ministère de la culture - 03/2018",
+      "source:heritage": "data.gouv.fr:Ministère de la Culture - 03/2018",
+      "start_date": "1836-07-29",
+      "tourism": "attraction",
+      "website": "https://www.paris-arc-de-triomphe.fr/",
+      "wheelchair": "no",
+      "wikidata": "Q64436",
+      "wikimedia_commons": "Category:Arc de Triomphe de l'Étoile",
+      "wikipedia": "fr:Arc de triomphe de l'Étoile"
+    },
+    "ring_vertex_count": 13
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          2.2950666,
+          48.8735201
+        ],
+        [
+          2.2950977,
+          48.8735655
+        ],
+        [
+          2.2951447,
+          48.8736319
+        ],
+        [
+          2.2952736,
+          48.8738203
+        ],
+        [
+          2.295321,
+          48.8738873
+        ],
+        [
+          2.2953512,
+          48.8739297
+        ],
+        [
+          2.295018,
+          48.8740363
+        ],
+        [
+          2.2949835,
+          48.87399
+        ],
+        [
+          2.2949356,
+          48.8739238
+        ],
+        [
+          2.2947987,
+          48.8737379
+        ],
+        [
+          2.2947506,
+          48.8736712
+        ],
+        [
+          2.2947196,
+          48.8736281
+        ],
+        [
+          2.2948743,
+          48.8735799
+        ],
+        [
+          2.2950666,
+          48.8735201
+        ]
+      ]
+    ]
+  }
+}
