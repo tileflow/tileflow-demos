@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f8f6f2"><title>Paris on Film</title><link rel="icon" href="/frame.svg">
+</head><body>
+<main id="atlas" aria-label="Paris on Film">
+  <div id="map"></div>
+  <div id="places" aria-hidden="true"></div>
+  <button id="paris-pin" hidden>Paris</button>
+  <header><h1>Paris <em>on Film</em></h1><p>Outdoor filming locations <span>·</span> 2016–2025</p>
+    <button id="active-title" hidden title="Clear title filter"><span id="active-label"></span><span aria-hidden="true">×</span></button>
+  </header>
+  <nav id="top" aria-label="Explore the map">
+    <button id="find" class="icon" aria-label="Find a title" title="Find a title"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.1"/><path d="m15.2 15.2 4.6 4.6"/></svg></button>
+    <details id="tools"><summary class="icon" aria-label="Map controls" title="Map controls"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></summary>
+      <div class="menu">
+        <div class="zoom-row"><span>Zoom</span><button id="minus" aria-label="Zoom out">−</button><button id="plus" aria-label="Zoom in">+</button></div>
+        <button id="tilt">Change tilt</button><button id="home">Paris view</button><button id="wide">France overview</button><button id="info">About the map</button>
+      </div>
+    </details>
+  </nav>
+  <section id="panel" hidden aria-label="Filming records in the selected hexagon">
+    <button id="unpick" class="close" aria-label="Close location details">×</button>
+    <p class="overline">In this hexagon</p><h2 id="area"></h2><p id="tally"></p><div id="works"></div><button id="more" hidden>Show more titles</button>
+  </section>
+  <footer class="strip"><label class="year"><select id="year" aria-label="Filming year"><option value="0">All years</option></select><svg viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg></label>
+    <button class="legend" id="key" aria-label="How to read the colours" title="How to read the colours"><span><i></i>Film</span><span><i></i>TV &amp; web</span></button>
+  </footer>
+  <aside class="credit"><a href="https://tileflow.dev/copyright">Tileflow</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a> · <a href="https://opendata.paris.fr/explore/dataset/lieux-de-tournage-a-paris/">Paris Data</a></aside>
+  <p id="loading" role="status">Opening Paris…</p>
+</main>
+<dialog id="searchbox"><button class="close" data-close aria-label="Close search">×</button>
+  <h2>Find a title</h2><label class="search-field"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.1"/><path d="m15.2 15.2 4.6 4.6"/></svg><input type="search" id="query" placeholder="Film or series title" aria-label="Film or series title" autocomplete="off"></label>
+  <div id="suggestions"></div>
+</dialog>
+<dialog id="about"><button class="close" data-close aria-label="Close map information">×</button>
+  <h2>Reading the map</h2>
+  <p>Each hexagon counts outdoor shoot records. Coral marks predominantly feature films, violet marks television and web productions, and rose blends the two. A deeper tint means more records in that area.</p>
+  <p>Choose a year, tap a coloured area for its titles and addresses, or use the magnifier to follow a production across Paris. A title search brightens its locations so that even a single shoot is visible.</p>
+  <p>The map includes <strong id="total"></strong> geocoded records with Paris postcodes, from 2016 through 2025. Titles and addresses follow the archive. Multiple records may refer to the same production or street.</p>
+  <p><a href="https://opendata.paris.fr/explore/dataset/lieux-de-tournage-a-paris/">Ville de Paris · Outdoor filming locations ↗</a> <span class="note">Open Database License</span></p>
+  <details class="sources"><summary>City model credits</summary><p>Streets and footprints by Tileflow and OpenStreetMap contributors. Tree crowns and windows are stylised. The Eiffel Tower, Arc de Triomphe and Palais de Chaillot use Tileflow landmark models.</p><ul id="landmark-credits"></ul></details>
+</dialog>
+<script type="module" src="/src/main.js"></script></body></html>

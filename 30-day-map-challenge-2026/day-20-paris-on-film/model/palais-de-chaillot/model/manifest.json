@@ -1,0 +1,17 @@
+{
+  "id": "palais-de-chaillot",
+  "placement": {
+    "at": [
+      2.28847,
+      48.86204
+    ],
+    "heading": 0
+  },
+  "attribution": "Palais de Chaillot, Paris. Stylised original geometry from OpenStreetMap ways 79742852 v18 and 79749386 v16 (\u00a9 OpenStreetMap contributors, ODbL), operator photographs and architectural references. Not a surveyed reconstruction.",
+  "levels": {
+    "mid": {
+      "file": "palais-de-chaillot.mid.glb",
+      "sha256": "6980a66a5871cc42921a4345f86bd6b32423a656847a70bd24524e2a16a5b989"
+    }
+  }
+}

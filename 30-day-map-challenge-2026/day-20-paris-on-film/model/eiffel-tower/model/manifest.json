@@ -1,0 +1,17 @@
+{
+  "id": "eiffel-tower",
+  "placement": {
+    "at": [
+      2.29449615571273,
+      48.8582621115472
+    ],
+    "heading": 0
+  },
+  "attribution": "Eiffel Tower; stylised contemporary geometry from authored sections and official/photo references. Outline and placement: OpenStreetMap way 5013364, \u00a9 OpenStreetMap contributors, ODbL.",
+  "levels": {
+    "mid": {
+      "file": "eiffel-tower.mid.glb",
+      "sha256": "3ceb691082f8b311567b3b36cc897be502ab97d2bc160bad6b2323455ca1913a"
+    }
+  }
+}
