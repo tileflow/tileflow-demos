@@ -1,0 +1,25 @@
+{
+  "name": "@tileflow-demos/type-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5195",
+    "build": "vite build",
+    "validate": "tileflow validate",
+    "test": "node --test test/*.test.js",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@tileflow/core": "0.1.0-alpha.55",
+    "@tileflow/dom": "0.1.0-alpha.5",
+    "@tileflow/maps": "0.1.0-alpha.25",
+    "maplibre-gl": "6.16.0"
+  },
+  "devDependencies": {
+    "@tileflow/vite": "0.1.0-alpha.28",
+    "tileflow": "0.1.0-alpha.28",
+    "vite": "8.0.16"
+  },
+  "license": "Apache-2.0"
+}

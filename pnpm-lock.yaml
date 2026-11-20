@@ -95,6 +95,31 @@ importers:
         specifier: 8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
 
+  30-day-map-challenge-2026/day-25-type-atlas:
+    dependencies:
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.55
+        version: 0.1.0-alpha.55
+      '@tileflow/dom':
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5(maplibre-gl@6.16.0)
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.25
+        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+    devDependencies:
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      tileflow:
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)
+      vite:
+        specifier: 8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
   apps/next-basic:
     dependencies:
       '@tileflow/core':

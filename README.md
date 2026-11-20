@@ -13,6 +13,7 @@ Public demos for Tileflow packages.
   gets sunlight. [Explore the map](https://maps.tileflow.dev/sun-on-the-street/).
 - Day 19 · [SNIFF!](30-day-map-challenge-2026/day-19-sniff) challenges players to follow scents
   and find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
+- Day 25 · [Type Atlas](30-day-map-challenge-2026/day-25-type-atlas) draws the world in letters and punctuation for **Is this a map?** [Explore the map](https://maps.tileflow.dev/type-atlas/).
 
 ## Run
 

@@ -11,6 +11,7 @@ import {fileURLToPath} from 'node:url';
 const maps = {
   sniff: '30-day-map-challenge-2026/day-19-sniff',
   'sun-on-the-street': '30-day-map-challenge-2026/day-17-sun-on-the-street',
+  'type-atlas': '30-day-map-challenge-2026/day-25-type-atlas',
 };
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
