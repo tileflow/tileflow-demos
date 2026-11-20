@@ -7,6 +7,7 @@
   "scripts": {
     "build": "pnpm --recursive --if-present run build",
     "check": "pnpm run test:sdk-sync && pnpm --filter @tileflow-demos/sniff test && pnpm run typecheck && pnpm run build && pnpm run validate:configs && pnpm run smoke:runtime",
+    "dev:hexagonize": "pnpm --filter @tileflow-demos/hexagonize dev",
     "dev:next-basic": "pnpm --filter @tileflow-demos/next-basic dev",
     "dev:sun-on-the-street": "pnpm --filter @tileflow-demos/sun-on-the-street dev",
     "dev:vite-basic": "pnpm --filter @tileflow-demos/vite-basic dev",
@@ -15,7 +16,7 @@
     "start:next-basic": "pnpm --filter @tileflow-demos/next-basic start",
     "test:sdk-sync": "node --test scripts/sync-sdk-versions.test.mjs",
     "typecheck": "pnpm --recursive --if-present run typecheck",
-    "validate:configs": "pnpm --filter @tileflow-demos/vite-basic exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/next-basic exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/sun-on-the-street exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/sniff exec tileflow validate -c tileflow.config.ts"
+    "validate:configs": "pnpm --filter @tileflow-demos/vite-basic exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/next-basic exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/sun-on-the-street exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/sniff exec tileflow validate -c tileflow.config.ts && pnpm --filter @tileflow-demos/hexagonize exec tileflow validate -c tileflow.config.ts"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
