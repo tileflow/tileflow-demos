@@ -23,3 +23,26 @@ dialog{color:inherit;border-radius:18px;width:min(380px,calc(100vw - 28px));padd
 #loading{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:12px;padding:5px 12px;border-radius:15px;background:#fffaf1e0}
 [hidden]{display:none!important}
 @media(max-width:600px){header{top:16px;left:16px}header p{font-size:10px;margin-top:4px}h1{font-size:44px}#top{right:12px;top:15px}.icon{width:33px;height:33px}.strip{left:14px;bottom:max(30px,env(safe-area-inset-bottom))}#panel{left:14px;bottom:77px;max-height:45dvh;width:min(320px,calc(100vw - 28px))}.place{font-size:16px}.credit{font-size:7.5px;right:5px}.maplibregl-compact{display:none}}
+
+#play-years{display:grid;place-items:center;width:30px;height:30px;flex-shrink:0;border-radius:50%;color:#fffaf8;background:#4e404f}
+#play-years:hover{background:#6b5369}#play-years:disabled{opacity:.45;cursor:default}
+#play-years svg{width:15px;height:15px}.triangle{fill:currentColor;stroke:none}
+#play-years .bars,#play-years[data-playing="true"] .triangle{display:none}#play-years[data-playing="true"] .bars{display:block;stroke-width:2.3}
+#year-track{--elapsed:0%;appearance:none;cursor:pointer;width:clamp(48px,9vw,124px);height:24px;margin:0 1px;background:transparent;accent-color:#825f81}
+#year-track::-webkit-slider-runnable-track{height:3px;border-radius:4px;background:linear-gradient(90deg,#825f81 var(--elapsed),#ddd5d9 var(--elapsed))}
+#year-track::-webkit-slider-thumb{appearance:none;width:7px;height:7px;border-radius:50%;background:#654d65;margin-top:-2px;opacity:0}
+#year-track:focus-visible::-webkit-slider-thumb,#year-track:hover::-webkit-slider-thumb{opacity:1}
+#year-track::-moz-range-track{height:3px;border-radius:4px;background:linear-gradient(90deg,#825f81 var(--elapsed),#ddd5d9 var(--elapsed))}
+#year-track::-moz-range-thumb{width:7px;height:7px;border:0;background:#654d65;opacity:0}
+#year-track:focus-visible::-moz-range-thumb,#year-track:hover::-moz-range-thumb{opacity:1}
+.work-still{position:relative;margin:6px 0;line-height:0}.work-still img{width:100%;display:block;aspect-ratio:2.15;object-fit:cover;object-position:50% 37%;border-radius:4px}
+.work-still figcaption{position:absolute;bottom:0;left:0;right:0;padding:12px 6px 4px;background:linear-gradient(transparent,#211b249e);border-radius:0 0 4px 4px;color:white;font:9px/1.1 Geist,Arial}
+@media(max-width:420px){.strip{gap:4px}.year select{min-width:66px}.legend{gap:6px;padding-left:7px}#year-track{width:clamp(38px,12vw,52px)}}
+
+#featured-shoot{display:flex;align-items:center;gap:13px;margin:8px 0 12px}
+#featured-shoot img{flex:none;object-fit:contain;width:74px;height:101px;border-radius:2px}
+#featured-shoot figcaption{min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+#shoot-place,#shoot-credit{font:10px/1.3 Geist,Arial;color:#6b6066}
+#shoot-name{font:26px/1.08 Instrument,Georgia;margin:3px 0}
+#shoot-street{font:13px/1.3 Geist,Arial}
+#shoot-credit{margin-top:8px;text-underline-offset:2px}
