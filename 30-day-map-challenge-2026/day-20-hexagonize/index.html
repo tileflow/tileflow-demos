@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hexagonize</title>
+    <meta name="description" content="Land and sea floor as one relief of hexagonal columns, from Tileflow Terrain and Bathymetry. Move the sea level to the last Ice Age or a world without ice." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <header id="head">
+      <div class="brand"><i class="logo" aria-hidden="true"></i><b>Hexagonize</b></div>
+      <button id="hexify" type="button" role="switch" aria-checked="false" aria-label="Show the map as hexagons">
+        <span class="side map">Map</span>
+        <span class="side hex">Hexagons</span>
+        <i class="knob" aria-hidden="true"></i>
+      </button>
+      <p class="line">Land and sea floor as one relief, from Tileflow Terrain and Bathymetry. Raise or drain the sea on the gauge.</p>
+      <p id="status" aria-live="polite"></p>
+    </header>
+
+    <aside id="gauge" aria-label="Sea level">
+      <h2 title="Water reaches only what connects to the ocean. Ice sheets and the rise and fall of the land itself are not shown.">Sea level <output id="sea-value">0 m</output></h2>
+      <div id="gauge-body">
+        <div id="gauge-ticks"></div>
+        <div id="gauge-track" role="slider" tabindex="0" aria-label="Sea level" aria-valuemin="-6000" aria-valuemax="4500" aria-valuenow="0" aria-valuetext="0 m">
+          <div id="gauge-water"></div>
+          <div id="gauge-handle"></div>
+        </div>
+      </div>
+      <p id="stats" aria-live="polite"></p>
+      <div id="changes" hidden>
+        <span><i class="lost"></i>Land under water</span>
+        <span><i class="gained"></i>Sea floor laid bare</span>
+      </div>
+    </aside>
+
+    <div id="probe" role="tooltip"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
