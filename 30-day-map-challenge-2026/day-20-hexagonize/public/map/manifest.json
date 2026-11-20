@@ -1,0 +1,65 @@
+{
+  "apiUrl": "https://api.tileflow.dev",
+  "maps": {
+    "hexagonize": {
+      "defaultTheme": "light",
+      "environment": "hexagonize",
+      "mapId": "map_tvmwFQ2baiqotKqX",
+      "systemThemes": {
+        "dark": "dark",
+        "light": "light"
+      },
+      "familyUrl": "https://api.tileflow.dev/maps/map_tvmwFQ2baiqotKqX/family/v2.json",
+      "timeOfDay": {
+        "light": {
+          "day": "light",
+          "dawn": "dawn",
+          "dusk": "dusk",
+          "night": "dark"
+        }
+      },
+      "themes": {
+        "dark": {
+          "colorScheme": "dark",
+          "fontFaces": [],
+          "revision": "f861223158c633f899ba8e8944cb840cf3fbcb147082ffb34f124392b170c704",
+          "styleId": "sty_c290d576-cdd2-4dd5-91c6-5f1fff236fc9",
+          "styleUrl": "https://api.tileflow.dev/maps/map_tvmwFQ2baiqotKqX/dark.json"
+        },
+        "dawn": {
+          "colorScheme": "light",
+          "fontFaces": [],
+          "revision": "9bce7fa466672fe10db53c0430c2df189cda82700cf512dfdb71a237f15b2ce9",
+          "styleId": "sty_c290d576-cdd2-4dd5-91c6-5f1fff236fc9",
+          "styleUrl": "https://api.tileflow.dev/maps/map_tvmwFQ2baiqotKqX/dawn.json"
+        },
+        "dusk": {
+          "colorScheme": "dark",
+          "fontFaces": [],
+          "revision": "456dad9653148b0f40233165a2dfbb2d985933b96423bf98e2e98fec76a9e448",
+          "styleId": "sty_c290d576-cdd2-4dd5-91c6-5f1fff236fc9",
+          "styleUrl": "https://api.tileflow.dev/maps/map_tvmwFQ2baiqotKqX/dusk.json"
+        },
+        "light": {
+          "colorScheme": "light",
+          "fontFaces": [],
+          "revision": "3529a249eacad414edf2b2d950f49d76c3f4e314f63fe50cee60233047b4ad28",
+          "styleId": "sty_c290d576-cdd2-4dd5-91c6-5f1fff236fc9",
+          "styleUrl": "https://api.tileflow.dev/maps/map_tvmwFQ2baiqotKqX/light.json"
+        }
+      },
+      "view": {
+        "bearing": -18,
+        "center": [
+          -16.62,
+          28.27
+        ],
+        "pitch": 52,
+        "zoom": 8.1
+      },
+      "usageMode": "session",
+      "worldGeneration": "v1"
+    }
+  },
+  "version": 3
+}

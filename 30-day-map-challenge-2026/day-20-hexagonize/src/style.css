@@ -1,0 +1,89 @@
+:root {
+  color-scheme: light;
+  --ink: #14202b;
+  --ink-2: #4c5b68;
+  --panel: rgba(255, 255, 255, 0.9);
+  --line: rgba(20, 32, 43, 0.1);
+  --accent: #1f6fe0;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; color: var(--ink); font: 14px/1.4 'Geist', system-ui, -apple-system, 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; }
+/* a bright studio backdrop the island floats over once the map steps back */
+body { background: radial-gradient(ellipse 80% 70% at 50% 45%, #ffffff 0%, #eef2f5 60%, #dde4ea 100%); }
+#map { position: fixed; inset: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* paper behind the title, so it reads over the hexagons */
+#head { position: fixed; z-index: 2; left: 22px; top: 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 276px; max-width: calc(100vw - 44px); padding: 16px 18px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(20, 40, 70, 0.14); backdrop-filter: blur(12px); }
+.brand { display: flex; align-items: center; gap: 9px; font-size: 22px; letter-spacing: -0.02em; }
+.logo { width: 26px; height: 26px; background: conic-gradient(from 30deg, #2a4fd0, #29b6f0, #69e6e6, #f3dfa6, #7cc63a, #d8a632, #8a5530, #f2f4f8, #2a4fd0); clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); }
+.line { margin: 0; color: var(--ink-2); font-size: 13px; max-width: 300px; }
+#status { margin: 0; color: var(--ink-2); font-size: 12px; }
+#status:empty { display: none; }
+
+/* Map ⇄ Hexagons: a track with a hexagonal knob that rolls from one side to the other */
+#hexify { position: relative; display: grid; grid-template-columns: 1fr 1fr; width: 100%; height: 44px; padding: 4px; border-radius: 22px; background: rgba(20, 32, 43, 0.08); box-shadow: inset 0 1px 2px rgba(20, 32, 43, 0.12); font-weight: 600; font-size: 13px; }
+#hexify .side { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--ink-2); transition: color 0.3s; }
+#hexify .knob { position: absolute; top: 4px; left: 4px; width: calc(50% - 4px); height: 36px; border-radius: 18px; background: #fff; box-shadow: 0 2px 8px rgba(20, 40, 70, 0.18); transition: transform 0.55s cubic-bezier(0.5, 1.6, 0.4, 1), background 0.4s; }
+#hexify .knob::after { content: ''; position: absolute; top: 9px; left: 12px; width: 18px; height: 18px; background: #c7d2db; clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); transition: transform 0.55s cubic-bezier(0.5, 1.6, 0.4, 1), background 0.4s; }
+#hexify .side.map { padding-left: 22px; }
+#hexify .side.hex { padding-left: 22px; }
+#hexify[aria-checked='false'] .side.map, #hexify[aria-checked='true'] .side.hex { color: var(--ink); }
+#hexify[aria-checked='true'] .knob { transform: translateX(100%); background: var(--ink); }
+#hexify[aria-checked='true'] .knob::after { transform: rotate(180deg); background: conic-gradient(from 30deg, #2a4fd0, #29b6f0, #69e6e6, #f3dfa6, #7cc63a, #d8a632, #8a5530, #f2f4f8, #2a4fd0); }
+#hexify[aria-checked='true'] .side.hex { color: #fff; }
+#hexify:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.modes { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--ink-2); }
+.modes span { margin-right: 6px; }
+.modes button { white-space: nowrap; padding: 3px 9px; border-radius: 999px; font-weight: 500; color: var(--ink-2); }
+.modes button[aria-checked='true'] { background: rgba(20, 32, 43, 0.08); color: var(--ink); }
+
+/* the sea-level gauge: a tide staff coloured as the relief, so it is the legend too */
+#gauge { position: fixed; z-index: 2; right: 22px; top: 50%; transform: translateY(-50%); width: 212px; padding: 14px 14px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(20, 40, 70, 0.14); backdrop-filter: blur(12px); }
+#gauge h2 { white-space: nowrap; display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); cursor: help; }
+#gauge h2 output { font-size: 20px; letter-spacing: -0.01em; text-transform: none; color: #1f6fe0; font-variant-numeric: tabular-nums; }
+#gauge-body { position: relative; display: flex; justify-content: flex-end; height: min(400px, 52vh); }
+#gauge-ticks { position: absolute; inset: 0 34px 0 0; }
+#gauge-ticks button, #gauge-ticks span { position: absolute; right: 0; transform: translateY(50%); white-space: nowrap; font-size: 11px; line-height: 1; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+#gauge-ticks button { padding: 3px 7px; border-radius: 999px; font-weight: 600; color: var(--ink); background: rgba(20, 32, 43, 0.06); }
+#gauge-ticks button:hover { background: rgba(20, 32, 43, 0.12); }
+#gauge-ticks button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+#gauge-ticks button small { font-weight: 400; opacity: 0.7; margin-left: 4px; }
+#gauge-track { position: relative; width: 22px; height: 100%; border-radius: 11px; cursor: ns-resize; touch-action: none; box-shadow: inset 0 0 0 1px rgba(20, 32, 43, 0.12); }
+#gauge-track:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+#gauge-water { position: absolute; left: -5px; right: -5px; bottom: 0; border-radius: 0 0 14px 14px; background: linear-gradient(to top, rgba(31, 111, 224, 0.0), rgba(31, 111, 224, 0.16)); border-top: 2px solid #1f6fe0; pointer-events: none; transition: height 0.12s; }
+#gauge-handle { position: absolute; left: 50%; width: 34px; height: 12px; transform: translate(-50%, 50%); border-radius: 6px; background: #fff; border: 2px solid #1f6fe0; box-shadow: 0 2px 6px rgba(20, 40, 70, 0.25); pointer-events: none; }
+#stats { margin: 12px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-2); font-variant-numeric: tabular-nums; height: 4.35em; white-space: nowrap; }
+#stats b { font-weight: 600; color: var(--ink); }
+#stats .down { color: #b0306f; font-weight: 600; }
+#stats .up { color: #8a6d12; font-weight: 600; }
+#changes { display: grid; gap: 3px; margin-top: 8px; font-size: 11px; color: var(--ink-2); }
+/* the key keeps its room when hidden, so the panel never changes size */
+#changes[hidden] { display: grid; visibility: hidden; }
+#changes i, #covers i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); }
+
+#covers { position: fixed; z-index: 2; left: 28px; bottom: 26px; display: flex; flex-wrap: wrap; gap: 5px 12px; max-width: min(380px, calc(100vw - 280px)); padding: 10px 12px; font-size: 12px; color: var(--ink-2); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 10px 30px rgba(20, 40, 70, 0.12); }
+#covers[hidden] { display: none; }
+
+#probe { position: fixed; left: 0; top: 0; z-index: 3; pointer-events: none; max-width: 300px; padding: 8px 11px; font-size: 12px; line-height: 1.5; color: var(--ink-2); background: rgba(255, 255, 255, 0.94); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(20, 40, 70, 0.16); opacity: 0; transition: opacity 0.12s; }
+#probe.on { opacity: 1; }
+#probe b { color: var(--ink); font-weight: 600; }
+#probe .now { color: var(--ink); }
+
+/* the zoom buttons sit low on the right, clear of the gauge */
+.maplibregl-ctrl-top-right { top: auto !important; bottom: 40px; }
+
+@media (max-width: 640px) {
+  #head { left: 10px; top: 10px; gap: 9px; width: 220px; padding: 12px; }
+  .line, .modes span { display: none; }
+  #hexify { height: 40px; }
+  #hexify .knob { height: 32px; }
+  #hexify .knob::after { top: 7px; }
+  #gauge { right: 10px; width: 160px; padding: 10px; }
+  #stats { font-size: 11px; }
+  #gauge h2 { letter-spacing: 0.02em; }
+  #gauge h2 output { font-size: 16px; }
+  #gauge-body { height: 40vh; }
+  #covers { left: 16px; bottom: 16px; max-width: calc(100vw - 190px); }
+}
