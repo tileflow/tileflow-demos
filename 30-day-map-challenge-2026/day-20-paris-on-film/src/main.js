@@ -5,6 +5,7 @@ import {atlasStyle,tileRequest} from './contexto.js';
 import {FilmArchive,media,fold} from './archive.js';
 import {FilmMaterial} from './material.js';
 import {centerOf} from './grid.js';
+import {bindTimeline} from './timeline.js';
 
 const $=id=>document.getElementById(id);
 const format=new Intl.NumberFormat('en-GB');
@@ -15,11 +16,12 @@ const places=[
   ['La Seine',2.3006,48.8633,'river'],['Gros-Caillou',2.3056,48.8580],['Invalides',2.3124,48.8560],
   ['Étoile',2.2945,48.8746],['Champs-Élysées',2.3090,48.8697],['Montmartre',2.3411,48.8865],['Pigalle',2.3381,48.8821],
   ['Palais-Royal',2.3374,48.8653],['Le Marais',2.3628,48.8588],['Île de la Cité',2.3474,48.8547],['Latin Quarter',2.3457,48.8498],
-  ['Saint-Germain-des-Prés',2.3334,48.8540],['Montparnasse',2.3239,48.8417],['Belleville',2.3871,48.8731],['Bastille',2.3694,48.8532],
+  ['Saint-Germain-des-Prés',2.3334,48.8540],['Montparnasse',2.3239,48.8417],['Belleville',2.3871,48.8731],['Bastille',2.3694,48.8532],['Port de l’Arsenal',2.3676,48.8475],
   ['Père-Lachaise',2.3941,48.8606],['Canal Saint-Martin',2.3650,48.8725],['Bercy',2.3859,48.8359],['Batignolles',2.3188,48.8849]
 ];
 const labels=[];
 let map,archive,material,selection,year=0,term='',work=null,key=null,shown=8;
+let pauseTimeline = () => {};
 const labelForWork=()=>work===null?term:archive.titles[work][0];
 const motion=ms=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:ms;
 function placeNames(){
@@ -67,6 +69,30 @@ function explore({phrase='',id=null},fit=true){
     map.fitBounds(selection.bounds,{padding:pad,pitch:25,bearing:0,maxZoom:16.2,duration:motion(750)});
   }
 }
+const montmartrePosters = {
+  '8,-22': {record: 'JOHN WICK 4', title: 'John Wick 4', street: 'Rue Foyatier', poster: 'john-wick-4',
+    credit: 'Metropolitan Filmexport', source: 'https://metrofilms.com/media/Exe_A4-JW4-Prochainement.3751d2d7-2541-4ee7-8a2f-cda047aec1e9.pdf'},
+  '7,-22': {record: 'LA PAGE BLANCHE', title: 'La Page blanche', street: 'Rue Androuet', poster: 'la-page-blanche',
+    credit: 'SND', source: 'https://www.academie-cinema.org/films/la-page-blanche/-44610/'},
+  '7,-21': {record: 'Les Volets Verts', title: 'Les Volets verts', street: 'Place Charles Dullin', poster: 'les-volets-verts',
+    credit: 'ARP / Artémis Productions', source: 'https://www.artemisproductions.com/fr/films/Les_Volets_Verts'},
+};
+
+function showFeaturedShoot(cell) {
+  const film = montmartrePosters[key];
+  const row = film && cell.records.find(r => r.year === 2021 && archive.titles[r.title][0] === film.record &&
+    archive.addresses[r.address].split(',')[0] === film.street.toLowerCase());
+  const card = $('featured-shoot');
+  card.hidden = !row;
+  if (!row) return;
+  card.querySelector('img').src = import.meta.env.BASE_URL + 'stills/' + film.poster + '.webp';
+  $('shoot-place').textContent = 'Montmartre · Filmed in ' + row.year;
+  $('shoot-name').textContent = film.title;
+  $('shoot-street').textContent = film.street;
+  $('shoot-credit').textContent = 'Poster · ' + film.credit;
+  $('shoot-credit').href = film.source;
+}
+
 function drawDetail(){
   const c=selection.cells.get(key);$('panel').hidden=!c;if(!c)return;
   const groups=new Map();
@@ -74,6 +100,7 @@ function drawDetail(){
     let g=groups.get(row.title);if(!g){g={id:row.title,count:0,addresses:new Set(),years:new Set()};groups.set(row.title,g);}
     g.count++;g.years.add(row.year);g.addresses.add(archive.addresses[row.address]);
   }
+  showFeaturedShoot(c);
   $('area').textContent=nearestName(c);
   $('tally').textContent=format.format(c.records.length)+(c.records.length===1?' shoot record':' shoot records')+' · '+groups.size+(groups.size===1?' title':' titles')+(year?' · '+year:'');
   const container=$('works');container.replaceChildren();
@@ -84,6 +111,21 @@ function drawDetail(){
     const list=document.createElement('ul');
     for(const address of g.addresses){const li=document.createElement('li');li.textContent=address||'Address unlisted';list.append(li);}
     details.append(list);
+    if (title === 'EMILY IN PARIS SAISON 4') {
+      const figure = document.createElement('figure');
+      figure.className = 'work-still';
+      const photo = document.createElement('img');
+      photo.alt = 'Emily and Gabriel on a bridge in season four';
+      photo.loading = 'lazy';
+      photo.src = import.meta.env.BASE_URL + 'stills/emily-season-four.webp';
+      const credit = document.createElement('figcaption');
+      const source = document.createElement('a');
+      source.href = 'https://www.netflix.com/tudum/galleries/emily-in-paris-season-4-photo-gallery';
+      source.textContent = 'Season 4 still · Netflix';
+      credit.append(source);
+      figure.append(photo, credit);
+      details.append(figure);
+    }
     const action=document.createElement('button');action.className='map-title';action.textContent='Map this title';action.onclick=()=>explore({id:g.id});details.append(action);
     container.append(details);
   }
@@ -109,13 +151,17 @@ function results(){
   for(const [id] of matches){const [title,kind]=archive.titles[id];result(title,media[kind],()=>explore({id}));}
 }
 function openDialog(id){
+  pauseTimeline();
   $('tools').open=false;$(id).showModal();
   if(id==='searchbox'){$('query').value='';results();$('query').focus();}
 }
 function controls(){
   for(const y of archive.years){const opt=new Option(String(y),String(y));$('year').append(opt);}
   $('year').value=year;
-  $('year').onchange=e=>{year=Number(e.target.value);explore({phrase:term,id:work},false);};
+  pauseTimeline = bindTimeline(archive.years, $('year'), $('play-years'), $('year-track'), next => {
+    year = next;
+    explore({phrase:term,id:work}, false);
+  });
   $('find').onclick=()=>openDialog('searchbox');$('info').onclick=$('key').onclick=()=>openDialog('about');
   $('query').addEventListener('input',results);
   $('query').addEventListener('keydown',e=>{if(e.key==='Enter')$('suggestions').querySelector('button')?.click();});
@@ -153,7 +199,10 @@ async function start(){
   material=new FilmMaterial(selection,()=>{$('loading').hidden=true;});
   map.addLayer(material,map.getStyle().layers.find(l=>l.type==='symbol')?.id);
   for(const [name,lon,lat,kind] of places){const el=document.createElement('span');el.className='place '+(kind||'');el.textContent=name;$('places').append(el);labels.push({el,lon,lat});}
-  map.on('move',placeNames);map.on('resize',placeNames);map.on('click',e=>choose(material.pick(e.point,e.lngLat).join(',')));
+  map.on('move',placeNames);map.on('resize',placeNames);map.on('click', e => {
+    pauseTimeline();
+    choose(material.pick(e.point, e.lngLat).join(','));
+  });
   controls();placeNames();if(term || work!==null)explore({phrase:term,id:work},!savedView);
 }
 start().catch(error=>{console.error(error);$('loading').textContent='The map could not be opened. '+error.message;});

@@ -21,9 +21,19 @@
   </nav>
   <section id="panel" hidden aria-label="Filming records in the selected hexagon">
     <button id="unpick" class="close" aria-label="Close location details">×</button>
-    <p class="overline">In this hexagon</p><h2 id="area"></h2><p id="tally"></p><div id="works"></div><button id="more" hidden>Show more titles</button>
+    <p class="overline">In this hexagon</p><h2 id="area"></h2><p id="tally"></p>
+    <figure id="featured-shoot" hidden>
+      <img width="94" height="128" alt="">
+      <figcaption><small id="shoot-place"></small><strong id="shoot-name"></strong><span id="shoot-street"></span><a id="shoot-credit"></a></figcaption>
+    </figure>
+    <div id="works"></div><button id="more" hidden>Show more titles</button>
   </section>
-  <footer class="strip"><label class="year"><select id="year" aria-label="Filming year"><option value="0">All years</option></select><svg viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg></label>
+  <footer class="strip">
+    <button type="button" id="play-years" aria-label="Play years" title="Play years" disabled>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path class="triangle" d="M5 3.5 12 8l-7 4.5Z"/><path class="bars" d="M5.5 4v8m5-8v8"/></svg>
+    </button>
+    <label class="year"><select id="year" aria-label="Filming year"><option value="0">All years</option></select><svg viewBox="0 0 16 16"><path d="m4 6 4 4 4-4"/></svg></label>
+    <input type="range" id="year-track" min="0" step="1" value="0" aria-label="Scrub filming years" hidden>
     <button class="legend" id="key" aria-label="How to read the colours" title="How to read the colours"><span><i></i>Film</span><span><i></i>TV &amp; web</span></button>
   </footer>
   <aside class="credit"><a href="https://tileflow.dev/copyright">Tileflow</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a> · <a href="https://opendata.paris.fr/explore/dataset/lieux-de-tournage-a-paris/">Paris Data</a></aside>

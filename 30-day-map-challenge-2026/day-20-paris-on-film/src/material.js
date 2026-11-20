@@ -102,6 +102,8 @@ void main(){
   vec3 shaded=albedo*illumination+silk*vec3(1.,.987,.974);
   vec2 local=abs(gridPoint-vec2(1.732050808*(cell.x+cell.y*.5),1.5*cell.y));
   float edge=.8660254-max(local.x,dot(local,vec2(.5,.8660254)));
+  float outline=1.-smoothstep(0.,max(fwidth(edge)*1.2,.0015),edge);
+  shaded=mix(shaded,vec3(.43,.35,.46),outline*.25*smoothstep(.02,.38,magnitude)*show);
   if(distance(cell,selection)<.2)shaded=mix(shaded,vec3(.43,.33,.53),.39*(1.-smoothstep(0.,max(fwidth(edge)*1.2,.003),edge)));
   color=vec4(shaded*alpha,alpha);pick=vec4((cell+vec2(128.))/255.,0.,1.);
 }`;
