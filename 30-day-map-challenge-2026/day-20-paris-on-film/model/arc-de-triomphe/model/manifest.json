@@ -1,0 +1,17 @@
+{
+  "id": "arc-de-triomphe",
+  "placement": {
+    "at": [
+      2.29503727549576,
+      48.873777393178194
+    ],
+    "heading": 0
+  },
+  "attribution": "Arc de Triomphe; stylised authored geometry using CMN dimensions and architectural/sculptural references. Outline and placement: OpenStreetMap way 226413508, \u00a9 OpenStreetMap contributors, ODbL.",
+  "levels": {
+    "mid": {
+      "file": "arc-de-triomphe.mid.glb",
+      "sha256": "47ea9e4a008a5f903296b2e6d02f26ab7b16bc96c1dc7613fd61f349c83f8aac"
+    }
+  }
+}

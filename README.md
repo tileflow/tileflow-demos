@@ -13,6 +13,7 @@ Public demos for Tileflow packages.
   gets sunlight. [Explore the map](https://maps.tileflow.dev/sun-on-the-street/).
 - Day 19 · [SNIFF!](30-day-map-challenge-2026/day-19-sniff) challenges players to follow scents
   and find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
+- Day 20 · [Paris on Film](30-day-map-challenge-2026/day-20-paris-on-film) colours the streets of Paris by outdoor film and television shoots. [Explore the map](https://maps.tileflow.dev/paris-on-film/).
 
 ## Run
 
