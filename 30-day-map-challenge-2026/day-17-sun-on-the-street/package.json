@@ -13,15 +13,15 @@
   "dependencies": {
     "@mapbox/vector-tile": "2.0.4",
     "@photostructure/tz-lookup": "11.2.0",
-    "@tileflow/core": "0.1.0-alpha.55",
-    "@tileflow/dom": "0.1.0-alpha.5",
-    "@tileflow/maps": "0.1.0-alpha.25",
+    "@tileflow/core": "0.1.0-alpha.57",
+    "@tileflow/dom": "0.1.0-alpha.7",
+    "@tileflow/maps": "0.1.0-alpha.27",
     "maplibre-gl": "6.16.0",
     "pbf": "4.0.1"
   },
   "devDependencies": {
-    "@tileflow/vite": "0.1.0-alpha.28",
-    "tileflow": "0.1.0-alpha.28",
+    "@tileflow/vite": "0.1.0-alpha.30",
+    "tileflow": "0.1.0-alpha.30",
     "typescript": "^6.0.3",
     "vite": "^8.0.16"
   }
