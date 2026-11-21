@@ -8,16 +8,16 @@
   },
   "dependencies": {
     "maplibre-gl": "6.16.0",
-    "@tileflow/core": "0.1.0-alpha.55",
-    "@tileflow/dom": "0.1.0-alpha.5",
-    "@tileflow/maps": "0.1.0-alpha.25"
+    "@tileflow/core": "0.1.0-alpha.57",
+    "@tileflow/dom": "0.1.0-alpha.7",
+    "@tileflow/maps": "0.1.0-alpha.27"
   },
   "devDependencies": {
     "vite": "8.0.16",
     "@mapbox/vector-tile": "3.0.0",
     "pbf": "5.1.2",
-    "@tileflow/vite": "0.1.0-alpha.28",
-    "tileflow": "0.1.0-alpha.28",
+    "@tileflow/vite": "0.1.0-alpha.30",
+    "tileflow": "0.1.0-alpha.30",
     "earcut": "3.2.4"
   },
   "version": "0.1.0"
