@@ -1,0 +1,29 @@
+{
+  "name": "@tileflow-demos/when-the-sea-arrives",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5327 --strictPort",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4328 --strictPort"
+  },
+  "dependencies": {
+    "@mapbox/vector-tile": "2.0.4",
+    "@tileflow/core": "0.1.0-alpha.55",
+    "@tileflow/dom": "0.1.0-alpha.5",
+    "@tileflow/maps": "0.1.0-alpha.25",
+    "@tileflow/search": "0.1.0-alpha.10",
+    "maplibre-gl": "6.16.0",
+    "pbf": "4.0.1",
+    "pmtiles": "4.5.0"
+  },
+  "devDependencies": {
+    "@tileflow/vite": "0.1.0-alpha.28",
+    "tileflow": "0.1.0-alpha.28",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  }
+}

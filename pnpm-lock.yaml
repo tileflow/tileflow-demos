@@ -129,6 +129,46 @@ importers:
         specifier: 8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
 
+  30-day-map-challenge-2026/day-26-when-the-sea-arrives:
+    dependencies:
+      '@mapbox/vector-tile':
+        specifier: 2.0.4
+        version: 2.0.4
+      '@tileflow/core':
+        specifier: 0.1.0-alpha.55
+        version: 0.1.0-alpha.55
+      '@tileflow/dom':
+        specifier: 0.1.0-alpha.5
+        version: 0.1.0-alpha.5(maplibre-gl@6.16.0)
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.25
+        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
+      '@tileflow/search':
+        specifier: 0.1.0-alpha.10
+        version: 0.1.0-alpha.10
+      maplibre-gl:
+        specifier: 6.16.0
+        version: 6.16.0
+      pbf:
+        specifier: 4.0.1
+        version: 4.0.1
+      pmtiles:
+        specifier: 4.5.0
+        version: 4.5.0
+    devDependencies:
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
+      tileflow:
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
   apps/next-basic:
     dependencies:
       '@tileflow/core':
@@ -807,6 +847,9 @@ packages:
       maplibre-gl: 6.16.0
       react: '>=18 <20'
       react-dom: '>=18 <20'
+
+  '@tileflow/search@0.1.0-alpha.10':
+    resolution: {integrity: sha512-dlc22k70wS7Wf4ENeopnEs8IHdWf5/y9FqT0QKLKmd+PSeZccBoAzDmz78mAqf8QQODoRqv0SrJ5YD9GIT5JZg==}
 
   '@tileflow/static@0.1.0-alpha.33':
     resolution: {integrity: sha512-VKr02uZW7Q+U0kZXKPIgWSbrY47BuKSeDn1hKP+U78ONjrZElLSK+vpl8MbiI9nnKE4krbdSPQrh8tcMC9f/cw==}
@@ -1763,6 +1806,10 @@ snapshots:
       maplibre-gl: 6.16.0
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
+
+  '@tileflow/search@0.1.0-alpha.10':
+    dependencies:
+      zod: 4.6.7
 
   '@tileflow/static@0.1.0-alpha.33':
     dependencies:
