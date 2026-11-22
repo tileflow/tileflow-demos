@@ -6,12 +6,13 @@ import type {Map as MapLibreMap} from 'maplibre-gl';
 import {FloodLayer} from './flood-layer';
 import {CAP, OCEAN, type Counts, type Raster, type Reply, type Request, type View} from './flood-worker';
 import {mercator} from './geo';
-import {block, FIRST_YEAR, LAST_YEAR, loadSeaLevels, MEDIAN, riseAt, SCENARIOS, type SeaLevels, yearIndex, yearReaching} from './sea-level';
+import {block, FIRST_YEAR, LAST_YEAR, lineAt, lineField, LINES, loadLines, loadSeaLevels, MEDIAN, riseAt, SCENARIOS, type SeaLevels, yearIndex, yearReaching} from './sea-level';
 
 const BASE = import.meta.env.BASE_URL;
 const DATA_URL = `${BASE}data/sea-level.bin`;
 const POPULATION_URL = `${BASE}data/population.pmtiles`;
 const COAST_URL = `${BASE}data/coastal-terrain.pmtiles`;
+const LINES_URL = `${BASE}data/water-lines.bin`;
 const params = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const setStatus = (t: string) => ($('status').textContent = t);
@@ -21,12 +22,17 @@ const setStatus = (t: string) => ($('status').textContent = t);
 
 let scenario = Number(params.get('scenario') ?? 1);
 let quantile = MEDIAN;
+/** The water line above mean sea level: 0 none, 1 high tide, 2 yearly flood. */
+let line = Number(params.get('water') ?? 1);
+let lines: Int16Array | undefined;
 let year = FIRST_YEAR;
 const sharedYear = params.has('year') ? Number(params.get('year')) : undefined;
 let levels: SeaLevels | undefined;
 let raster: Raster | undefined;
 
 const field = (s = scenario, q = quantile) => block(levels!, s, q);
+/** The water line's height above mean sea level at a place, metres. */
+const extraAt = (lng: number, lat: number) => (lines ? lineAt(lineField(lines, line), lng, lat) : 0);
 
 // ------------------------------------------------------------------------------------------------
 // The worker builds the ground under the view and counts what floods
@@ -88,7 +94,7 @@ async function rebuild() {
   try {
     const view = viewOf(m);
     if (!raster) setStatus('Reading the ground…');
-    const reply = await ask({type: 'build', view, dataUrl: DATA_URL, populationUrl: POPULATION_URL, coastUrl: COAST_URL});
+    const reply = await ask({type: 'build', view, dataUrl: DATA_URL, linesUrl: LINES_URL, populationUrl: POPULATION_URL, coastUrl: COAST_URL});
     if (reply.type !== 'build') return;
     raster = reply.raster;
     built = {zoom: view.zoom};
@@ -113,7 +119,7 @@ async function recount(moved = false) {
   if (counting) return void (countAgain = true);
   counting = true;
   try {
-    const reply = await ask({type: 'count', scenario, quantile, year, visible: moved ? viewPolygon(m, 0) : undefined});
+    const reply = await ask({type: 'count', scenario, quantile, year, line, visible: moved ? viewPolygon(m, 0) : undefined});
     if (reply.type === 'count') showCounts(reply.counts);
   } finally {
     counting = false;
@@ -190,9 +196,11 @@ controller.ready.then(async (m) => {
   else if (params.get('auto') !== '0') setTimeout(() => playTo(2100, 7), 900);
 });
 
-const ready = loadSeaLevels(DATA_URL).then((l) => {
+const ready = Promise.all([loadSeaLevels(DATA_URL), loadLines(LINES_URL)]).then(([l, w]) => {
   levels = l;
+  lines = w;
   layer.setRise(field());
+  layer.setLine(lineField(lines, line) ?? null);
 });
 
 // ------------------------------------------------------------------------------------------------
@@ -268,6 +276,25 @@ function setScenario(i: number) {
   recount();
 }
 setScenario(scenario);
+const lineButtons = LINES.map((l, i) => {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.setAttribute('role', 'radio');
+  b.textContent = l.label;
+  b.title = l.title;
+  b.addEventListener('click', () => setLine(i));
+  $('line').append(b);
+  return b;
+});
+function setLine(i: number) {
+  line = i;
+  lineButtons.forEach((b, j) => b.setAttribute('aria-checked', String(i === j)));
+  if (lines) layer.setLine(lineField(lines, line) ?? null);
+  share();
+  hereChanged();
+  recount();
+}
+setLine(line);
 const quantileButtons = [...$('quantile').querySelectorAll<HTMLButtonElement>('button')];
 function setQuantile(q: number) {
   quantile = q;
@@ -289,6 +316,7 @@ function share() {
   q.set('view', [c.lng.toFixed(3), c.lat.toFixed(3), m.getZoom().toFixed(1)].join(','));
   q.set('year', String(Math.round(year)));
   q.set('scenario', String(scenario));
+  q.set('water', String(line));
   history.replaceState(null, '', `${location.pathname}?${q}`);
 }
 
@@ -311,6 +339,8 @@ function hereChanged() {
   $('here-year').textContent = String(Math.round(year));
   $('here').textContent = metres(mid);
   $('here-range').textContent = `likely ${lo.toFixed(2)} to ${hi.toFixed(2)} m`;
+  const extra = extraAt(c.lng, c.lat);
+  $('here-line').textContent = line ? `${LINES[line].label} adds ${extra.toFixed(2)} m here` : '';
 }
 
 function showCounts(c: Counts) {
@@ -337,25 +367,28 @@ function probe(x: number, y: number, lng: number, lat: number, pin = false) {
   const i = py * r.w + px;
   const elev = r.elev[i];
   const spill = r.spill[i];
-  const lines: string[] = [];
-  if (spill === OCEAN) lines.push('<b>The sea today</b>');
+  const out: string[] = [];
+  if (spill === OCEAN) out.push('<b>The sea today</b>');
   else if (spill >= CAP) {
-    lines.push(`<b>${Math.round(elev).toLocaleString('en')} m</b> above the sea`);
-    lines.push(`<span class="muted">Out of reach of these projections</span>`);
+    out.push(`<b>${Math.round(elev).toLocaleString('en')} m</b> above the sea`);
+    out.push(`<span class="muted">Out of reach of these projections</span>`);
   } else {
-    lines.push(`<b>${elev.toFixed(1)} m</b> above today's sea`);
-    if (spill > elev + 0.05) lines.push(`<span class="muted">Higher ground in between: the sea must reach ${spill.toFixed(1)} m first</span>`);
+    out.push(`<b>${elev.toFixed(1)} m</b> above today's sea`);
+    if (spill > elev + 0.05) out.push(`<span class="muted">Higher ground in between: the water must reach ${spill.toFixed(1)} m first</span>`);
+    const extra = extraAt(lng, lat);
+    const need = spill - extra;
     const rows = SCENARIOS.map((s, k) => {
-      const mid = yearReaching(field(k, MEDIAN), lng, lat, spill);
-      const early = yearReaching(field(k, 2), lng, lat, spill);
-      const late = yearReaching(field(k, 0), lng, lat, spill);
+      const mid = yearReaching(field(k, MEDIAN), lng, lat, need);
+      const early = yearReaching(field(k, 2), lng, lat, need);
+      const late = yearReaching(field(k, 0), lng, lat, need);
       const likely = mid !== null && (early !== null || late !== null) ? `<small>likely ${early ? Math.round(early) : '…'}–${late ? Math.round(late) : `after ${LAST_YEAR}`}</small>` : '';
       return `<tr${k === scenario ? ' class="on"' : ''}><th>${s.label}</th><td>${when(mid)} ${likely}</td></tr>`;
     });
-    const defended = riseAt(field(scenario, quantile), lng, lat, FIRST_YEAR) > spill;
-    lines.push(defended ? '<span class="defended-note">Already below the sea: kept dry by dikes and pumps</span>' : `The sea reaches it<table>${rows.join('')}</table>`);
+    const defended = riseAt(field(scenario, quantile), lng, lat, FIRST_YEAR) + extra > spill;
+    const reaches = line === 2 ? 'The yearly flood reaches it' : line === 1 ? 'High tide reaches it' : 'The sea reaches it';
+    out.push(defended ? '<span class="defended-note">Already below this water today: dikes and pumps, or it floods already</span>' : `${reaches}<table>${rows.join('')}</table>`);
   }
-  probeEl.innerHTML = lines.join('<br>');
+  probeEl.innerHTML = out.join('<br>');
   probeEl.style.transform = `translate(${Math.min(x + 16, innerWidth - probeEl.offsetWidth - 12)}px, ${Math.max(12, y - probeEl.offsetHeight - 14)}px)`;
   probeEl.classList.add('on');
   probeEl.classList.toggle('pinned', pin);

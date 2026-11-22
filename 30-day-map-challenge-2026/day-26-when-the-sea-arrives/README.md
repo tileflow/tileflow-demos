@@ -4,7 +4,7 @@
 
 Where the sea could reach as it rises, decade by decade to 2150, in the IPCC's sea-level projections. Pick an emissions scenario, play the years, and hover any place to see when the sea reaches it. The figures count the land the sea takes in view and the people who live there.
 
-The projections are the IPCC's; the flooding is our calculation. Each pixel compares the projected sea level with the ground's elevation, and water enters only where it can flow from today's ocean, so low land behind higher ground stays dry until the sea tops it. Land already below the projected sea in 2020, kept dry by dikes and pumps, is hatched. Mean sea level only: no tides, storm surges or waves.
+The projections are the IPCC's; the flooding is our calculation. Each pixel compares the projected sea level with the ground's elevation, and water enters only where it can flow from today's ocean, so low land behind higher ground stays dry until the sea tops it. Land already below that water in 2020, mostly kept dry by dikes and pumps, is hatched. The Water option adds a high tide or the yearly flood (tide plus storm surge) to the projected mean sea level.
 
 ## Run locally
 
@@ -24,10 +24,13 @@ The map is a managed Tileflow Map: `public/map/manifest.json` is its manifest.
 | File | Source | Script |
 | --- | --- | --- |
 | `sea-level.bin` | IPCC AR6 regional projections, medium confidence, total with vertical land motion; SSP1-2.6, SSP2-4.5 and SSP5-8.5; 17th, 50th and 83rd percentiles; 2020–2150 | `fetch_ar6.py`, then `build_slr.py` (writes `slr.bin.gz`) |
+| `water-lines.bin` | GTSM-ERA5-E statistics (Deltares, 1950–2024): the level exceeded 5 % of the time and the 1-in-1-year still water level, above mean sea level | `build_lines.py` |
 | `population.pmtiles` | GHS-POP R2023A, epoch 2025, 30 arc-seconds, within 120 km of the coast | `build_pop.py` (needs the GHS-POP GeoTIFF and Natural Earth land in `raw/`) |
 | `coastal-terrain.pmtiles` | DeltaDTM v1.1 at about 300 m, where Tileflow Terrain carries a surface model | `reduce_dtm.py`, then `build_coast.py` |
 
 Sea-level projections: Fox-Kemper et al. (2021), IPCC AR6 WG1 Chapter 9; Garner et al. (2021), IPCC AR6 Sea Level Projections, doi:10.5281/zenodo.5914709; Kopp et al. (2023), FACTS v1.0. We thank the projection authors for developing and making the sea-level rise projections available, multiple funding agencies for supporting the development of the projections, and the NASA Sea Level Change Team for developing and hosting the IPCC AR6 Sea Level Projection Tool.
+
+Water lines: Muis, Aleksandrova, Veenstra, Gwee (2025), GTSM-ERA5-E, Zenodo, doi:10.5281/zenodo.14671593 (CC BY 4.0).
 
 Population: Schiavina et al. (2023), GHS-POP R2023A, European Commission, Joint Research Centre (CC BY 4.0).
 

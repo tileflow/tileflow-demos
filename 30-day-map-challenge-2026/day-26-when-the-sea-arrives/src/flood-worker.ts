@@ -8,7 +8,7 @@ import {VectorTile} from '@mapbox/vector-tile';
 import Pbf from 'pbf';
 import {PMTiles} from 'pmtiles';
 import {EARTH, lngLat} from './geo';
-import {block, loadSeaLevels, riseAt, type SeaLevels} from './sea-level';
+import {block, lineAt, lineField, loadLines, loadSeaLevels, riseAt, type SeaLevels} from './sea-level';
 
 /** Ground higher than this never floods in these projections: the flood stops there. */
 export const CAP = 15;
@@ -46,8 +46,8 @@ export type Counts = {
   defendedPeople: number;
 };
 export type Request =
-  | {id: number; type: 'build'; view: View; dataUrl: string; populationUrl: string; coastUrl: string}
-  | {id: number; type: 'count'; scenario: number; quantile: number; year: number; visible?: Array<[number, number]>};
+  | {id: number; type: 'build'; view: View; dataUrl: string; linesUrl: string; populationUrl: string; coastUrl: string}
+  | {id: number; type: 'count'; scenario: number; quantile: number; year: number; line: number; visible?: Array<[number, number]>};
 export type Reply =
   | {id: number; type: 'build'; raster: Raster; ms: Record<string, number>}
   | {id: number; type: 'count'; counts: Counts}
@@ -246,6 +246,7 @@ const nearest = (t: Grid, gx: number, gy: number) =>
 type State = Raster & {people: Float32Array; area: Float32Array; lng: Float32Array; lat: Float32Array; spans: Int32Array};
 let state: State | undefined;
 let levels: Promise<SeaLevels> | undefined;
+let lines: Promise<Int16Array> | undefined;
 
 function plan(view: View): Raster {
   let minU = Infinity;
@@ -386,12 +387,13 @@ function spans(r: Raster, poly: Array<[number, number]>) {
   return out;
 }
 
-async function count(scenario: number, quantile: number, year: number, visible?: Array<[number, number]>): Promise<Counts> {
+async function count(scenario: number, quantile: number, year: number, line: number, visible?: Array<[number, number]>): Promise<Counts> {
   const out: Counts = {area: 0, people: 0, defended: 0, defendedPeople: 0};
   const s = state;
   if (!s) return out;
   if (visible) s.spans = spans(s, visible);
   const field = block(await levels!, scenario, quantile);
+  const above = lineField(await lines!, line);
   for (let py = 0; py < s.h; py++) {
     const a = s.spans[py * 2];
     const b = s.spans[py * 2 + 1];
@@ -401,9 +403,10 @@ async function count(scenario: number, quantile: number, year: number, visible?:
       const i = py * s.w + px;
       const sp = s.spill[i];
       if (sp >= CAP || s.water[i]) continue;
-      const now = riseAt(field, s.lng[px], lat, year);
+      const extra = lineAt(above, s.lng[px], lat);
+      const now = riseAt(field, s.lng[px], lat, year) + extra;
       if (now <= sp) continue;
-      if (riseAt(field, s.lng[px], lat, 2020) > sp) {
+      if (riseAt(field, s.lng[px], lat, 2020) + extra > sp) {
         out.defended += s.area[py];
         out.defendedPeople += s.people[i];
       } else {
@@ -421,10 +424,11 @@ self.onmessage = async (e: MessageEvent<Request>) => {
   try {
     if (req.type === 'build') {
       levels ??= loadSeaLevels(req.dataUrl);
+      lines ??= loadLines(req.linesUrl);
       const {raster, ms} = await build(req.view, req.populationUrl, req.coastUrl);
       post({id: req.id, type: 'build', raster, ms}, [raster.elev.buffer, raster.spill.buffer, raster.water.buffer]);
     } else {
-      post({id: req.id, type: 'count', counts: await count(req.scenario, req.quantile, req.year, req.visible)});
+      post({id: req.id, type: 'count', counts: await count(req.scenario, req.quantile, req.year, req.line, req.visible)});
     }
   } catch (err) {
     post({id: req.id, type: 'error', error: String(err)});

@@ -83,3 +83,45 @@ export function yearReaching(field: Int16Array, lng: number, lat: number, height
   }
   return null;
 }
+
+// ------------------------------------------------------------------------------------------------
+// Water lines above mean sea level, from GTSM-ERA5-E (public/data/water-lines.bin, gzip): Int16
+// centimetres on a 0.25-degree grid, [line][lat 90..-90 (721)][lon -180..179.75 (1440)].
+
+export const LINES = [
+  {id: 'mean', label: 'Mean sea', title: 'Mean sea level: the projections alone'},
+  {id: 'tide', label: 'High tide', title: 'The water level exceeded 5 % of the time: a high tide'},
+  {id: 'flood', label: 'Yearly flood', title: 'The highest still water level of a typical year: tide plus storm surge'},
+] as const;
+export const LINE_COLS = 1440;
+export const LINE_ROWS = 721;
+const LINE_CELLS = LINE_COLS * LINE_ROWS;
+
+export async function loadLines(url: string): Promise<Int16Array> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`water lines: ${res.status}`);
+  let bytes = await res.arrayBuffer();
+  const head = new Uint8Array(bytes, 0, 2);
+  if (head[0] === 0x1f && head[1] === 0x8b) bytes = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  return new Int16Array(bytes);
+}
+
+/** One line's grid (0 = mean sea level has none). */
+export const lineField = (lines: Int16Array, line: number) => (line > 0 ? lines.subarray((line - 1) * LINE_CELLS, line * LINE_CELLS) : undefined);
+
+/** The line's height above mean sea level at a place, metres. */
+export function lineAt(field: Int16Array | undefined, lng: number, lat: number) {
+  if (!field) return 0;
+  const x = ((((lng + 180) % 360) + 360) % 360) * 4;
+  const y = Math.min(LINE_ROWS - 1.0001, Math.max(0, (90 - lat) * 4));
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const fx = x - x0;
+  const fy = y - y0;
+  const x1 = (x0 + 1) % LINE_COLS;
+  const a = field[y0 * LINE_COLS + x0];
+  const b = field[y0 * LINE_COLS + x1];
+  const c = field[(y0 + 1) * LINE_COLS + x0];
+  const d = field[(y0 + 1) * LINE_COLS + x1];
+  return ((a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy) / 100;
+}

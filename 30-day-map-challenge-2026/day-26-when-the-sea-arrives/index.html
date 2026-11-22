@@ -24,13 +24,13 @@
     </header>
 
     <aside id="figures" class="card" aria-live="polite">
-      <p class="label">Sea level at the centre, <span id="here-year">2020</span></p>
-      <p class="here"><b id="here">+0.00 m</b> <span id="here-range"></span></p>
+      <p class="label">Sea level rise at the centre, <span id="here-year">2020</span></p>
+      <p class="here"><b id="here">+0.00 m</b> <span id="here-range"></span><span id="here-line"></span></p>
       <dl>
         <div><dt><i class="swatch water"></i>Land the sea reaches, in view</dt><dd id="area">0 km²</dd></div>
         <div><dt>People who live there</dt><dd id="people">none</dd></div>
       </dl>
-      <p id="defended" hidden><i class="swatch hatch"></i><span><b id="defended-area"></b> already lie below this sea, kept dry by dikes and pumps. <b id="defended-people"></b> people live there.</span></p>
+      <p id="defended" hidden><i class="swatch hatch"></i><span><b id="defended-area"></b> already lie below this water today, most of it behind dikes and pumps. <b id="defended-people"></b> people live there.</span></p>
     </aside>
 
     <section id="timeline" class="card" aria-label="Year and scenario">
@@ -44,6 +44,7 @@
       </div>
       <div class="row options">
         <div><span class="label">Emissions</span><div id="scenario" role="radiogroup" aria-label="Emissions scenario" class="segmented"></div></div>
+        <div><span class="label">Water</span><div id="line" role="radiogroup" aria-label="Water line" class="segmented"></div></div>
         <div>
           <span class="label">Estimate</span>
           <div id="quantile" role="radiogroup" aria-label="Estimate" class="segmented">
@@ -56,7 +57,7 @@
     </section>
 
     <footer id="credits">
-      <span class="long">Sea-level projections: <b>IPCC AR6</b>, via the NASA Sea Level Projection Tool · Coastal terrain: DeltaDTM · Population: GHS-POP 2025, European Commission JRC · Flooding calculated and mapped with <b>Tileflow</b></span>
+      <span class="long">Sea-level projections: <b>IPCC AR6</b>, via the NASA Sea Level Projection Tool · Coastal terrain: DeltaDTM · Water lines: GTSM-ERA5-E, Deltares · Population: GHS-POP 2025, European Commission JRC · Flooding calculated and mapped with <b>Tileflow</b></span>
       <span class="short">Projections: <b>IPCC AR6</b> via NASA · Mapped with <b>Tileflow</b></span>
       <button id="about" type="button">About the data</button>
     </footer>
@@ -70,6 +71,11 @@
         likely range. The NASA Sea Level Change Team hosts them in the IPCC AR6 Sea Level Projection Tool.
       </p>
       <p>
+        <b>The water line.</b> The projections are of mean sea level. "High tide" adds the water level that the sea exceeds 5 % of
+        the time, and "Yearly flood" the highest still water level of a typical year, tide plus storm surge; both are relative to
+        mean sea level, from the GTSM-ERA5-E reanalysis by Deltares (1950–2024), and assume tides and storms stay as they are.
+      </p>
+      <p>
         <b>The flooding is our calculation.</b> We compare each projected sea level with the elevation of the ground, and let the
         water in only where it can flow from today's ocean: low land behind higher ground stays dry until the sea
         tops it. Land already below the projected sea in 2020 is hatched: dikes and pumps keep it dry today. The elevation is Tileflow
@@ -78,7 +84,7 @@
         satellite lidar, at about 300 m. The population is GHS-POP 2025 from the European Commission's Joint Research Centre.
       </p>
       <p>
-        <b>What it leaves out.</b> Mean sea level only: no tides, storm surges or waves, which reach higher. No defences beyond those
+        <b>What it leaves out.</b> Waves, rare storms beyond the yearly flood, and changes in tides and storms. No defences beyond those
         visible in the elevation data. Elevation models have errors of decimetres to metres on low coasts. Read this as an exploration of the projections, not as a flood-risk assessment for any property.
       </p>
       <h3>Sources</h3>
@@ -86,6 +92,7 @@
         <li>Fox-Kemper, B., et al. (2021). Ocean, Cryosphere and Sea Level Change. In <i>Climate Change 2021: The Physical Science Basis</i>, IPCC AR6 WG1, pp. 1211–1362. doi:10.1017/9781009157896.011</li>
         <li>Garner, G. G., et al. (2021). IPCC AR6 Sea Level Projections. Version 20210809. doi:10.5281/zenodo.5914709</li>
         <li>Kopp, R. E., et al. (2023). The Framework for Assessing Changes To Sea-level (FACTS) v1.0. <i>Geoscientific Model Development</i> 16, 7461–7489. doi:10.5194/gmd-16-7461-2023</li>
+        <li>Muis, S., Aleksandrova, N., Veenstra, J., Gwee, R. (2025). GTSM-ERA5-E: statistics of still water levels 1950–2024. Zenodo. doi:10.5281/zenodo.14671593 (CC BY 4.0). Aleksandrova, N., et al. (2026). <i>Earth System Science Data</i> 18, 5759.</li>
         <li>Schiavina, M., Freire, S., Carioli, A., MacManus, K. (2023). GHS-POP R2023A. European Commission, Joint Research Centre. doi:10.2905/2FF68A52-5B5B-4A22-8F40-C41DA8332CFE (CC BY 4.0)</li>
         <li>Pronk, M., Hooijer, A., Eilander, D., et al. (2024). DeltaDTM: A global coastal digital terrain model. <i>Scientific Data</i> 11, 273. doi:10.1038/s41597-024-03091-9. Dataset doi:10.4121/21997565 (CC BY 4.0). Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.</li>
         <li>Elevation elsewhere: Tileflow Terrain, from Mapterhorn sources. Map data © OpenStreetMap contributors.</li>

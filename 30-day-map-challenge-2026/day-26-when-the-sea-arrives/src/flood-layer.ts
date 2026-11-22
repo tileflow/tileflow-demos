@@ -5,7 +5,7 @@
 // crosses zero: interpolated between samples, it stays smooth at any zoom.
 import type {CustomLayerInterface, CustomRenderMethodInput, Map as MapLibreMap} from 'maplibre-gl';
 import type {Raster} from './flood-worker';
-import {CELLS, YEARS} from './sea-level';
+import {CELLS, LINE_COLS, LINE_ROWS, YEARS} from './sea-level';
 
 const VS = `#version 300 es
 in vec2 a_pos;
@@ -26,6 +26,8 @@ uniform sampler2D u_field;   // r: elevation, g: spill height, metres
 uniform sampler2D u_rise;    // centimetres, 360 x (181 x decades)
 uniform vec4 u_box;          // Mercator origin and size of the raster
 uniform float u_year;        // fractional index into the decades
+uniform sampler2D u_line;    // centimetres above mean sea level, 0.25 degree
+uniform float u_lineOn;      // 0..1: how much of the water line is added
 uniform float u_time;
 uniform float u_alpha;
 uniform float u_pulse;       // 0..1: the water front glows while the year moves
@@ -52,6 +54,19 @@ float riseAt(vec2 ll, float year) {
   float i1 = min(i0 + 1.0, ${YEARS.length - 1}.0);
   return mix(rise(ll, i0), rise(ll, i1), year - i0);
 }
+float lineAt(vec2 ll) {
+  vec2 p = vec2(mod(ll.x + 180.0, 360.0) * 4.0, clamp((90.0 - ll.y) * 4.0, 0.0, ${LINE_ROWS - 1}.999));
+  vec2 i0 = floor(p);
+  vec2 f = p - i0;
+  int x0 = int(i0.x);
+  int x1 = (x0 + 1) % ${LINE_COLS};
+  int y0 = int(i0.y);
+  float a = texelFetch(u_line, ivec2(x0, y0), 0).r;
+  float b = texelFetch(u_line, ivec2(x1, y0), 0).r;
+  float c = texelFetch(u_line, ivec2(x0, y0 + 1), 0).r;
+  float d = texelFetch(u_line, ivec2(x1, y0 + 1), 0).r;
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y) / 100.0;
+}
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
   vec2 i = floor(p);
@@ -66,8 +81,9 @@ void main() {
   if (spill < -900.0 || elev < -5000.0) discard; // today's ocean and other water: the map draws them
   vec2 merc = u_box.xy + v_uv * u_box.zw;
   vec2 ll = vec2(merc.x * 360.0 - 180.0, degrees(atan(sinh(PI * (1.0 - 2.0 * merc.y)))));
-  float sea = riseAt(ll, u_year);
-  float today = riseAt(ll, 0.0);
+  float line = u_lineOn > 0.0 ? lineAt(ll) * u_lineOn : 0.0;
+  float sea = riseAt(ll, u_year) + line;
+  float today = riseAt(ll, 0.0) + line;
   float a = sea - spill;
   float aa = max(fwidth(a), 1e-4);
   float wet = smoothstep(-aa, aa, a);
@@ -126,6 +142,10 @@ export class FloodLayer implements CustomLayerInterface {
   private vao?: WebGLVertexArrayObject;
   private rise?: WebGLTexture;
   private pendingRise?: Int16Array;
+  private line?: WebGLTexture;
+  private pendingLine?: Int16Array | null;
+  private lineOn = 0;
+  private lineTarget = 0;
   private slots: Slot[] = [];
   private pending?: Raster;
   private loc: Record<string, WebGLUniformLocation | null> = {};
@@ -143,7 +163,7 @@ export class FloodLayer implements CustomLayerInterface {
     this.map = map;
     this.gl = gl;
     this.program = compile(gl, VS, FS);
-    for (const n of ['u_matrix', 'u_size', 'u_field', 'u_rise', 'u_box', 'u_year', 'u_time', 'u_alpha', 'u_pulse'])
+    for (const n of ['u_matrix', 'u_size', 'u_field', 'u_rise', 'u_box', 'u_year', 'u_time', 'u_alpha', 'u_pulse', 'u_line', 'u_lineOn'])
       this.loc[n] = gl.getUniformLocation(this.program, n);
     this.vao = gl.createVertexArray()!;
     gl.bindVertexArray(this.vao);
@@ -154,6 +174,7 @@ export class FloodLayer implements CustomLayerInterface {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.bindVertexArray(null);
     if (this.pendingRise) this.setRise(this.pendingRise);
+    if (this.pendingLine !== undefined) this.setLine(this.pendingLine);
     if (this.pending) this.setRaster(this.pending);
   }
 
@@ -177,6 +198,23 @@ export class FloodLayer implements CustomLayerInterface {
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, 360, (CELLS / 360) * YEARS.length, 0, gl.RED, gl.FLOAT, Float32Array.from(field));
     for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
+    this.map?.triggerRepaint();
+  }
+
+  /** A water line above mean sea level (centimetres, 0.25 degree), or null for mean sea level. */
+  setLine(field: Int16Array | null) {
+    const gl = this.gl;
+    if (!gl) return void (this.pendingLine = field);
+    this.pendingLine = undefined;
+    if (field) {
+      if (!this.line) this.line = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, this.line);
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, LINE_COLS, LINE_ROWS, 0, gl.RED, gl.FLOAT, Float32Array.from(field));
+      for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.NEAREST);
+    }
+    // from mean sea level the water rises to the line, and sinks back when it is turned off
+    this.lineTarget = field ? 1 : 0;
     this.map?.triggerRepaint();
   }
 
@@ -243,6 +281,7 @@ export class FloodLayer implements CustomLayerInterface {
       moving = true;
     }
     this.pulse += ((moving ? 1 : 0) - this.pulse) * Math.min(1, dt * 4);
+    this.lineOn += Math.sign(this.lineTarget - this.lineOn) * Math.min(Math.abs(this.lineTarget - this.lineOn), dt / 1.2);
     for (const s of this.slots) s.alpha += Math.sign(s.target - s.alpha) * Math.min(Math.abs(s.target - s.alpha), dt / 0.35);
     // the newest raster is complete once it has faded in; the older ones go
     const top = this.slots[this.slots.length - 1];
@@ -259,6 +298,12 @@ export class FloodLayer implements CustomLayerInterface {
     gl.bindTexture(gl.TEXTURE_2D, this.rise);
     gl.uniform1i(this.loc.u_rise, 1);
     gl.uniform1i(this.loc.u_field, 0);
+    if (this.line) {
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, this.line);
+    }
+    gl.uniform1i(this.loc.u_line, 2);
+    gl.uniform1f(this.loc.u_lineOn, this.line ? this.lineOn : 0);
     gl.uniform1f(this.loc.u_year, this.year);
     gl.uniform1f(this.loc.u_time, (now - this.start) / 1000);
     gl.uniform1f(this.loc.u_pulse, this.pulse);

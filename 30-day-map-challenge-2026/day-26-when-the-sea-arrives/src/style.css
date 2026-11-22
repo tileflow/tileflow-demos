@@ -133,3 +133,5 @@ h1::before { content: ''; display: block; width: 34px; height: 10px; margin-bott
   #figures dt { font-size: 11px; }
 }
 #about-dialog h2:focus { outline: none; }
+#here-line { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+#here-line:empty { display: none; }
