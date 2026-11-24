@@ -176,7 +176,9 @@ def extract(archive):
         stops = {
             row["stop_id"]: {
                 "name": row["stop_name"], "code": row["stop_code"],
-                "coordinate": [float(row["stop_lon"]), float(row["stop_lat"])]
+                "coordinate": [float(row["stop_lon"]), float(row["stop_lat"])],
+                **({"platform": row["platform_code"].strip()} if row.get("platform_code", "").strip() else {}),
+                **({"indoorLevel": "E"} if row["stop_desc"].strip() == "Sisäterminaali E" else {})
             }
             for row in rows if row["stop_id"] in stop_ids
         }

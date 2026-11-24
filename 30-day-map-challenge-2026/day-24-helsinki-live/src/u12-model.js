@@ -575,6 +575,12 @@ export function createU12Model(vehicle = {}) {
   const plate = fleet ? 'YMN-' + (Number(fleet) - 600) : '';
   const m = materials();
   const leaves = [];
+  const axles = AXLES.map((z) => {
+    const axle = new T.Group();
+    axle.position.set(0, 0.48, z);
+    root.add(axle);
+    return axle;
+  });
   box(fixed, m.black, 0, 0.33, 0, 2.1, 0.29, 10.8, 0.1);
   for (const side of [-1, 1]) {
     const artwork = imageMaterial(sideArt(side, fleet));
@@ -582,7 +588,7 @@ export function createU12Model(vehicle = {}) {
     skinSection(shell, side, artwork, fixed);
     skinSection(shell, side, m.glass, fixed, HALF - 0.024);
     for (const z of AXLES) {
-      rim(fixed, side, z, m);
+      rim(axles[AXLES.indexOf(z)], side, z, m);
       arcTrim(fixed, side, z, z < 0 ? m.blue : m.white);
     }
     if (side === 1)
@@ -614,9 +620,13 @@ export function createU12Model(vehicle = {}) {
   interior(fixed, m);
   roof(fixed, m);
   const boards = signs(fixed);
+  for (const axle of axles) {
+    for (const part of axle.children) part.position.sub(axle.position);
+    batch(axle);
+  }
   batch(fixed);
   batch(brakeLights);
-  instances.set(root, {boards, leaves, brakeLights, lastSign: null});
+  instances.set(root, {boards, leaves, axles, brakeLights, lastSign: null});
   updateU12Model(root, vehicle);
   return root;
 }
@@ -625,7 +635,10 @@ export function createU12Model(vehicle = {}) {
 export function updateU12Model(root, vehicle, opening = vehicle.doors === true ? 1 : 0) {
   const state = instances.get(root);
   if (!state) return;
-  const {boards, leaves, brakeLights} = state;
+  const {boards, leaves, axles, brakeLights} = state;
+  if (Number.isFinite(vehicle.wheelDistance)) {
+    for (const axle of axles) axle.rotation.x = -(vehicle.wheelDistance / 0.48) % (Math.PI * 2);
+  }
   for (const {leaf, direction, width} of leaves) {
     leaf.position.set(Math.min(1, opening * 4) * 0.073, 0, direction * opening * width);
   }

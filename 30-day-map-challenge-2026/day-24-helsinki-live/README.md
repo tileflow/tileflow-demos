@@ -15,6 +15,14 @@ From the repository root, install with `pnpm install --frozen-lockfile` and run 
 - [HSL's published GTFS ZIP](https://infopalvelut.storage.hsldev.com/gtfs/hsl.zip) supplies the route shapes, stop order and stop names. The catalogue includes its publication date and validity range. Refresh with `python3 scripts/prepare_network.py /path/to/hsl.zip` before the catalogue expires, then rebuild. Diversions can differ from the published street geometry.
 - Transit data © Helsinki Regional Transport (HSL), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The initial catalogue was delivered on 24 November 2026. Map and map-data credits are provided by Streets.
 
+## Stops on the street map
+
+Select a bus to see its next platform. At street zoom the anchored card opens the stop’s departures. Two pause bars mean HSL reports the vehicle at that platform. The open-door symbol requires a recent door reading for the selected trip. The detailed U12 wheels roll with distance along the trip.
+
+Platform numbers and indoor terminal information come from HSL GTFS. Shelter and bench records are matched to individual boarding points by HSL code and proximity. From zoom 17, supplemental mapped outdoor shelters appear with schematic roof heights and supports. Streets supplies building-tagged shelters directly. Other platforms retain their map symbol. A shelter symbol indicates a recorded shelter even if its outline is unknown.
+
+The separate facilities extract is © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0. To refresh it after the GTFS catalogue, install Python’s `osmium` package and run `python3 scripts/prepare_facilities.py Helsinki.osm.pbf` with the [BBBike Helsinki extract](https://download.bbbike.org/osm/bbbike/Helsinki/). The initial snapshot is from 21 November 2026.
+
 ## Vehicles and road placement
 
 The 2026 Nobina Yutong U12-B is reconstructed from the Finnish manufacturer's [dimensions and equipment](https://www.yutong.fi/static/res/2026/6/6/product/cpzl/6b6b7eed47ad452a9c0f24c10b916cea.pdf), the [Nobina 1523 fleet record](https://bussikirjasto.fi/esb/kortti.php?haku=YMN-923), and [VynedJ's photograph of Nobina 1526](https://commons.wikimedia.org/wiki/File:Nobina_1526_20260822.jpg). The Helsinki configuration has a 12.17 m body, a 6.00 m wheelbase and front, middle and rear door groups with 2, 2 and 1 leaves. The mesh and its graphics are drawn in the demo. Verified Nobina fleet IDs 1503–1532 use this body; other vehicles have a generic symbol. The opening view prefers an active U12 on line 21. Select **Street view** to inspect the bus at street level.

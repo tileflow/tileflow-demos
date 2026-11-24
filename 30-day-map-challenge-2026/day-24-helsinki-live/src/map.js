@@ -3,6 +3,7 @@ import {Marker, LngLatBounds} from 'maplibre-gl';
 import {distance, heading, splitShape} from './route-track.js';
 import {mapCarriageways} from './carriageways.js';
 import {createBusLayer} from './bus-model.js';
+import {createStopCard} from './stop-card.js';
 
 const fc = (features) => ({type: 'FeatureCollection', features});
 const feature = (type, coordinates, properties = {}) => ({
@@ -11,6 +12,35 @@ const feature = (type, coordinates, properties = {}) => ({
   geometry: {type, coordinates},
 });
 const empty = fc([]);
+function shelterGeometry(id, ring) {
+  const roof = feature('Polygon', [ring], {id, part: 'roof'});
+  // Four inset supports describe a rectangular canopy at map scale without inventing walls.
+  if (ring.length !== 5) return [roof];
+  const corners = ring.slice(0, -1);
+  const supports = corners.map(([x, y], i) => {
+    const [oppositeX, oppositeY] = corners[(i + 2) % 4];
+    const lng = x + (oppositeX - x) * 0.08,
+      lat = y + (oppositeY - y) * 0.08;
+    const dy = 0.075 / 111320,
+      dx = dy / Math.cos((lat * Math.PI) / 180);
+    return [
+      [lng - dx, lat - dy],
+      [lng + dx, lat - dy],
+      [lng + dx, lat + dy],
+      [lng - dx, lat + dy],
+      [lng - dx, lat - dy],
+    ];
+  });
+  return [
+    roof,
+    feature(
+      'MultiPolygon',
+      supports.map((ring) => [ring]),
+      {id, part: 'support'},
+    ),
+  ];
+}
+
 const vehicleOpacity = ['case', ['get', 'secondary'], 0.68, 1];
 const dotOpacity = [
   'interpolate',
@@ -22,7 +52,7 @@ const dotOpacity = [
   ['case', ['get', 'onRoute'], 0, vehicleOpacity],
 ];
 
-export async function makeMap(network, handlers, timeOfDay) {
+export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   const controller = createTileflowMap(document.querySelector('#map'), {
     source: {map: 'helsinki-streets', manifestUrl: import.meta.env.BASE_URL + 'tileflow/manifest.json'},
     theme: 'light',
@@ -53,7 +83,24 @@ export async function makeMap(network, handlers, timeOfDay) {
   }
   const align = mapCarriageways(map);
   const allRoutes = fc(lines);
-  const allStops = fc(Object.entries(network.stops).map(([id, s]) => feature('Point', s.coordinate, {id})));
+  const signKind = (id) =>
+    network.stops[id].platform || network.stops[id].indoorLevel
+      ? 'platform'
+      : amenities[id]?.shelter
+        ? 'sheltered-stop'
+        : 'bus-stop';
+  const allStops = fc(
+    Object.entries(network.stops).map(([id, s]) => feature('Point', s.coordinate, {id, sign: signKind(id)})),
+  );
+  const roofs = fc(
+    Object.entries(amenities).flatMap(([id, data]) =>
+      network.stops[id] && !network.stops[id].indoorLevel
+        ? (data.roofs ?? []).flatMap((ring) => shelterGeometry(id, ring))
+        : [],
+    ),
+  );
+  const stopCard = createStopCard(map, network.stops, (id) => handlers.select('stop', id));
+
   const label = document.createElement('button');
   label.type = 'button';
   label.className = 'bus-label';
@@ -93,22 +140,32 @@ export async function makeMap(network, handlers, timeOfDay) {
     ctx.stroke();
     map.addImage('hsl-chevron', ctx.getImageData(0, 0, 32, 32), {pixelRatio: 2});
   }
-  const response = await fetch(import.meta.env.BASE_URL + 'bus-stop.svg');
-  if (!response.ok) throw Error('Could not load the stop symbol.');
-  const signArt = await response.text();
-  const signPixels = await Promise.all(
-    ['#007ac9', '#a33866'].map(async (ink) => {
-      const img = new Image();
-      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(signArt.replaceAll('#007ac9', ink));
-      await img.decode();
-      const canvas = document.createElement('canvas');
-      canvas.width = 64;
-      canvas.height = 72;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 64, 72);
-      return ctx.getImageData(0, 0, 64, 72);
-    }),
-  );
+  const signs = (
+    await Promise.all(
+      ['bus-stop', 'sheltered-stop', 'platform'].map(async (kind) => {
+        const response = await fetch(import.meta.env.BASE_URL + kind + '.svg');
+        if (!response.ok) throw Error('Could not load a stop symbol.');
+        const artwork = await response.text();
+        return Promise.all(
+          [
+            ['local', '#007ac9'],
+            ['trip', '#a33866'],
+          ].map(async ([tone, ink]) => {
+            const img = new Image();
+            img.src =
+              'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(artwork.replaceAll('#007ac9', ink));
+            await img.decode();
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 72;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 64, 72);
+            return {id: tone + '-' + kind, pixels: ctx.getImageData(0, 0, 64, 72)};
+          }),
+        );
+      }),
+    )
+  ).flat();
   const lowLight = () => ['dusk', 'night'].includes(timeOfDay);
   const routeColor = () => (lowLight() ? '#ff94bd' : '#a33866');
   const routeCase = () => (lowLight() ? '#48233b' : '#fffcf6');
@@ -149,12 +206,18 @@ export async function makeMap(network, handlers, timeOfDay) {
           '<a href="https://www.hsl.fi/en/opendata" target="_blank" rel="noopener noreferrer">© HSL</a>',
       });
       sources('hsl-stops', allStops);
+      sources('hsl-shelters', roofs, {
+        tolerance: 0.05,
+        maxzoom: 19,
+        attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
+      });
       sources('hsl-focus', focus);
       sources('hsl-calls', calls);
       sources('hsl-arrows', arrows);
       sources('hsl-previews', previews, {lineMetrics: true, tolerance: 0.08, maxzoom: 18});
-      if (!map.hasImage('hsl-stop-sign')) map.addImage('hsl-stop-sign', signPixels[0], {pixelRatio: 2});
-      if (!map.hasImage('hsl-trip-stop')) map.addImage('hsl-trip-stop', signPixels[1], {pixelRatio: 2});
+      for (const sign of signs) {
+        if (!map.hasImage(sign.id)) map.addImage(sign.id, sign.pixels, {pixelRatio: 2});
+      }
       addChevron();
       sources('hsl-vehicles', renderPoints);
       add(
@@ -230,8 +293,27 @@ export async function makeMap(network, handlers, timeOfDay) {
         },
         building,
       );
+      // Only independently mapped outdoor shelter footprints have any physical volume.
+      for (const [part, base, top, color] of [
+        ['support', 0, 2.35, '#476f71'],
+        ['roof', 2.35, 2.52, '#6c9392'],
+      ]) {
+        add({
+          id: 'hsl-shelter-' + part,
+          filter: ['==', ['get', 'part'], part],
+          type: 'fill-extrusion',
+          source: 'hsl-shelters',
+          minzoom: 17,
+          paint: {
+            'fill-extrusion-base': base,
+            'fill-extrusion-height': top,
+            'fill-extrusion-color': color,
+            'fill-extrusion-vertical-gradient': false,
+          },
+        });
+      }
       const stopLayout = {
-        'icon-image': 'hsl-stop-sign',
+        'icon-image': ['concat', 'local-', ['get', 'sign']],
         'icon-anchor': 'bottom',
         'icon-padding': 1,
         'icon-ignore-placement': true,
@@ -241,7 +323,7 @@ export async function makeMap(network, handlers, timeOfDay) {
         type: 'symbol',
         source: 'hsl-stops',
         minzoom: 13.5,
-        layout: {...stopLayout, 'icon-size': width(0.42, 0.7)},
+        layout: {...stopLayout, 'icon-size': width(0.46, 0.86)},
       });
       add({
         id: 'hsl-platform-light',
@@ -249,9 +331,12 @@ export async function makeMap(network, handlers, timeOfDay) {
         source: 'hsl-calls',
         filter: ['==', ['get', 'highlight'], true],
         paint: {
-          'circle-color': '#ae3969',
-          'circle-opacity': ['case', ['get', 'boarding'], 0.34, 0.19],
-          'circle-radius': ['case', ['get', 'boarding'], 16, 12],
+          'circle-color': ['case', ['get', 'atStop'], '#56c6ac', '#ac6487'],
+          'circle-opacity': ['case', ['get', 'atStop'], 0.36, 0.22],
+          'circle-stroke-color': ['case', ['get', 'atStop'], '#206c67', '#90516e'],
+          'circle-stroke-width': 1.4,
+          'circle-pitch-alignment': 'map',
+          'circle-radius': ['case', ['get', 'atStop'], 16, 11],
         },
       });
       add({
@@ -262,8 +347,8 @@ export async function makeMap(network, handlers, timeOfDay) {
         paint: {'icon-opacity': ['case', ['boolean', ['get', 'passed'], false], 0.52, 1]},
         layout: {
           ...stopLayout,
-          'icon-image': 'hsl-trip-stop',
-          'icon-size': width(0.53, 0.84),
+          'icon-image': ['concat', 'trip-', ['get', 'sign']],
+          'icon-size': width(0.56, 0.94),
           'icon-allow-overlap': showAllTripStops,
           'icon-ignore-placement': false,
         },
@@ -273,10 +358,16 @@ export async function makeMap(network, handlers, timeOfDay) {
         type: 'symbol',
         source: 'hsl-calls',
         filter: ['get', 'highlight'],
-        layout: {...stopLayout, 'icon-image': 'hsl-trip-stop', 'icon-size': 0.94, 'icon-allow-overlap': true},
+        layout: {
+          ...stopLayout,
+          'icon-image': ['concat', 'trip-', ['get', 'sign']],
+          'icon-size': 0.94,
+          'icon-allow-overlap': true,
+        },
       });
       add({
         id: 'hsl-platform-name',
+        maxzoom: 15.3,
         type: 'symbol',
         source: 'hsl-calls',
         minzoom: 13,
@@ -375,7 +466,7 @@ export async function makeMap(network, handlers, timeOfDay) {
     );
   }
   map.on('click', (e) => {
-    const stopLayers = ['hsl-next-stop', 'hsl-call', 'hsl-station'];
+    const stopLayers = ['hsl-next-stop', 'hsl-call', 'hsl-station', 'hsl-shelter-roof'];
     let hit,
       distance = 23;
     for (const bus of handlers.visible(performance.now(), map.getBounds())) {
@@ -460,7 +551,8 @@ export async function makeMap(network, handlers, timeOfDay) {
       set('hsl-previews', previews);
       set('hsl-arrows', arrows);
     },
-    geometry(patterns, ids, progress, routeId) {
+    geometry(patterns, ids, progress, routeId, call) {
+      stopCard.update(call, amenities);
       const fullTrip = Boolean(progress && patterns.length);
       if (showAllTripStops !== fullTrip) {
         showAllTripStops = fullTrip;
@@ -490,9 +582,10 @@ export async function makeMap(network, handlers, timeOfDay) {
             feature('Point', network.stops[id].coordinate, {
               id,
               name: network.stops[id].name,
+              sign: signKind(id),
               passed: fullTrip && passedStops.has(id),
               highlight: progress ? id === progress.currentStop : ids.length === 1,
-              boarding: Boolean(progress?.boarding && id === progress.currentStop),
+              atStop: id === call?.id && ['doors', 'at'].includes(call.state),
             }),
           ),
       );
@@ -525,7 +618,7 @@ export async function makeMap(network, handlers, timeOfDay) {
       if (number.textContent !== network.routes[bus.route].number)
         number.textContent = network.routes[bus.route].number;
       if (destination.textContent !== title) destination.textContent = title;
-      label.hidden = map.getZoom() >= 18.85;
+      label.hidden = map.getZoom() >= 18.85 || stopCard.nearBus(coordinate);
       const last = marker.getLngLat();
       if (!last || last.lng !== coordinate[0] || last.lat !== coordinate[1]) marker.setLngLat(coordinate);
       if (current !== bus.id) {

@@ -6,6 +6,8 @@ import {choosePattern, move, progress as tripOffset, samplePose, upcoming} from 
 import {isNobinaU12} from './u12-model.js';
 import {distance, routePreview, routeTrack} from './route-track.js';
 import {trackDetail} from './door-feed.js';
+import {platformInfo, vehicleAtStop, callForBus, matchesService} from './stop-call.js';
+import {statusIcon} from './stop-card.js';
 
 const $ = (id) => document.getElementById(id);
 const escape = (v) =>
@@ -34,6 +36,7 @@ let nearbyFix,
 const stamps = {positions: 0, arrivals: 0},
   errors = {};
 const freshArrivals = () => now() - stamps.arrivals < 75;
+let amenities = {};
 let network,
   view,
   timeOfDay,
@@ -103,7 +106,8 @@ function visible(time, bounds) {
       destination: selected ? titleFor(bus) : undefined,
       selected,
       stopped: bus.status === 1 && (bus.speed == null || bus.speed < 1),
-      doors: selected && door?.time > now() - 8 ? door.open : null,
+      doors: selected && door?.key === bus.key && door.time > now() - 8 ? door.open : null,
+      wheelDistance: bus.track && isNobinaU12(bus.id) ? tripOffset(bus, time) : undefined,
       line: network.routes[bus.route].number,
     });
   }
@@ -134,11 +138,22 @@ function subscribeBus(id) {
       !current ||
       current.route !== route ||
       Number(reading.dir) - 1 !== current.direction ||
+      !matchesService(current.key, reading) ||
       !Number.isFinite(reading.tsi) ||
       Math.abs(now() - reading.tsi) > 35
     )
       return;
-    if (reading.drst === 0 || reading.drst === 1) door = {open: reading.drst === 1, time: reading.tsi};
+    if (
+      (reading.drst === 0 || reading.drst === 1) &&
+      (door?.key !== current.key || reading.tsi >= door.time)
+    ) {
+      door = {
+        open: reading.drst === 1,
+        time: reading.tsi,
+        key: current.key,
+        stopId: reading.stop && String(reading.stop),
+      };
+    }
     if (Number.isFinite(reading.long) && Number.isFinite(reading.lat)) {
       vehicles.set(
         id,
@@ -151,13 +166,14 @@ function subscribeBus(id) {
             timestamp: reading.tsi,
             bearing: reading.hdg ?? current.bearing,
             speed: reading.spd ?? current.speed,
-            status: reading.drst === 1 ? 1 : current.status,
           },
           performance.now(),
         ),
       );
       updateFleet();
     }
+    updateGeometry();
+    paint();
   }).catch(() => {});
 }
 function frameMap() {
@@ -344,18 +360,13 @@ function startSelection() {
   const closest = recent.reduce((a, b) => (score(a) < score(b) ? a : b));
   select('bus', closest.id, 'startup');
 }
-function doorsOpen() {
-  return Boolean(door?.time > now() - 8 && door.open);
-}
-function stoppedAtPlatform(bus) {
-  return doorsOpen() || (bus.status === 1 && (bus.speed == null || bus.speed < 1));
-}
 function updateGeometry() {
   if (!view || !network) return;
   const {kind, id} = selection;
   let patterns = [],
     ids = [],
-    progress;
+    progress,
+    call;
   if (kind === 'bus') {
     const bus = vehicles.get(id),
       p = pattern(bus);
@@ -370,9 +381,10 @@ function updateGeometry() {
       const track = bus.track;
       const offset = track && track.line === network.shapes[p.shape] ? tripOffset(bus, performance.now()) : 0;
       const ahead = new Set(p.stops.filter((stop, i) => (p.stopOffsets?.[i] ?? Infinity) >= offset - 4));
+      call = callForBus(bus, p, remaining, door, network.stops, now());
+      if (call) call.line = network.routes[bus.route].number;
       progress = {
-        currentStop: stoppedAtPlatform(bus) && bus.stopId ? bus.stopId : remaining[0],
-        boarding: doorsOpen(),
+        currentStop: call?.id,
         passedStops: p.stops.filter((stop) => !ahead.has(stop)),
       };
       caption(
@@ -386,6 +398,7 @@ function updateGeometry() {
     caption('Route ' + network.routes[id].number + ' · ' + routeGroup().headsign, 'route');
   } else if (kind === 'stop') {
     ids = [id];
+    call = {id};
     caption('Stop · ' + network.stops[id].name, 'stop');
   } else if (kind === 'nearby') {
     ids = nearestStops.map((s) => s.id);
@@ -397,12 +410,12 @@ function updateGeometry() {
     ids,
     progress?.passedStops,
     progress?.currentStop,
-    progress?.boarding,
+    call,
   ]);
   if (key !== lastGeometry) {
     lastGeometry = key;
     const routeId = kind === 'bus' ? vehicles.get(id)?.route : kind === 'route' ? id : undefined;
-    view.geometry(patterns, ids, progress, routeId);
+    view.geometry(patterns, ids, progress, routeId, call);
     if (selection.fullTrip) {
       const bus = vehicles.get(id);
       if (bus?.track) view.tripProgress(bus.track, tripOffset(bus, performance.now()));
@@ -422,7 +435,18 @@ function feedMessage({data: {name, data, timestamp, error}}) {
     for (const v of data) {
       if (now() - v.timestamp > 90) continue;
       seen.add(v.id);
-      vehicles.set(v.id, placeFix(vehicles.get(v.id), v, performance.now()));
+      const previous = vehicles.get(v.id);
+      const fix = placeFix(previous, {...v, statusTime: v.timestamp}, performance.now());
+      // A newer HFP location can arrive before this GTFS report carries its new stop.
+      if (fix === previous && previous.precise && v.timestamp >= (previous.statusTime ?? 0)) {
+        vehicles.set(v.id, {
+          ...previous,
+          stopId: v.stopId,
+          stopSequence: v.stopSequence,
+          status: v.status,
+          statusTime: v.timestamp,
+        });
+      } else vehicles.set(v.id, fix);
     }
     for (const [id, v] of vehicles)
       if (!seen.has(id) && (selection.kind !== 'bus' || selection.id !== id || now() - v.timestamp > 120))
@@ -458,9 +482,10 @@ function busDetail(id) {
     p = pattern(b),
     trip = freshArrivals() ? predictions.get(b.key) : null;
   const live = trip ? upcoming(trip.stops, now()) : [];
-  const stopName = network.stops[b.stopId]?.name;
-  const open = doorsOpen();
-  const atStop = stoppedAtPlatform(b);
+  const platform = vehicleAtStop(b, door, network.stops, now());
+  const atStop = Boolean(platform);
+  const open = platform?.state === 'doors';
+  const stopName = network.stops[platform?.id]?.name;
   const status =
     now() - b.timestamp > 20
       ? 'Delayed signal'
@@ -478,9 +503,9 @@ function busDetail(id) {
   const scheduleStops = pos >= 0 ? p.stops.slice(pos) : [];
   const rows = trip ? live.map((s) => [s.id, s.arrival || s.departure]) : scheduleStops.map((s) => [s, 0]);
   const next = rows[0];
-  const namedPlatform = atStop && next?.[0] === b.stopId;
+  const namedPlatform = atStop && next?.[0] === platform.id;
   const details = [];
-  if (status !== 'At stop' || !namedPlatform) details.push(status);
+  if (!atStop) details.push(status);
   if (atStop && stopName && !namedPlatform) details.push(stopName);
   if (b.speed != null && !(namedPlatform && b.speed < 0.5)) details.push(Math.round(b.speed * 3.6) + ' km/h');
   const boarding = selection.tripKey === b.key && selection.originStop;
@@ -496,7 +521,7 @@ function busDetail(id) {
   const nextLine =
     next && boarding !== next[0]
       ? '<div class="next-call"><span>' +
-        (atStop && next[0] === b.stopId ? 'At stop' : 'Next') +
+        (atStop && next[0] === platform.id ? 'At stop' : 'Next') +
         '</span> ' +
         escape(network.stops[next[0]]?.name ?? next[0]) +
         (next[1] ? ' · ' + eta(next[1]) : '') +
@@ -505,7 +530,7 @@ function busDetail(id) {
   const boardingLine = boarding
     ? '<div class="boarding-call"><span>' +
       (next?.[0] === boarding
-        ? atStop && boarding === b.stopId
+        ? atStop && boarding === platform.id
           ? 'At your stop'
           : 'Your stop is next'
         : 'Your stop') +
@@ -527,6 +552,12 @@ function busDetail(id) {
     escape(id.split('/').at(-1)) +
     (isNobinaU12(id) ? ' · Nobina Yutong U12' : '') +
     '</div>' +
+    (platform
+      ? '<span class="boarding-status">' +
+        statusIcon(platform.state) +
+        (open ? 'Doors open' : 'At stop') +
+        '</span>'
+      : '') +
     (details.length ? '<div class="status-text">' + escape(details.join(' · ')) + '</div>' : '') +
     '<div class="actions"><button class="action ' +
     (following ? 'active' : '') +
@@ -546,7 +577,7 @@ function busDetail(id) {
       ? '<div class="timeline">' +
         rows
           .slice(0, showAll ? Infinity : 5)
-          .map(([s, a]) => stopRow(s, a, s === (atStop && b.stopId ? b.stopId : rows[0][0])))
+          .map(([s, a]) => stopRow(s, a, s === (platform?.id ?? rows[0][0])))
           .join('') +
         '</div>'
       : empty(
@@ -646,6 +677,9 @@ function stopDetail(id) {
     '</div><h2 class="stop-heading">' +
     escape(s.name) +
     '</h2>' +
+    '<div class="platform-facts">' +
+    escape(platformInfo(s, amenities[id]).join(' · ')) +
+    '</div>' +
     '<div class="route-info">Routes ' +
     escape((servedBy.get(id) ?? []).map((r) => network.routes[r].number).join(' · ')) +
     '</div>' +
@@ -990,7 +1024,13 @@ function mapError(message) {
 async function init() {
   $('detail').innerHTML = empty('Loading the Helsinki network…');
   const base = new URL(import.meta.env.BASE_URL, location.href).href;
-  const result = await fetch(base + 'data/network.json');
+  const [result, facilities] = await Promise.all([
+    fetch(base + 'data/network.json'),
+    fetch(base + 'data/stop-facilities.json', {signal: AbortSignal.timeout(5000)})
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({})),
+  ]);
+  amenities = facilities;
   if (!result.ok) throw Error('Could not load the HSL network.');
   network = await result.json();
   const serviceDate = new Intl.DateTimeFormat('sv-SE', {timeZone: 'Europe/Helsinki'}).format(new Date());
@@ -1039,7 +1079,7 @@ async function init() {
   syncFeeds();
   showSearch();
   paint();
-  view = await makeMap(network, {visible, select, detach}, timeOfDay);
+  view = await makeMap(network, {visible, select, detach}, timeOfDay, amenities);
   view.setTimeOfDay(timeOfDay);
   if (selection.kind === 'nearby') refreshNearby();
   updateGeometry();
@@ -1085,6 +1125,7 @@ init().catch((e) => {
 });
 setInterval(() => {
   updateFleet();
+  updateGeometry();
   paint();
   draw();
 }, 1500);
