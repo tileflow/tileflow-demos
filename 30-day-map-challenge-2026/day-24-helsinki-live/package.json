@@ -1,0 +1,27 @@
+{
+  "name": "@tileflow-demos/helsinki-live",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5194",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4194",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@tileflow/core": "0.1.0-alpha.55",
+    "@tileflow/dom": "0.1.0-alpha.5",
+    "@tileflow/maps": "0.1.0-alpha.25",
+    "gtfs-realtime-bindings": "3.0.0",
+    "maplibre-gl": "6.16.0",
+    "mqtt": "5.16.1",
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "@tileflow/vite": "0.1.0-alpha.28",
+    "tileflow": "0.1.0-alpha.28",
+    "vite": "8.0.16"
+  }
+}

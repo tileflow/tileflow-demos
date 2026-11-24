@@ -1,12 +1,15 @@
 {
-  // maps.tileflow.dev: one folder per map (maps.tileflow.dev/<map-name>/), static files only.
+  // maps.tileflow.dev: one folder per map (maps.tileflow.dev/<map-name>/), static maps and the Helsinki HSL feed relay.
   // `node sites/maps/build.mjs` writes ./dist; the Deploy maps workflow publishes it. The account
   // comes from CLOUDFLARE_ACCOUNT_ID.
   "name": "tileflow-maps",
+  "main": "helsinki-feed.mjs",
   "compatibility_date": "2026-07-15",
   "workers_dev": false,
   "preview_urls": false,
   "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": ["/helsinki-live/api/*"],
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "none"

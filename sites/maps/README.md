@@ -4,7 +4,7 @@ Maps published from this repository, one folder each: `maps.tileflow.dev/<map-na
 the map's public address and never changes once shared. The bare domain redirects to tileflow.dev.
 
 `build.mjs` lists the maps and builds each app with its Vite `base` set to `/<map-name>/` (through the
-`MAP_BASE` variable). `wrangler.jsonc` serves the result as a static-assets Worker on the custom domain.
+`MAP_BASE` variable). `wrangler.jsonc` serves the result as static assets on the custom domain. For Helsinki Live it also relays HSL's public vehicle and arrival feeds at two fixed paths below `/helsinki-live/api/`.
 
 ```bash
 node sites/maps/build.mjs
