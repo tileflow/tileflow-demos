@@ -1,6 +1,7 @@
 import test from 'node:test';
+import {atOffset, routeTrack} from '../src/route-track.js';
 import assert from 'node:assert/strict';
-import {choosePattern, move, sample, tripKey, upcoming} from '../src/transit.js';
+import {choosePattern, move, recentTrail, sample, tripKey, upcoming} from '../src/transit.js';
 
 test('joins the service across midnight and distinguishes opposite directions', () => {
   const t = {startDate: '20261124', routeId: '1021', directionId: 0, startTime: '25:03:00'};
@@ -33,4 +34,79 @@ test('GPS fixes ignore older signals and freeze at the last observation', () => 
   assert.equal(move(second, a, 8000), second);
   const newRun = move(second, {...a, key: 'new', timestamp: 13}, 9000);
   assert.deepEqual(sample(newRun, 9000), a.coordinate);
+});
+
+test('the overview tail follows measured travel through a bend and fades while boarding', () => {
+  const road = {
+    track: routeTrack([
+      [24.91, 60.16],
+      [24.912, 60.16],
+      [24.912, 60.165],
+    ]),
+  };
+  const track = road.track;
+  const corner = track.offsets[1];
+  const fix = (stamp, offset) => ({key: 'A', timestamp: stamp, coordinate: atOffset(track, offset)});
+  const first = move(null, fix(100, corner - 24), 0, road);
+  assert.deepEqual(recentTrail(first, 0, 100), []);
+  const second = move(first, fix(107, corner + 26), 7000, road);
+  const third = move(second, fix(112, corner + 48), 12000, road);
+  const tail = recentTrail(third, 18000, 118);
+  assert.deepEqual(tail[1], track.line[1]);
+  assert.deepEqual(tail.at(-1), sample(third, 18000));
+  const fading = recentTrail(third, 34000, 138);
+  assert(fading.length > 1);
+  assert(fading[0][0] > tail[0][0]);
+  assert.deepEqual(recentTrail(third, 48000, 148), []);
+});
+
+test('the overview tail restarts after a lost signal, a trip change or a diversion', () => {
+  const road = {
+    track: routeTrack([
+      [24.91, 60.16],
+      [24.91, 60.18],
+    ]),
+  };
+  const a = {key: 'A', timestamp: 100, coordinate: [24.91, 60.16]};
+  const b = {...a, timestamp: 105, coordinate: [24.91, 60.1604]};
+  const bus = move(move(null, a, 0, road), b, 5000, road);
+  const precise = move(bus, {...b, precise: true}, 5100, road);
+  assert.deepEqual(
+    precise.recentOffsets.map(([stamp]) => stamp),
+    [100, 105],
+  );
+  for (const update of [
+    {...b, timestamp: 120},
+    {...b, key: 'B', timestamp: 106},
+    {...b, coordinate: [24.89, 60.155], timestamp: 106},
+  ]) {
+    const reacquired = move(precise, update, 9000, road);
+    assert.deepEqual(recentTrail(reacquired, 13000, update.timestamp), []);
+  }
+});
+
+test('a trail starts after the last unresolved crossing and has a bounded length', () => {
+  const track = routeTrack(
+    [
+      [24.91, 60.16],
+      [24.91, 60.18],
+    ],
+    undefined,
+    [[350, 400]],
+  );
+  const bus = {
+    track,
+    recentOffsets: [
+      [100, 0],
+      [110, 600],
+    ],
+    started: 0,
+    duration: 1000,
+    fromOffset: 0,
+    offset: 600,
+    timestamp: 110,
+  };
+  assert.deepEqual(recentTrail(bus, 625, 110), []);
+  assert.deepEqual(recentTrail(bus, 1000, 110)[0], atOffset(track, 400));
+  assert.deepEqual(recentTrail({...bus, offset: 1300}, 1000, 110)[0], atOffset(track, 750));
 });

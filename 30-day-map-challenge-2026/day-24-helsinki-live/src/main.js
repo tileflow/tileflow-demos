@@ -2,7 +2,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
 import {makeMap} from './map.js';
 import {helsinkiTimeOfDay} from './daylight.js';
-import {choosePattern, move, progress as tripOffset, samplePose, upcoming} from './transit.js';
+import {overviewStart, overviewEnd} from './fleet-lights.js';
+import {choosePattern, move, progress as tripOffset, recentTrail, samplePose, upcoming} from './transit.js';
 import {isNobinaU12} from './u12-model.js';
 import {distance, networkTrack, routePreview} from './route-track.js';
 import {trackDetail} from './door-feed.js';
@@ -302,12 +303,18 @@ function detach() {
 function updateFleet() {
   visibleFleet = [...vehicles.values()].filter((b) => now() - b.timestamp < 90);
 }
-function draw() {
+let lastFleetDraw = -Infinity;
+function draw(t = performance.now()) {
   if (!view) return;
+  lastFleetDraw = t;
+  const clock = Date.now() / 1000;
+  const overview = view.map.getZoom() < overviewEnd;
   view.drawVehicles(
     visibleFleet.filter(matchesDestination).map((bus) => {
-      const pose = displayedPose(bus, performance.now());
+      const pose = displayedPose(bus, t);
       return {
+        trail: overview && !pose.uncertain ? recentTrail(bus, t, clock) : undefined,
+        stale: clock - bus.timestamp > 30,
         id: bus.id,
         line: network.routes[bus.route].number,
         coordinate: pose.coordinate,
@@ -330,7 +337,7 @@ function drawPreviews(t) {
     const track = bus?.track;
     view.tripProgress(track, track ? tripOffset(bus, t) : 0);
   }
-  if (map.getZoom() >= 11.5) {
+  if (map.getZoom() >= overviewStart) {
     const bounds = map.getBounds();
     const align = map.getZoom() >= 15 ? view.align : undefined;
     for (const bus of visibleFleet) {
@@ -911,6 +918,7 @@ function paint() {
   }
 }
 function animate(t) {
+  if (view && view.map.getZoom() < overviewEnd && t - lastFleetDraw >= 400) draw(t);
   drawPreviews(t);
   if (view && selection.kind === 'bus') {
     const bus = vehicles.get(selection.id);

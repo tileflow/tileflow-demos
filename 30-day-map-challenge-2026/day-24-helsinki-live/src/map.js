@@ -3,6 +3,7 @@ import {Marker, LngLatBounds} from 'maplibre-gl';
 import {distance, heading, mappedSections, networkTrack, splitShape} from './route-track.js';
 import {mapCarriageways} from './carriageways.js';
 import {createBusLayer} from './bus-model.js';
+import {fleetLightLayers, overviewStart, overviewEnd, trailLayerIds} from './fleet-lights.js';
 import {createStopCard} from './stop-card.js';
 
 const fc = (features) => ({type: 'FeatureCollection', features});
@@ -41,17 +42,6 @@ function shelterGeometry(id, ring) {
   ];
 }
 
-const vehicleOpacity = ['case', ['get', 'secondary'], 0.68, 1];
-const dotOpacity = [
-  'interpolate',
-  ['linear'],
-  ['zoom'],
-  14.7,
-  vehicleOpacity,
-  15.6,
-  ['case', ['get', 'onRoute'], 0, vehicleOpacity],
-];
-
 export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   const controller = createTileflowMap(document.querySelector('#map'), {
     source: {map: 'helsinki-streets', manifestUrl: import.meta.env.BASE_URL + 'tileflow/manifest.json'},
@@ -63,6 +53,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   });
   const map = await controller.ready;
   if (!map) throw Error('Could not open the Streets map.');
+  let lights = fleetLightLayers(timeOfDay);
   let current = null,
     previews = empty,
     focus = empty,
@@ -236,7 +227,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         if (!map.hasImage(sign.id)) map.addImage(sign.id, sign.pixels, {pixelRatio: 2});
       }
       addChevron();
-      sources('hsl-vehicles', renderPoints);
+      sources('hsl-vehicles', renderPoints, {lineMetrics: true, tolerance: 0.12, maxzoom: 18});
       add(
         {
           id: 'hsl-network',
@@ -251,6 +242,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         },
         building,
       );
+      for (const layer of lights) if (layer.type === 'line') add(layer, building);
       for (const [id, color, w] of [
         ['hsl-route-case', routeCase(), 7.2],
         ['hsl-route', routeColor(), 4.6],
@@ -281,12 +273,13 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
             id: selected ? 'hsl-selected-preview' : 'hsl-preview',
             type: 'line',
             source: 'hsl-previews',
-            minzoom: 11.5,
+            minzoom: overviewStart,
             filter: ['==', ['get', 'selected'], selected],
             layout: {'line-cap': 'round', 'line-join': 'round'},
             paint: {
               'line-width': width(3.5, 8),
               'line-gradient': previewGradient(selected),
+              'line-opacity': ['interpolate', ['linear'], ['zoom'], overviewStart, 0, overviewEnd, 1],
             },
           },
           building,
@@ -410,40 +403,13 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         },
         paint: {'text-color': '#682843', 'text-halo-color': '#fffcf6', 'text-halo-width': 2},
       });
-      add({
-        id: 'hsl-vehicle',
-        type: 'circle',
-        source: 'hsl-vehicles',
-        paint: {
-          'circle-color': [
-            'case',
-            ['any', ['get', 'selected'], ['get', 'routeSelected']],
-            '#9c315c',
-            ['get', 'secondary'],
-            '#718894',
-            '#11618a',
-          ],
-          'circle-stroke-color': '#fff',
-          'circle-stroke-width': 1.5,
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            11,
-            ['case', ['get', 'secondary'], 2.5, 3.8],
-            18,
-            ['case', ['get', 'secondary'], 4.5, 7.5],
-          ],
-          'circle-opacity': dotOpacity,
-          'circle-stroke-opacity': dotOpacity,
-        },
-      });
+      for (const layer of lights) if (layer.type === 'circle') add(layer);
       add({
         id: 'hsl-numbers',
         type: 'symbol',
         source: 'hsl-vehicles',
         minzoom: 14,
-        filter: ['!', ['get', 'selected']],
+        filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['get', 'selected']]],
         layout: {
           'text-field': ['get', 'line'],
           'text-font': ['Noto Sans Regular'],
@@ -471,7 +437,12 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   function setTimeOfDay(next) {
     if (timeOfDay === next) return;
     timeOfDay = next;
+    lights = fleetLightLayers(next);
     controller.update({timeOfDay});
+    for (const {id, paint} of lights) {
+      if (!map.getLayer(id)) continue;
+      for (const [property, value] of Object.entries(paint)) map.setPaintProperty(id, property, value);
+    }
     for (const [id, property, value] of [
       ['hsl-route', 'line-color', routeColor()],
       ['hsl-route-case', 'line-color', routeCase()],
@@ -513,6 +484,8 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     if (hit && distance <= 6) return handlers.select('bus', hit);
     const sign = placesAt(e.point, 0, stopLayers)[0];
     if (sign) return handlers.select('stop', sign.properties.id);
+    const trail = map.getZoom() < overviewEnd && placesAt(e.point, 3, trailLayerIds)[0];
+    if (trail) return handlers.select('bus', trail.properties.id);
     if (hit) return handlers.select('bus', hit);
     const stop = placesAt(e.point, 7, stopLayers)[0];
     if (stop) return handlers.select('stop', stop.properties.id);
@@ -528,6 +501,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       'hsl-call',
       'hsl-preview',
       'hsl-vehicle',
+      ...(map.getZoom() < overviewEnd ? trailLayerIds : []),
       'hsl-network',
       'hsl-route',
     ]).length
@@ -550,18 +524,16 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     position: () => map.getCenter(),
     align,
     drawVehicles(buses) {
-      renderPoints = fc(
-        buses.map((b) =>
-          feature('Point', b.coordinate, {
-            id: b.id,
-            line: b.line,
-            selected: b.selected,
-            routeSelected: b.routeSelected,
-            secondary: b.secondary,
-            onRoute: b.onRoute,
-          }),
-        ),
-      );
+      const features = [];
+      for (const bus of buses) {
+        const {coordinate, trail, ...properties} = bus;
+        const ink = bus.selected || bus.routeSelected ? 4 : (parseInt(bus.line, 10) || 0) % 4;
+        features.push(feature('Point', coordinate, {...properties, ink, trailing: Boolean(trail?.length)}));
+        if (trail?.length) {
+          features.push(feature('LineString', trail, {id: bus.id, ink, secondary: bus.secondary, stale: bus.stale}));
+        }
+      }
+      renderPoints = fc(features);
       set('hsl-vehicles', renderPoints);
       map.triggerRepaint();
     },

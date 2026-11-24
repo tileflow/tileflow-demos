@@ -1,4 +1,4 @@
-import {atOffset, matchFix, routePose} from './route-track.js';
+import {atOffset, mappedSections, matchFix, routePose} from './route-track.js';
 
 // HSL joins the two real-time feeds by service date, route, direction and start time.
 export function tripKey(trip) {
@@ -37,6 +37,40 @@ export function upcoming(stops, now) {
 export function progress(bus, time) {
   const t = Math.max(0, Math.min(1, (time - bus.started) / bus.duration));
   return bus.fromOffset + (bus.offset - bus.fromOffset) * t;
+}
+
+// Only consecutive, route-matched fixes contribute to a tail. Keep the observation just
+// before the cutoff so the tail retreats continuously when a vehicle stops.
+const trailSeconds = 32;
+function recordOffsets(previous, timestamp, offset) {
+  if (offset == null) return [];
+  const fixes = previous ? previous.recentOffsets.slice() : [];
+  if (fixes.at(-1)?.[0] === timestamp) fixes.pop();
+  fixes.push([timestamp, offset]);
+  while (fixes.length > 1 && fixes[1][0] <= timestamp - trailSeconds) fixes.shift();
+  return fixes;
+}
+
+export function recentTrail(bus, time, clockSeconds) {
+  const fixes = bus.recentOffsets;
+  const cutoff = clockSeconds - trailSeconds;
+  if (!bus.track || fixes.length < 2 || bus.timestamp <= cutoff) return [];
+  const end = progress(bus, time);
+  let i = 0;
+  while (i + 1 < fixes.length && fixes[i + 1][0] <= cutoff) i++;
+  const [stamp, offset] = fixes[i];
+  let start = offset;
+  if (stamp < cutoff && i + 1 < fixes.length) {
+    const [nextStamp, nextOffset] = fixes[i + 1];
+    start += ((cutoff - stamp) / (nextStamp - stamp)) * (nextOffset - offset);
+  }
+  start = Math.max(start, end - 550);
+  for (const [entry, exit] of bus.track.gaps ?? []) {
+    if (entry > end) break;
+    if (end <= exit) return [];
+    start = Math.max(start, exit);
+  }
+  return end - start >= 3 ? mappedSections(bus.track, start, end)[0] : [];
 }
 
 export function samplePose(bus, time, align) {
@@ -88,6 +122,7 @@ export function move(previous, update, time, road) {
     bearing,
     track,
     offset,
+    recentOffsets: recordOffsets(canTrace ? previous : null, update.timestamp, offset),
     fromOffset: canTrace ? progress(previous, time) : offset,
     started: time,
     duration,
