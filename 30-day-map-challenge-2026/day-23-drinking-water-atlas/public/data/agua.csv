@@ -1,0 +1,239 @@
+﻿code,iso2,name,percentage,year,method,source_note,subregion,proxy_reference,reference_type,longitude,latitude
+WLD,,World,73.73517794,2024,jmp,Global estimate published by the JMP.,World,,,,
+AFG,AF,Afghanistan,30.55472231,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,66.496586,34.164262
+ALB,AL,Albania,70.79373639,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,20.11384,40.654855
+DZA,DZ,Algeria,69.02918252,2024,jmp,JMP national estimate for 2024.,Northern Africa,,,2.808241,27.397406
+ASM,AS,American Samoa,90.53833605,2024,jmp,JMP national estimate for 2024.,Polynesia,,,-170.747153,-14.32671
+AND,AD,Andorra,90.64000181,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,1.539409,42.547643
+AGO,AO,Angola,24,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Middle Africa).,Middle Africa,Middle Africa,m49_sub,17.984249,-12.182762
+AIA,AI,Anguilla,59,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-63.026361,18.242979
+ATG,AG,Antigua and Barbuda,65,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-61.790612,17.352249
+ARG,AR,Argentina,83,2024,proxy,Atlas approximation using safely managed coverage for the reference group (South America).,South America,South America,m49_sub,-64.173331,-33.501159
+ARM,AM,Armenia,82.07281919,2024,jmp,JMP national estimate for 2024.,Western Asia,,,44.800564,40.459077
+ABW,AW,Aruba,59,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-69.972795,12.5174
+AUS,AU,Australia,96,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (High income). The estimate is capped at the lowest available national service component.,Australia and New Zealand,High income,income,134.04972,-24.129522
+AUT,AT,Austria,98.89153572,2024,jmp,JMP national estimate for 2024.,Western Europe,,,14.130515,47.518859
+AZE,AZ,Azerbaijan,57.81182832,2024,jmp,JMP national estimate for 2024.,Western Asia,,,47.210994,40.402387
+BHS,BS,Bahamas,59,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-77.146688,26.401789
+BHR,BH,Bahrain,98.90397556,2024,jmp,JMP national estimate for 2024.,Western Asia,,,50.554816,26.055972
+BGD,BD,Bangladesh,59.12542599,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,89.684963,24.214956
+BRB,BB,Barbados,65,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-59.568966,13.163709
+BLR,BY,Belarus,93.05975529,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,28.417701,53.821888
+BEL,BE,Belgium,99.54713452,2024,jmp,JMP national estimate for 2024.,Western Europe,,,4.800448,50.785392
+BLZ,BZ,Belize,48,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Central America).,Central America,Central America,m49_sub,-88.712962,17.202068
+BEN,BJ,Benin,17.69683224,2024,jmp,JMP national estimate for 2024.,Western Africa,,,2.352018,10.324775
+BMU,BM,Bermuda,98,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Northern America).,Northern America,Northern America,m49_sub,-64.763573,32.296592
+BTN,BT,Bhutan,65.59421597,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,90.040294,27.536685
+BOL,BO,Bolivia,79,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (South America).,South America,South America,m49_sub,-64.593433,-16.666015
+BES,BQ,"Bonaire, Sint Eustatius and Saba",100.0,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-63.1334,17.5438
+BIH,BA,Bosnia and Herzegovina,86.40010788,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,18.06841,44.091051
+BWA,BW,Botswana,63.29104124,2024,jmp,JMP national estimate for 2024.,Southern Africa,,,24.179216,-22.102634
+BRA,BR,Brazil,88.62396607,2024,jmp,JMP national estimate for 2024.,South America,,,-49.55945,-12.098687
+VGB,VG,British Virgin Islands,65,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-64.63661,18.426606
+BRN,BN,Brunei,46,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (South-eastern Asia).,South-eastern Asia,South-eastern Asia,m49_sub,114.551943,4.448298
+BGR,BG,Bulgaria,96.20707815,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,25.15709,42.508785
+BFA,BF,Burkina Faso,20,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa).,Western Africa,Western Africa,m49_sub,-1.36388,12.673048
+BDI,BI,Burundi,12,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa). The estimate is capped at the lowest available national service component.,Eastern Africa,Eastern Africa,m49_sub,29.917086,-3.332836
+CPV,CV,Cabo Verde,36,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa).,Western Africa,Western Africa,m49_sub,-23.639434,15.074761
+KHM,KH,Cambodia,29.98557614,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,104.50487,12.647584
+CMR,CM,Cameroon,26,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Middle Africa).,Middle Africa,Middle Africa,m49_sub,12.473488,4.585041
+CAN,CA,Canada,96.89032266,2024,jmp,JMP national estimate for 2024.,Northern America,,,-101.9107,60.324287
+CYM,KY,Cayman Islands,62,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-81.24055,19.319862
+CAF,CF,Central African Republic,6.21748769,2024,jmp,JMP national estimate for 2024.,Middle Africa,,,20.906897,6.989681
+TCD,TD,Chad,6.34082647,2024,jmp,JMP national estimate for 2024.,Middle Africa,,,18.645041,15.142959
+CHL,CL,Chile,97.8170552,2024,jmp,JMP national estimate for 2024.,South America,,,-72.318871,-38.151771
+CHN,CN,China,76,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern and South-Eastern Asia).,Eastern Asia,Eastern and South-Eastern Asia,sdg,106.337289,32.498178
+COL,CO,Colombia,74.33929919,2024,jmp,JMP national estimate for 2024.,South America,,,-73.174347,3.373111
+COM,KM,Comoros,35,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,43.318094,-11.727683
+COK,CK,Cook Islands,71,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Polynesia).,Polynesia,Polynesia,m49_sub,-159.785675,-21.215993
+CRI,CR,Costa Rica,80.50007424,2024,jmp,JMP national estimate for 2024.,Central America,,,-84.077922,10.0651
+CIV,CI,Côte d’Ivoire,36.44893816,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-5.568618,7.49139
+HRV,HR,Croatia,87.26826925,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,16.37241,45.805799
+CUB,CU,Cuba,62,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-77.975855,21.334024
+CUW,CW,Curaçao,65,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-68.920578,12.145039
+CYP,CY,Cyprus,99.72110883,2024,jmp,JMP national estimate for 2024.,Western Asia,,,33.084182,34.913329
+CZE,CZ,Czechia,98.14487284,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,15.377555,49.882364
+COD,CD,Democratic Republic of the Congo,11.87264818,2024,jmp,JMP national estimate for 2024.,Middle Africa,,,23.458829,-1.858167
+DNK,DK,Denmark,99.91882714,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,9.018163,55.966965
+DJI,DJ,Djibouti,33,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,42.498825,11.976343
+DMA,DM,Dominica,63,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-61.344958,15.458829
+DOM,DO,Dominican Republic,45.33240707,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-70.653998,19.104137
+ECU,EC,Ecuador,69.8869997,2024,jmp,JMP national estimate for 2024.,South America,,,-78.188375,-1.259076
+EGY,EG,Egypt,78.94015883,2024,jmp,JMP national estimate for 2024.,Northern Africa,,,29.445837,26.186173
+SLV,SV,El Salvador,46,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Central America).,Central America,Central America,m49_sub,-88.890124,13.685371
+GNQ,GQ,Equatorial Guinea,18,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Middle Africa).,Middle Africa,Middle Africa,m49_sub,8.9902,2.333
+ERI,ER,Eritrea,26,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,38.285566,15.787401
+EST,EE,Estonia,98.94390973,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,25.867126,58.724865
+SWZ,SZ,Eswatini,38.2165357,2024,jmp,JMP national estimate for 2024.,Southern Africa,,,31.467264,-26.533676
+ETH,ET,Ethiopia,13.54720092,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,39.0886,8.032795
+FLK,FK,Falkland Islands (Malvinas),83,2024,proxy,Atlas approximation using safely managed coverage for the reference group (South America).,South America,South America,m49_sub,-58.738602,-51.608913
+FRO,FO,Faroe Islands,100,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Northern Europe).,Northern Europe,Northern Europe,m49_sub,-7.058429,62.185604
+FSM,FM,Federated States of Micronesia,60,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Micronesia).,Micronesia,Micronesia,m49_sub,158.234019,6.887553
+FJI,FJ,Fiji,42.11075011,2024,jmp,JMP national estimate for 2024.,Melanesia,,,177.975427,-17.826099
+FIN,FI,Finland,99.64679671,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,27.276449,63.252361
+FRA,FR,France,99.71270147,2024,jmp,JMP national estimate for 2024.,Western Europe,,,2.552275,46.696113
+GUF,GF,French Guiana,92.23724415,2024,jmp,JMP national estimate for 2024.,South America,,,-53.068349,3.999223
+PYF,PF,French Polynesia,90.44871795,2024,jmp,JMP national estimate for 2024.,Polynesia,,,-149.46157,-17.628081
+GAB,GA,Gabon,32,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Middle Africa).,Middle Africa,Middle Africa,m49_sub,11.835939,-0.437739
+GMB,GM,Gambia,48.17900349,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-14.998318,13.641721
+GEO,GE,Georgia,70.52660973,2024,jmp,JMP national estimate for 2024.,Western Asia,,,43.735724,41.870087
+DEU,DE,Germany,99.91729795,2024,jmp,JMP national estimate for 2024.,Western Europe,,,9.678348,50.961733
+GHA,GH,Ghana,42.9413892,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-1.036941,7.717639
+GIB,GI,Gibraltar,100.0,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,-5.3467,36.129426
+GRC,GR,Greece,96.68615548,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,21.72568,39.492763
+GRL,GL,Greenland,90,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Northern America). The estimate is capped at the lowest available national service component.,Northern America,Northern America,m49_sub,-39.335251,74.319387
+GRD,GD,Grenada,89.91768,2017,historical,The latest available JMP national estimate is for 2017.,Caribbean,,,-61.680461,12.113156
+GLP,GP,Guadeloupe,96.65287834,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-61.433565,16.299332
+GUM,GU,Guam,93.99715378,2024,jmp,JMP national estimate for 2024.,Micronesia,,,144.703614,13.354173
+GTM,GT,Guatemala,48.78719507,2024,jmp,JMP national estimate for 2024.,Central America,,,-90.497134,14.982133
+GGY,GG,Guernsey,99,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Northern Europe).,Northern Europe,Northern Europe,m49_sub,-2.561736,49.463533
+GIN,GN,Guinea,29,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa). The estimate is capped at the lowest available national service component.,Western Africa,Western Africa,m49_sub,-10.016402,10.618516
+GNB,GW,Guinea-Bissau,23.98501679,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-14.52413,12.163712
+GUY,GY,Guyana,67.17443743,2024,jmp,JMP national estimate for 2024.,South America,,,-58.942643,5.124317
+HTI,HT,Haiti,9,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean). The estimate is capped at the lowest available national service component.,Caribbean,Caribbean,m49_sub,-72.224051,19.263784
+HND,HN,Honduras,65.51622118,2024,jmp,JMP national estimate for 2024.,Central America,,,-86.887604,14.794801
+HKG,HK,Hong Kong,100.0,2024,jmp,JMP national estimate for 2024.,Eastern Asia,,,114.097769,22.448829
+HUN,HU,Hungary,100.0,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,19.447867,47.086841
+ISL,IS,Iceland,100.0,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,-18.673711,64.779286
+IND,IN,India,76.44219421,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,79.358105,22.686852
+IDN,ID,Indonesia,30.46097736,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,101.892949,-0.954404
+IRN,IR,Iran,94.41220521,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,54.931495,32.166225
+IRQ,IQ,Iraq,59.82724613,2024,jmp,JMP national estimate for 2024.,Western Asia,,,43.26181,33.09403
+IRL,IE,Ireland,96.12501116,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,-7.798588,53.078726
+IMN,IM,Isle of Man,99.91059649,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,-4.530069,54.220833
+ISR,IL,Israel,99.46198769,2024,jmp,JMP national estimate for 2024.,Western Asia,,,34.847915,30.911148
+ITA,IT,Italy,96.75843583,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,11.076907,44.732482
+JAM,JM,Jamaica,57,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-77.318767,18.137124
+JPN,JP,Japan,98.72702421,2024,jmp,JMP national estimate for 2024.,Eastern Asia,,,138.44217,36.142538
+JEY,JE,Jersey,92.84517917,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,-2.090146,49.220808
+JOR,JO,Jordan,88.95029853,2024,jmp,JMP national estimate for 2024.,Western Asia,,,36.375991,30.805025
+KAZ,KZ,Kazakhstan,91.54541823,2024,jmp,JMP national estimate for 2024.,Central Asia,,,68.685548,49.054149
+KEN,KE,Kenya,27,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,37.907632,0.549043
+KIR,KI,Kiribati,15.0879416,2024,jmp,JMP national estimate for 2024.,Micronesia,,,-157.384577,1.820437
+XKX,XK,Kosovo,96,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Southern Europe).,Southern Europe,Southern Europe,m49_sub,20.860719,42.593587
+KWT,KW,Kuwait,100.0,2024,jmp,JMP national estimate for 2024.,Western Asia,,,47.313999,29.413628
+KGZ,KG,Kyrgyzstan,73.8812993,2024,jmp,JMP national estimate for 2024.,Central Asia,,,74.532637,41.66854
+LAO,LA,Laos,35.18772308,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,102.533912,19.431821
+LVA,LV,Latvia,97.01140687,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,25.458723,57.066872
+LBN,LB,Lebanon,47.7,2024,jmp,JMP national estimate for 2024.,Western Asia,,,35.992892,34.133368
+LSO,LS,Lesotho,31.32024171,2024,jmp,JMP national estimate for 2024.,Southern Africa,,,28.246639,-29.480158
+LBR,LR,Liberia,17,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa). The estimate is capped at the lowest available national service component.,Western Africa,Western Africa,m49_sub,-9.460379,6.447177
+LBY,LY,Libya,45,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Northern Africa). The estimate is capped at the lowest available national service component.,Northern Africa,Northern Africa,m49_sub,18.011015,26.638944
+LIE,LI,Liechtenstein,100.0,2024,jmp,JMP national estimate for 2024.,Western Europe,,,9.559439,47.111405
+LTU,LT,Lithuania,96.73357426,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,24.089932,55.103703
+LUX,LU,Luxembourg,99.65305502,2024,jmp,JMP national estimate for 2024.,Western Europe,,,6.07762,49.733732
+MAC,MO,Macao,100.0,2024,jmp,JMP national estimate for 2024.,Eastern Asia,,,113.556038,22.129735
+MDG,MG,Madagascar,22.05599449,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,46.704241,-18.628288
+MWI,MW,Malawi,18.18165397,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,33.608082,-13.386737
+MYS,MY,Malaysia,94.70036186,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,113.83708,2.528667
+MDV,MV,Maldives,76,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Southern Asia). The estimate is capped at the lowest available national service component.,Southern Asia,Southern Asia,m49_sub,73.507554,4.174441
+MLI,ML,Mali,34,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa).,Western Africa,Western Africa,m49_sub,-2.038455,18.692713
+MLT,MT,Malta,99.82676853,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,14.433005,35.892886
+MHL,MH,Marshall Islands,58,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Micronesia).,Micronesia,Micronesia,m49_sub,171.193609,7.082568
+MTQ,MQ,Martinique,98.98405509,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-61.055657,14.711979
+MRT,MR,Mauritania,30,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa).,Western Africa,Western Africa,m49_sub,-9.740299,19.587062
+MUS,MU,Mauritius,41,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,57.565848,-20.299506
+MYT,YT,Mayotte,92.46110697,2023,historical,The latest available JMP national estimate is for 2023.,Eastern Africa,,,45.151319,-12.774755
+MEX,MX,Mexico,42.96663115,2024,jmp,JMP national estimate for 2024.,Central America,,,-102.289448,23.919988
+MDA,MD,Moldova,75.81589087,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,28.487904,47.434999
+MCO,MC,Monaco,100.0,2024,jmp,JMP national estimate for 2024.,Western Europe,,,7.398291,43.739652
+MNG,MN,Mongolia,43.3607223,2024,jmp,JMP national estimate for 2024.,Eastern Asia,,,104.150405,45.997488
+MNE,ME,Montenegro,85.50091179,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,19.143727,42.803101
+MSR,MS,Montserrat,64,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-62.188252,16.73717
+MAR,MA,Morocco,79.98180723,2024,jmp,JMP national estimate for 2024.,Northern Africa,,,-7.187296,31.650723
+MOZ,MZ,Mozambique,27.5429457,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,37.83789,-13.94323
+MMR,MM,Myanmar,59.72397508,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,95.804497,21.573855
+NAM,NA,Namibia,61,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Southern Africa). The estimate is capped at the lowest available national service component.,Southern Africa,Southern Africa,m49_sub,17.108166,-20.575298
+NRU,NR,Nauru,18.66316211,2024,jmp,JMP national estimate for 2024.,Micronesia,,,166.932644,-0.520261
+NPL,NP,Nepal,16.48688567,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,83.639914,28.297925
+NLD,NL,Netherlands,99.9595064,2024,jmp,JMP national estimate for 2024.,Western Europe,,,5.61144,52.422211
+NCL,NC,New Caledonia,96.86528541,2024,jmp,JMP national estimate for 2024.,Melanesia,,,165.084004,-21.064697
+NZL,NZ,New Zealand,100.0,2024,jmp,JMP national estimate for 2024.,Australia and New Zealand,,,172.787,-39.759
+NIC,NI,Nicaragua,49,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Central America).,Central America,Central America,m49_sub,-85.069347,12.670697
+NER,NE,Niger,15,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Africa). The estimate is capped at the lowest available national service component.,Western Africa,Western Africa,m49_sub,9.504356,17.446195
+NGA,NG,Nigeria,29.90459919,2024,jmp,JMP national estimate for 2024.,Western Africa,,,7.50322,9.439799
+NIU,NU,Niue,92.9560215,2024,jmp,JMP national estimate for 2024.,Polynesia,,,-169.862565,-19.045956
+PRK,KP,North Korea,66.61213496,2023,historical,The latest available JMP national estimate is for 2023.,Eastern Asia,,,126.444516,39.885252
+MKD,MK,North Macedonia,80.79054149,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,21.555839,41.558223
+MNP,MP,Northern Mariana Islands,81.45454545,2024,jmp,JMP national estimate for 2024.,Micronesia,,,145.734397,15.188188
+NOR,NO,Norway,99.06248306,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,9.679975,61.357092
+OMN,OM,Oman,91.10117441,2024,jmp,JMP national estimate for 2024.,Western Asia,,,57.336553,22.120427
+PAK,PK,Pakistan,44.97373641,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,68.545632,29.328389
+PLW,PW,Palau,90.77521735,2024,jmp,JMP national estimate for 2024.,Micronesia,,,134.580157,7.518252
+PSE,PS,Palestine,80.6420172,2024,jmp,JMP national estimate for 2024.,Western Asia,,,35.291341,32.047431
+PAN,PA,Panama,48,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Central America).,Central America,Central America,m49_sub,-80.352106,8.72198
+PNG,PG,Papua New Guinea,32,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Lower middle income). The estimate is capped at the lowest available national service component.,Melanesia,Lower middle income,income,143.910216,-5.695285
+PRY,PY,Paraguay,64.36471974,2024,jmp,JMP national estimate for 2024.,South America,,,-60.146394,-21.674509
+PER,PE,Peru,49.42839623,2024,jmp,JMP national estimate for 2024.,South America,,,-72.90016,-12.976679
+PHL,PH,Philippines,48.48405774,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,122.465,11.198
+POL,PL,Poland,88.67554625,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,19.490468,51.990316
+PRT,PT,Portugal,95.21734795,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,-8.271754,39.606675
+PRI,PR,Puerto Rico,98.94026184,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-66.481065,18.234668
+QAT,QA,Qatar,95.34524188,2024,jmp,JMP national estimate for 2024.,Western Asia,,,51.143509,25.237383
+COG,CG,Republic of the Congo,45.874842,2021,historical,The latest available JMP national estimate is for 2021.,Middle Africa,,,15.9005,0.142331
+REU,RE,Réunion,95.69691869,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,55.535699,-21.113488
+ROU,RO,Romania,82.18299294,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,24.972624,45.733237
+RUS,RU,Russia,76.26072942,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,44.686469,58.249357
+RWA,RW,Rwanda,15,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa). The estimate is capped at the lowest available national service component.,Eastern Africa,Eastern Africa,m49_sub,30.103894,-1.897196
+BLM,BL,Saint Barthélemy,100.0,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-62.833193,17.901987
+SHN,SH,Saint Helena,98.39427134,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-5.71262,-15.950487
+KNA,KN,Saint Kitts and Nevis,59,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-62.757975,17.336558
+LCA,LC,Saint Lucia,64,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-60.980094,13.892371
+MAF,MF,Saint Martin (French part),96.62548146,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-63.049399,18.081302
+SPM,PM,Saint Pierre and Miquelon,96.03833944,2024,jmp,JMP national estimate for 2024.,Northern America,,,-56.332352,47.040344
+VCT,VC,Saint Vincent and the Grenadines,59,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-61.3359,13.0879
+WSM,WS,Samoa,62.5019406,2024,jmp,JMP national estimate for 2024.,Polynesia,,,-172.438241,-13.639139
+SMR,SM,San Marino,99.99999618,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,12.441206,43.933916
+STP,ST,Sao Tome and Principe,36.68003809,2024,jmp,JMP national estimate for 2024.,Middle Africa,,,7.021,0.9709
+SAU,SA,Saudi Arabia,79,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Asia).,Western Asia,Western Asia,m49_sub,44.6996,23.806908
+SEN,SN,Senegal,27.19314071,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-14.778586,15.138125
+SRB,RS,Serbia,74.96726348,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,20.787989,44.189919
+SYC,SC,Seychelles,64.70223163,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,55.480175,-4.676659
+SLE,SL,Sierra Leone,10.8953836,2024,jmp,JMP national estimate for 2024.,Western Africa,,,-11.763677,8.617449
+SGP,SG,Singapore,100.0,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,103.816925,1.366587
+SXM,SX,Sint Maarten (Dutch part),59,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Caribbean).,Caribbean,Caribbean,m49_sub,-63.070133,18.04088
+SVK,SK,Slovakia,99.57155691,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,19.049868,48.734044
+SVN,SI,Slovenia,99.5745942,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,14.915312,46.06076
+SLB,SB,Solomon Islands,39,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Lower middle income). The estimate is capped at the lowest available national service component.,Melanesia,Lower middle income,income,159.170468,-8.029548
+SOM,SO,Somalia,31,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,45.19238,3.568925
+ZAF,ZA,South Africa,68.00756388,2024,jmp,JMP national estimate for 2024.,Southern Africa,,,23.665734,-29.708776
+KOR,KR,South Korea,99.28266946,2024,jmp,JMP national estimate for 2024.,Eastern Asia,,,128.129504,36.384924
+SSD,SS,South Sudan,6,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa). The estimate is capped at the lowest available national service component.,Eastern Africa,Eastern Africa,m49_sub,30.390151,7.230477
+ESP,ES,Spain,99.45846467,2024,jmp,JMP national estimate for 2024.,Southern Europe,,,-3.464718,40.090953
+LKA,LK,Sri Lanka,46.93297051,2024,jmp,JMP national estimate for 2024.,Southern Asia,,,80.704823,7.581097
+SDN,SD,Sudan,41,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Northern Africa). The estimate is capped at the lowest available national service component.,Northern Africa,Northern Africa,m49_sub,29.260657,16.330746
+SUR,SR,Suriname,55.84724104,2024,jmp,JMP national estimate for 2024.,South America,,,-55.91094,4.143987
+SWE,SE,Sweden,99.76079667,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,19.01705,65.85918
+CHE,CH,Switzerland,96.69999689,2024,jmp,JMP national estimate for 2024.,Western Europe,,,7.463965,46.719114
+SYR,SY,Syria,75,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Asia).,Western Asia,Western Asia,m49_sub,38.277783,35.006636
+TWN,TW,Taiwan,75,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Eastern and South-Eastern Asia).,Eastern Asia,Eastern and South-Eastern Asia,sdg,120.868204,23.652408
+TJK,TJ,Tajikistan,65.10807152,2024,jmp,JMP national estimate for 2024.,Central Asia,,,72.587276,38.199835
+TZA,TZ,Tanzania,31.32539895,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,34.959183,-6.051866
+THA,TH,Thailand,46,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (South-eastern Asia).,South-eastern Asia,South-eastern Asia,m49_sub,101.073198,15.45974
+TLS,TL,Timor-Leste,40,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (South-eastern Asia).,South-eastern Asia,South-eastern Asia,m49_sub,125.854679,-8.803705
+TGO,TG,Togo,20.52323528,2024,jmp,JMP national estimate for 2024.,Western Africa,,,1.058113,8.80722
+TKL,TK,Tokelau,71,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Polynesia).,Polynesia,Polynesia,m49_sub,-172.48629,-8.561824
+TON,TO,Tonga,29.59845432,2024,jmp,JMP national estimate for 2024.,Polynesia,,,-175.163014,-21.210026
+TTO,TT,Trinidad and Tobago,69.36926267,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-60.9184,10.9989
+TUN,TN,Tunisia,64.97810721,2024,jmp,JMP national estimate for 2024.,Northern Africa,,,9.007881,33.687263
+TUR,TR,Türkiye,77,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Asia).,Western Asia,Western Asia,m49_sub,34.508268,39.345388
+TKM,TM,Turkmenistan,94.85354592,2024,jmp,JMP national estimate for 2024.,Central Asia,,,58.676647,39.855246
+TCA,TC,Turks and Caicos Islands,47.04991877,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-71.752704,21.81663
+TUV,TV,Tuvalu,8.72255043,2024,jmp,JMP national estimate for 2024.,Polynesia,,,179.209587,-8.513717
+UGA,UG,Uganda,18.09712278,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,32.948555,1.972589
+UKR,UA,Ukraine,87.86837694,2024,jmp,JMP national estimate for 2024.,Eastern Europe,,,32.140865,49.724739
+ARE,AE,United Arab Emirates,98.64131723,2024,jmp,JMP national estimate for 2024.,Western Asia,,,54.547256,23.466285
+GBR,GB,United Kingdom,99.82295068,2024,jmp,JMP national estimate for 2024.,Northern Europe,,,-2.116346,54.402739
+USA,US,United States,97.56768844,2024,jmp,JMP national estimate for 2024.,Northern America,,,-97.482602,39.538479
+VIR,VI,United States Virgin Islands,98.67748374,2024,jmp,JMP national estimate for 2024.,Caribbean,,,-64.779172,17.746706
+URY,UY,Uruguay,84,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (South America).,South America,South America,m49_sub,-55.966942,-32.961127
+UZB,UZ,Uzbekistan,81.9295048,2024,jmp,JMP national estimate for 2024.,Central Asia,,,64.005429,41.693603
+VUT,VU,Vanuatu,19.19708399,2024,jmp,JMP national estimate for 2024.,Melanesia,,,166.908762,-15.37153
+VAT,VA,Vatican City,96,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Southern Europe).,Southern Europe,Southern Europe,m49_sub,12.453418,41.903323
+VEN,VE,Venezuela,17,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (South America). The estimate is capped at the lowest available national service component.,South America,South America,m49_sub,-64.599381,7.182476
+VNM,VN,Vietnam,58.58083914,2024,jmp,JMP national estimate for 2024.,South-eastern Asia,,,105.387292,21.715416
+WLF,WF,Wallis and Futuna Islands,68.89931583,2024,jmp,JMP national estimate for 2024.,Polynesia,,,-178.137436,-14.286415
+ESH,EH,Western Sahara,73,2024,proxy,Atlas approximation using safely managed coverage for the reference group (Northern Africa).,Northern Africa,Northern Africa,m49_sub,-12.630304,23.967592
+YEM,YE,Yemen,58,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Western Asia). The estimate is capped at the lowest available national service component.,Western Asia,Western Asia,m49_sub,45.874383,15.328226
+ZMB,ZM,Zambia,30,2024,proxy,Atlas approximation. Local coverage of at least basic drinking water service is scaled by the share of people with at least basic service who have safely managed service in the reference group (Eastern Africa).,Eastern Africa,Eastern Africa,m49_sub,26.395298,-14.660804
+ZWE,ZW,Zimbabwe,25.46056336,2024,jmp,JMP national estimate for 2024.,Eastern Africa,,,29.925444,-18.91164

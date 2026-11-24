@@ -14,6 +14,7 @@ Public demos for Tileflow packages.
 - Day 19 · [SNIFF!](30-day-map-challenge-2026/day-19-sniff) challenges players to follow scents
   and find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
 - Day 20 · [Paris on Film](30-day-map-challenge-2026/day-20-paris-on-film) colours the streets of Paris by outdoor film and television shoots. [Explore the map](https://maps.tileflow.dev/paris-on-film/).
+- Day 23 · [Drinking Water Atlas](30-day-map-challenge-2026/day-23-drinking-water-atlas) shows drinking water access as 1,000 people in a glass. [Explore the map](https://maps.tileflow.dev/drinking-water-atlas/).
 
 ## Run
 
