@@ -8,7 +8,7 @@ An interactive map for day 23 of the 2026 30DayMapChallenge, Senses: Taste. The 
 
 ## Explore
 
-Hover over a country to highlight it and update its statistics. A click, tap or selection from the location menu frames the country. A wheel or pinch gesture zooms the actual geographic camera around the pointer or fingers. Drag to move the map. The location menu includes the world aggregate.
+Hover over a country to highlight it and update its statistics. Click or tap a country, or choose it from the location menu, to open its glass. Click another country to switch. Click the water or press Escape to close the glass and clear the selection. Clicks on the glass leave the selection in place. A wheel or pinch gesture zooms the actual geographic camera around the pointer or fingers. Drag to move the map. The location menu includes the world aggregate.
 
 At the zoom limit, the selection locks and the map turns a few degrees to frame the country beside the transparent glass. On a phone the country sits above it. The 1,000 dots lift off the map, cross the rim and glide straight into position. Green dots circulate above coral dots while the water level stays fixed. Labels show each group's count and percentage. Zoom out with the wheel or pinch to explore again, or pick another place from the menu. Reduced-motion mode opens the completed view immediately.
 

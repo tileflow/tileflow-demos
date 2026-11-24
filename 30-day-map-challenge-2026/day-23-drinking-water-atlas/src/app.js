@@ -65,6 +65,10 @@ function select(code,{center=false,stage,animate=true}={}){
   const row=rows.get(code);if(!row)return;
   const changed=selected?.code!==code;
   if(changed){
+    if(center&&stage===3&&map?.isLocked()){
+      glassVisible=false;
+      reveal=0;
+    }
     selected=row;place.value=row.code;
     const proxy=row.method==='proxy',good=Math.round(row.value*10);
     const value=proxy?'≈'+Math.round(row.value):row.value.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1});
@@ -83,14 +87,19 @@ function select(code,{center=false,stage,animate=true}={}){
   if(changed||center)map.setCountry(code==='WLD'?null:code,{center,stage:stage??(code==='WLD'?0:1),animate:animate&&!reduced.matches});
   cameraChanged();
 }
-place.addEventListener('change',()=>select(place.value,{center:true}));
+function choose(code){
+  if(code===selected?.code&&map?.isLocked()&&code!=='WLD')return;
+  select(code,{center:true,stage:code==='WLD'?0:3});
+}
+place.addEventListener('change',()=>choose(place.value));
 // A hover changes only the subject of the measurement. The map remains under
 // the pointer so moving directly from one country to another never flies away.
 function hover(code){
   if(code&&rows.has(code)&&selected?.code!==code)select(code);
 }
 window.addEventListener('keydown',e=>{
-  if(!map||e.altKey||e.ctrlKey||e.metaKey||e.target.closest?.('select,details,a'))return;
+  if(!map||e.altKey||e.ctrlKey||e.metaKey)return;
+  if(e.target.closest?.('select,details,a')&&!(e.key==='Escape'&&map.isLocked()))return;
   if(e.key==='Escape'||e.key==='Home'){e.preventDefault();select('WLD',{center:true,stage:0});}
   if(e.key==='End'){e.preventDefault();map.setStage(3,{animate:!reduced.matches});}
 });
@@ -109,7 +118,10 @@ async function start(){
   const resize=()=>{glass.resize();map?.resize();requestDraw();};
   const observer=new ResizeObserver(resize);observer.observe(scene);resize();
   map=await createGlobe(document.querySelector('#globe'),{rows:data.countries,onHover:hover,
-    onCountry:code=>{if(rows.has(code)&&(selected?.code!==code||map.getProgress()<.96))select(code,{center:true});},onView:cameraChanged});
+    onPick:(code,x,y)=>{
+      if(map.isLocked()&&glass.contains(x,y))return;
+      choose(code??'WLD');
+    },onView:cameraChanged});
   const stage=initial.has('stage')?stageNames.indexOf(initial.get('stage')):oldStages.indexOf(initial.get('etapa'));
   select(initialCode,{center:true,animate:false,stage:stage>=0?stage:(initialCode==='WLD'?0:1)});
 }

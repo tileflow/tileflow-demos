@@ -250,5 +250,11 @@ export function createParticles(canvas) {
     }
     ctx.globalAlpha = 1;
   }
-  return {configure, resize, draw, setOrigin};
+  function contains(x, y) {
+    if (!geometry) return false;
+    // The glass is drawn in CSS pixels. Canvas hit tests use backing-store pixels.
+    const scale = ctx.getTransform();
+    return ctx.isPointInPath(geometry.art.body, x * scale.a, y * scale.d);
+  }
+  return {configure, resize, draw, setOrigin, contains};
 }

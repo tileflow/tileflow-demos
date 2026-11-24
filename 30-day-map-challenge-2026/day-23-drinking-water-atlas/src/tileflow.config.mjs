@@ -3,6 +3,7 @@ import {
   defineMap,
   defineTheme,
   disable,
+  fixed,
   geojsonSource,
   maplibreOverlay,
 } from "@tileflow/core";
@@ -39,6 +40,14 @@ export const config = defineMap({
   name: "Drinking Water Atlas",
   version: 1,
   projection: "globe",
+  atmosphere: {
+    skyColor: fixed("#f8fbea", { reason: "Warm daylight around the globe" }),
+    spaceColor: fixed("#dcefe6", { reason: "Match the atlas background" }),
+    horizonColor: fixed("#92d8d2", { reason: "A soft turquoise horizon" }),
+    fogColor: fixed("#e2f1e6", { reason: "Daylight over the ocean" }),
+    starCount: 0,
+    starIntensity: 0,
+  },
   defaultTheme: "dia",
   themes: {
     dia: defineTheme({

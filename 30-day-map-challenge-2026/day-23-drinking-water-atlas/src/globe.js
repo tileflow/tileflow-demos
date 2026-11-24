@@ -1,3 +1,4 @@
+import { attachTileflowAtmosphere } from "@tileflow/core/browser";
 import { Map as LibreMap, setWorkerUrl, setWorkerCount } from "maplibre-gl";
 import {
   geoArea,
@@ -204,7 +205,7 @@ export async function createGlobe(
   container,
   {
     rows = [],
-    onCountry = () => {},
+    onPick = () => {},
     onReady = () => {},
     onView = () => {},
     onHover = () => {},
@@ -255,16 +256,8 @@ export async function createGlobe(
   mount.style.opacity = "0";
   mount.style.pointerEvents = "auto";
   mount.setAttribute("aria-hidden", "true");
-  const finish = positionElement("div", host);
   const shield = positionElement("div", host);
   shield.style.touchAction = "none";
-  finish.style.inset = "auto";
-  finish.style.borderRadius = "50%";
-  finish.style.boxSizing = "border-box";
-  finish.style.boxShadow =
-    "inset 1px 1px 2px rgba(255,255,232,.80),inset -3px -4px 10px rgba(20,102,123,.12), 0 0 0 1px rgba(36,112,122,.17),0 11px 27px rgba(34,104,108,.12)";
-  finish.style.background =
-    "radial-gradient(ellipse at 28% 22%,rgba(255,251,214,.22),rgba(255,255,243,.055) 38%,rgba(21,108,125,.008) 60%,rgba(8,78,111,.12) 81%,rgba(8,71,103,.25) 100%),radial-gradient(circle at 50% 49%,transparent 65%,rgba(16,96,125,.06) 90%,rgba(29,107,127,.15) 100%)";
   function notifyView() {
     if (!notifyFrame && !destroyed)
       notifyFrame = requestAnimationFrame(() => {
@@ -348,16 +341,6 @@ export async function createGlobe(
   function render() {
     frame = 0;
     if (destroyed) return;
-    finish.style.opacity = String(clamp(1 - Math.max(0, level) * 0.68, 0, 1));
-    finish.style.display =
-      view.r > Math.hypot(view.w, view.h) ? "none" : "block";
-    if (finish.style.display !== "none")
-      Object.assign(finish.style, {
-        left: `${view.cx - view.r}px`,
-        top: `${view.cy - view.r}px`,
-        width: `${view.r * 2}px`,
-        height: `${view.r * 2}px`,
-      });
     if (webgl) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1),
       pw = Math.round(view.w * dpr),
@@ -640,9 +623,10 @@ export async function createGlobe(
   function findCountry(x, y) {
     if (native && loaded) {
       const hits = map.queryRenderedFeatures([x, y], {
-        layers: ["islas", "pais"],
+        layers: ["islas", "lagos", "pais"],
       });
       for (const f of hits) {
+        if (f.layer.id === "lagos") return null;
         if (data.byCode.has(f.properties.code)) return f.properties.code;
       }
       return null;
@@ -660,6 +644,10 @@ export async function createGlobe(
     }
     if (nearest) return nearest;
     const coord = projection.invert([x, y]);
+    if (zoom >= 2.6 && layers.lakes.features.some(lake => {
+      const bounds = detailBounds.get(lake);
+      return (!bounds || coordinateInBounds(coord, bounds)) && geoContains(lake, coord);
+    })) return null;
     for (const { f, bbox } of features)
       if (
         data.byCode.has(f.properties.code) &&
@@ -744,8 +732,7 @@ export async function createGlobe(
     setFallbackCamera(ll ? anchorCamera(ll, next, xy) : center, next);
   }
   const pointers = new Map();
-  let gesture = null,
-    lastTap = null;
+  let gesture = null;
   function currentGesture() {
     const p = [...pointers.values()];
     if (!p.length) return null;
@@ -767,9 +754,7 @@ export async function createGlobe(
     if (locked || native || e.button !== 0) return;
     cancelAnimationFrame(flight);
     const xy = where(e);
-    pointers.set(e.pointerId, { xy, start: xy, moved: false, multi: false });
-    if (pointers.size > 1)
-      for (const one of pointers.values()) one.multi = true;
+    pointers.set(e.pointerId, { xy, start: xy, moved: false });
     startGesture();
     host.setPointerCapture(e.pointerId);
     host.style.cursor = "grabbing";
@@ -819,26 +804,11 @@ export async function createGlobe(
     if (native) return;
     const p = pointers.get(e.pointerId);
     if (!p) return;
-    const xy = where(e);
     pointers.delete(e.pointerId);
     if (host.hasPointerCapture(e.pointerId))
       host.releasePointerCapture(e.pointerId);
     startGesture();
-    if (!pointers.size) host.style.cursor = "grab";
-    if (!locked && !p.moved && !p.multi && e.type === "pointerup") {
-      if (
-        lastTap &&
-        performance.now() - lastTap.t < 330 &&
-        Math.hypot(xy[0] - lastTap.x, xy[1] - lastTap.y) < 22
-      ) {
-        if (e.pointerType === "touch") zoomAtPoint(xy, 1);
-        lastTap = null;
-        return;
-      }
-      lastTap = { x: xy[0], y: xy[1], t: performance.now() };
-      const code = findCountry(...xy);
-      if (code) onCountry(code);
-    }
+    if (!locked && !pointers.size) host.style.cursor = "grab";
   }
   // At the last scale this transparent surface freezes the selected map. Reverse
   // wheel and pinch gestures return to exploration, as do the location controls.
@@ -856,18 +826,20 @@ export async function createGlobe(
     if (e.shiftKey) setStage(selected ? 1 : 0);
   });
   const contacts = new Map();
-  let pinchGap = 0;
+  let pinchGap = 0, tap = null;
   const separation = () => {
     const [a, b] = contacts.values();
     return Math.hypot(a[0] - b[0], a[1] - b[1]);
   };
-  // A pinch can reach the limit and reverse without either finger lifting.
-  // Observe the original touch targets as well as touches starting on the shield.
+  // Detect taps on both the live map and the locked shield. A drag or pinch
+  // cancels selection, even if the gesture changes which surface is on top.
   host.addEventListener(
     "pointerdown",
     (e) => {
+      const xy = where(e);
+      tap = e.isPrimary && e.button === 0 ? { id: e.pointerId, xy } : null;
       if (e.pointerType !== "touch") return;
-      contacts.set(e.pointerId, where(e));
+      contacts.set(e.pointerId, xy);
       if (contacts.size === 2) pinchGap = separation();
     },
     true,
@@ -875,8 +847,11 @@ export async function createGlobe(
   host.addEventListener(
     "pointermove",
     (e) => {
+      const xy = where(e);
+      if (tap?.id === e.pointerId && Math.hypot(xy[0] - tap.xy[0], xy[1] - tap.xy[1]) >= 4)
+        tap = null;
       if (!contacts.has(e.pointerId)) return;
-      contacts.set(e.pointerId, where(e));
+      contacts.set(e.pointerId, xy);
       if (contacts.size === 2) {
         const gap = separation();
         if (locked && gap < pinchGap * 0.955) setStage(selected ? 1 : 0);
@@ -890,6 +865,13 @@ export async function createGlobe(
       type,
       (e) => {
         contacts.delete(e.pointerId);
+        if (tap?.id !== e.pointerId) return;
+        const [x, y] = where(e);
+        const distance = Math.hypot(x - tap.xy[0], y - tap.xy[1]);
+        tap = null;
+        if (type !== "pointerup" || distance >= 4) return;
+        const code = findCountry(x, y);
+        if (code || anchorAt([x, y])) onPick(code, x, y);
       },
       true,
     );
@@ -1019,6 +1001,7 @@ export async function createGlobe(
     });
     native = true;
     map.setVerticalFieldOfView(fieldOfView);
+    attachTileflowAtmosphere(map);
     const css = document.createElement("style");
     css.textContent =
       ".atlas-geo-viewport .maplibregl-canvas-container,.atlas-geo-viewport .maplibregl-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;outline:none}.atlas-geo-viewport .maplibregl-control-container{display:none}";
@@ -1031,11 +1014,6 @@ export async function createGlobe(
           code = findCountry(x, y);
         if (code !== hovered) hover(code, { x, y });
       }
-    });
-    map.on("click", (e) => {
-      if (locked || e.originalEvent?.detail > 1) return;
-      const code = findCountry(e.point.x, e.point.y);
-      if (code) onCountry(code);
     });
     function ready() {
       if (destroyed) return;
