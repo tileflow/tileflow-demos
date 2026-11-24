@@ -12,7 +12,7 @@ From the repository root, install with `pnpm install --frozen-lockfile` and run 
 
 - [HSL GTFS-RT](https://hsldevcom.github.io/gtfs_rt/) supplies observed vehicle locations and trip updates. The browser polls positions every three seconds and predictions every fifteen seconds. The service date, start time, route and direction identify a trip. A vehicle moves only between observations. Its last fix ages out after 90 seconds. The stop board uses live predictions and links to HSL's timetable.
 - [HSL high-frequency positioning](https://digitransit.fi/en/developers/apis/5-realtime-api/vehicle-positions/high-frequency-positioning/) supplies one-second position and door readings where available for the selected bus. The selected bus opens its doors when an HFP reading reports an opening. The feed provides a combined door state, so the model moves its passenger doors together.
-- [HSL's published GTFS ZIP](https://infopalvelut.storage.hsldev.com/gtfs/hsl.zip) supplies the route shapes, stop order and stop names. The catalogue includes its publication date and validity range. Refresh with `python3 scripts/prepare_network.py /path/to/hsl.zip` before the catalogue expires, then rebuild. Diversions can differ from the published street geometry.
+- [HSL's published GTFS ZIP](https://infopalvelut.storage.hsldev.com/gtfs/hsl.zip) supplies the route shapes, stop order and stop names. The catalogue includes its publication date and validity range. Install Shapely 2 for catalogue preparation. Refresh with `python3 scripts/prepare_network.py /path/to/hsl.zip` before the catalogue expires, then rebuild. Diversions can differ from the published street geometry.
 - Transit data © Helsinki Regional Transport (HSL), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The initial catalogue was delivered on 24 November 2026. Map and map-data credits are provided by Streets.
 
 ## Stops on the street map
@@ -22,6 +22,12 @@ Select a bus to see its next platform. At street zoom the anchored card opens th
 Platform numbers and indoor terminal information come from HSL GTFS. Shelter and bench records are matched to individual boarding points by HSL code and proximity. From zoom 17, supplemental mapped outdoor shelters appear with schematic roof heights and supports. Streets supplies building-tagged shelters directly. Other platforms retain their map symbol. A shelter symbol indicates a recorded shelter even if its outline is unknown.
 
 The separate facilities extract is © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0. To refresh it after the GTFS catalogue, install Python’s `osmium` package and run `python3 scripts/prepare_facilities.py Helsinki.osm.pbf` with the [BBBike Helsinki extract](https://download.bbbike.org/osm/bbbike/Helsinki/). The initial snapshot is from 21 November 2026.
+
+## Roundabouts
+
+The catalogue matches each trip’s incoming and outgoing streets to connected one-way roundabout geometry. Vehicle motion, bearings, forward previews and selected routes share the resulting arc. Stop offsets are remeasured along the corrected trip. Where a trip crosses the interior and the entry or exit is ambiguous, the route has a gap and the map can show the reported GPS location. Mapped flyovers and through roads are checked separately.
+
+The directed circles and approach roads in `scripts/data/roundabouts.json` are © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0, sourced from the [Uusimaa extract](https://download.openstreetmap.fr/extracts/europe/finland/uusimaa-latest.osm.pbf). The derived road geometry is included in the published catalogue. To refresh the extract, install Python’s `osmium` and Shapely 2, run `python3 scripts/roundabouts.py uusimaa-latest.osm.pbf scripts/data/roundabouts.json`, then regenerate the GTFS catalogue.
 
 ## Vehicles and road placement
 

@@ -1,6 +1,6 @@
 import {createTileflowMap} from '@tileflow/dom';
 import {Marker, LngLatBounds} from 'maplibre-gl';
-import {distance, heading, splitShape} from './route-track.js';
+import {distance, heading, mappedSections, networkTrack, splitShape} from './route-track.js';
 import {mapCarriageways} from './carriageways.js';
 import {createBusLayer} from './bus-model.js';
 import {createStopCard} from './stop-card.js';
@@ -71,14 +71,18 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     hasSelection = false,
     showAllTripStops = false,
     renderPoints = empty;
-  let selectedTrackLine, selectedRouteId, lastSplitOffset;
+  let selectedShape, selectedRouteId, lastSplitOffset;
+  function routeFeatures(shape, properties) {
+    if (!network.roundaboutGaps?.[shape]) return [feature('LineString', network.shapes[shape], properties)];
+    return mappedSections(networkTrack(network, shape)).map((part) => feature('LineString', part, properties));
+  }
   const drawn = new Set(),
     lines = [];
   for (const [id, route] of Object.entries(network.routes)) {
     for (const p of route.patterns) {
       if (drawn.has(p.shape)) continue;
       drawn.add(p.shape);
-      lines.push(feature('LineString', network.shapes[p.shape], {id}));
+      lines.push(...routeFeatures(p.shape, {id}));
     }
   }
   const align = mapCarriageways(map);
@@ -566,14 +570,14 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
           map.setPaintProperty('hsl-network', 'line-color', networkColor());
         }
       }
-      selectedTrackLine = fullTrip ? network.shapes[patterns[0].shape] : undefined;
+      selectedShape = fullTrip ? patterns[0].shape : undefined;
       selectedRouteId = routeId;
       lastSplitOffset = undefined;
       const passedStops = new Set(progress?.passedStops);
       focus = fc(
         patterns
           .filter((p) => network.shapes[p.shape])
-          .map((p) => feature('LineString', network.shapes[p.shape], {id: routeId})),
+          .flatMap((p) => routeFeatures(p.shape, {id: routeId})),
       );
       calls = fc(
         [...new Set(progress?.currentStop ? [...ids, progress.currentStop] : ids)]
@@ -593,19 +597,26 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       set('hsl-calls', calls);
     },
     tripProgress(track, offset) {
-      if (!selectedTrackLine) return;
-      if (!track || track.line !== selectedTrackLine) {
+      if (!selectedShape) return;
+      if (!track || track.line !== network.shapes[selectedShape]) {
         if (lastSplitOffset === undefined) return;
         lastSplitOffset = undefined;
-        focus = fc([feature('LineString', selectedTrackLine, {id: selectedRouteId})]);
+        focus = fc(routeFeatures(selectedShape, {id: selectedRouteId}));
       } else {
         if (lastSplitOffset !== undefined && Math.abs(lastSplitOffset - offset) < 1) return;
         lastSplitOffset = offset;
-        const {passed, remaining} = splitShape(track, offset);
-        const parts = [];
-        if (passed) parts.push(feature('LineString', passed, {id: selectedRouteId, passed: true}));
-        if (remaining) parts.push(feature('LineString', remaining, {id: selectedRouteId, passed: false}));
-        focus = fc(parts);
+        if (track.gaps) {
+          focus = fc([true, false].flatMap((passed) =>
+            mappedSections(track, passed ? 0 : offset, passed ? offset : track.length)
+              .map((part) => feature('LineString', part, {id: selectedRouteId, passed})),
+          ));
+        } else {
+          const {passed, remaining} = splitShape(track, offset);
+          const parts = [];
+          if (passed) parts.push(feature('LineString', passed, {id: selectedRouteId, passed: true}));
+          if (remaining) parts.push(feature('LineString', remaining, {id: selectedRouteId, passed: false}));
+          focus = fc(parts);
+        }
       }
       set('hsl-focus', focus);
     },

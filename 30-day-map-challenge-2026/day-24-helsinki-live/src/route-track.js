@@ -26,9 +26,14 @@ function mix(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
 
-export function routeTrack(line) {
+export function networkTrack(network, shape) {
+  return routeTrack(network.shapes[shape], network.roundabouts?.[shape], network.roundaboutGaps?.[shape]);
+}
+
+export function routeTrack(line, roundabouts, gaps) {
   if (!line || line.length < 2) return null;
-  if (tracks.has(line)) return tracks.get(line);
+  const cached = tracks.get(line);
+  if (cached && (!roundabouts || cached.roundabouts) && (!gaps || cached.gaps)) return cached;
   const offsets = [0],
     bearings = [];
   for (let i = 1; i < line.length; i++) {
@@ -38,7 +43,10 @@ export function routeTrack(line) {
   // Round only a local corner. The trim limits keep neighbouring bends disjoint and
   // keep the arc within 1.35 m of either leg on a right-angle street corner.
   const bends = [];
+  let circle = 0;
   for (let i = 1; i < line.length - 1; i++) {
+    while (roundabouts?.[circle] && roundabouts[circle][1] < i) circle++;
+    if (roundabouts?.[circle] && roundabouts[circle][0] <= i) continue;
     const angle = turn(bearings[i - 1], bearings[i]);
     if (angle < 10 || angle > 150) continue;
     const incoming = offsets[i] - offsets[i - 1],
@@ -52,7 +60,11 @@ export function routeTrack(line) {
       exit: mix(line[i], line[i + 1], trim / outgoing),
     };
   }
-  const track = {line, offsets, bearings, bends, length: offsets.at(-1)};
+  const track = {
+    line, offsets, bearings, bends, gaps,
+    length: offsets.at(-1),
+    roundabouts: roundabouts?.map(([a, b]) => [offsets[a], offsets[b]]),
+  };
   tracks.set(line, track);
   return track;
 }
@@ -120,14 +132,24 @@ function laneShift(track, offset, align) {
 }
 function lanePoint(track, offset, align) {
   const base = roadPoint(track, offset).coordinate;
+  if (track.gaps?.some(([a, b]) => offset >= a && offset <= b))
+    return {coordinate: base, base, uncertain: true, unlocated: true};
   if (!align) return {coordinate: base, base};
+  // The surveyed arc already follows the circulating carriageway. Taper the
+  // ordinary street correction on the approaches, including while tiles reload.
+  let weight = 1;
+  for (const [entry, exit] of track.roundabouts ?? []) {
+    if (entry > offset + 7) break;
+    if (offset >= entry && offset <= exit) return {coordinate: base, base};
+    weight = Math.min(weight, Math.max(entry - offset, offset - exit) / 7);
+  }
   const start = Math.floor(offset / 10) * 10;
   const end = Math.min(start + 10, track.length);
   const a = laneShift(track, start, align),
     b = laneShift(track, end, align);
   const t = (offset - start) / (end - start || 1);
   const shift = mix(a.shift, b.shift, t * t * (3 - 2 * t));
-  const coordinate = base.map((n, k) => n + shift[k]);
+  const coordinate = base.map((n, k) => n + shift[k] * weight);
   if (a.uncertain || b.uncertain) {
     // A missing road at the next anchor need not hide a bus on a confirmed
     // stretch. Validate its current position against the road at this offset.
@@ -171,6 +193,7 @@ export function routePose(track, offset, align) {
     coordinate: center.coordinate,
     bearing: ((bearing % 360) + 360) % 360,
     uncertain: center.uncertain || ambiguous,
+    ...(center.unlocated && {unlocated: true}),
   };
 }
 
@@ -199,6 +222,24 @@ export function splitShape(track, offset) {
   const i = sectionAt(track, offset);
   const point = atOffset(track, offset);
   return {passed: [...track.line.slice(0, i), point], remaining: [point, ...track.line.slice(i)]};
+}
+
+// Clip an ordered section of the route at each unverified at-grade crossing.
+export function mappedSections(track, start = 0, end = track.length) {
+  const parts = [];
+  function append(a, b) {
+    if (b <= a) return;
+    const inside = track.line.slice(sectionAt(track, a), sectionAt(track, b));
+    if (inside.length && track.offsets[sectionAt(track, a)] === a) inside.shift();
+    parts.push([atOffset(track, a), ...inside, atOffset(track, b)]);
+  }
+  for (const [a, b] of track.gaps ?? []) {
+    if (a >= end) break;
+    append(start, Math.min(end, a));
+    start = Math.max(start, b);
+  }
+  append(start, end);
+  return parts;
 }
 
 export function shapeAhead(track, offset) {

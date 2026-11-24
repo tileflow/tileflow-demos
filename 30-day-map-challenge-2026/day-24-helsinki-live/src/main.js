@@ -4,7 +4,7 @@ import {makeMap} from './map.js';
 import {helsinkiTimeOfDay} from './daylight.js';
 import {choosePattern, move, progress as tripOffset, samplePose, upcoming} from './transit.js';
 import {isNobinaU12} from './u12-model.js';
-import {distance, routePreview, routeTrack} from './route-track.js';
+import {distance, networkTrack, routePreview} from './route-track.js';
 import {trackDetail} from './door-feed.js';
 import {platformInfo, vehicleAtStop, callForBus, matchesService} from './stop-call.js';
 import {statusIcon} from './stop-card.js';
@@ -81,7 +81,8 @@ function displayedPose(bus, time) {
 }
 function placeFix(previous, update, time) {
   const p = pattern(update);
-  return move(previous, update, time, {pattern: p, track: routeTrack(network.shapes[p?.shape])});
+  const track = networkTrack(network, p?.shape);
+  return move(previous, update, time, {pattern: p, track});
 }
 
 function visible(time, bounds) {

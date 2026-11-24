@@ -40,9 +40,12 @@ export function progress(bus, time) {
 }
 
 export function samplePose(bus, time, align) {
-  return bus.track
-    ? routePose(bus.track, progress(bus, time), align)
-    : {coordinate: sample(bus, time), bearing: bus.bearing};
+  if (bus.track) {
+    const pose = routePose(bus.track, progress(bus, time), align);
+    if (!pose.unlocated) return pose;
+    return {coordinate: bus.rawCoordinate, bearing: bus.bearing, uncertain: true};
+  }
+  return {coordinate: bus.coordinate, bearing: bus.bearing};
 }
 
 export function sample(bus, time) {
