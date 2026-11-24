@@ -108,6 +108,7 @@ function visible(time, bounds) {
       selected,
       stopped: bus.status === 1 && (bus.speed == null || bus.speed < 1),
       doors: selected && door?.key === bus.key && door.time > now() - 8 ? door.open : null,
+      doorStop: selected && door?.open ? vehicleAtStop(bus, door, network.stops, now())?.id : undefined,
       wheelDistance: bus.track ? tripOffset(bus, time) : undefined,
       line: network.routes[bus.route].number,
     });
@@ -279,7 +280,7 @@ function select(kind, id, camera = 'keep', options = {}) {
     view.map.jumpTo(restored.camera);
     return;
   }
-  if (camera === 'keep' && (bus || kind === 'route' || kind === 'nearby')) {
+  if (camera === 'inPlace' || (camera === 'keep' && (bus || kind === 'route' || kind === 'nearby'))) {
     view?.map.stop();
     return;
   }
@@ -595,6 +596,7 @@ function busDetail(id) {
     '<div class="data-note">Last location · ' +
     Math.max(0, now() - b.timestamp) +
     (b.track ? ' s' : ' s · GPS outside the matched route') +
+    (open ? ' · Illustrative passengers' : '') +
     '</div></section></div>'
   );
 }

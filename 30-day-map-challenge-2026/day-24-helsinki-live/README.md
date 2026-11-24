@@ -19,9 +19,9 @@ From the repository root, install with `pnpm install --frozen-lockfile` and run 
 
 Select a bus to see its next platform. At street zoom the anchored card opens the stop’s departures. Two pause bars mean HSL reports the vehicle at that platform. The open-door symbol requires a recent door reading for the selected trip. The detailed U12 wheels roll with distance along the trip.
 
-Platform numbers and indoor terminal information come from HSL GTFS. Shelter and bench records are matched to individual boarding points by HSL code and proximity. From zoom 17, supplemental mapped outdoor shelters appear with schematic roof heights and supports. Streets supplies building-tagged shelters directly. Other platforms retain their map symbol. A shelter symbol indicates a recorded shelter even if its outline is unknown.
+Platform numbers and indoor levels come from HSL GTFS. At street scale, code-matched outdoor boarding points on the right of a directed trip show a stop flag with the real name and code. Surveyed amenities determine whether the model includes a bench or a glazed shelter. Existing mapped roof footprints take precedence. The furniture is a schematic interpretation of the [Helsinki street design guide](https://kaupunkitilaohje.hel.fi/kortti/pysakki/). Indoor or numbered platforms and stops with uncertain placement retain a map symbol. Winter-clad waiting passengers are illustrative. A selected bus with a fresh HSL door-open reading at the matching kerb triggers one illustrative exchange. Reduced-motion preferences keep the figures still.
 
-The separate facilities extract is © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0. To refresh it after the GTFS catalogue, install Python’s `osmium` package and run `python3 scripts/prepare_facilities.py Helsinki.osm.pbf` with the [BBBike Helsinki extract](https://download.bbbike.org/osm/bbbike/Helsinki/). The initial snapshot is from 21 November 2026.
+The facilities extract is © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), ODbL 1.0. To refresh it after the GTFS catalogue, install Python’s `osmium` package and run `python3 scripts/prepare_facilities.py uusimaa-latest.osm.pbf` with the [Uusimaa extract](https://download.openstreetmap.fr/extracts/europe/finland/uusimaa-latest.osm.pbf).
 
 ## Roundabouts
 

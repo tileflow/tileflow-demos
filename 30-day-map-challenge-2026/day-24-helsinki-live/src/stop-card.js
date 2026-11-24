@@ -43,7 +43,7 @@ export function createStopCard(map, stops, openStop) {
     },
     maxWidth: '255px',
   }).setDOMContent(button);
-  let call;
+  let call, anchor;
   button.onclick = (e) => {
     e.stopPropagation();
     if (call) openStop(call.id);
@@ -73,14 +73,13 @@ export function createStopCard(map, stops, openStop) {
             .filter(Boolean)
             .join('. '),
         );
-        popup.setLngLat(stop.coordinate);
+        anchor = amenities[call.id]?.point ?? stop.coordinate;
+        popup.setLngLat(anchor);
       }
       visibility();
     },
     nearBus(coordinate) {
-      return (
-        call && popup.isOpen() && map.project(coordinate).dist(map.project(stops[call.id].coordinate)) < 120
-      );
+      return call && popup.isOpen() && map.project(coordinate).dist(map.project(anchor)) < 120;
     },
   };
 }

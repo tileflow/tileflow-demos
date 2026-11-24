@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {MercatorCoordinate} from 'maplibre-gl';
+import {createPlatformScene} from './platform-model.js';
 import {createCityBusModel, updateU12Model, disposeU12Model} from './u12-model.js';
 
 const BLUE = '#007ac4';
@@ -127,7 +128,7 @@ function streetModels(map, vehicles, detailed) {
   return ids;
 }
 
-function makeBusScene(map, gl) {
+function makeBusScene(map, gl, amenities, stops) {
   const scene = new THREE.Scene();
   const camera = new THREE.Camera();
   const renderer = new THREE.WebGLRenderer({canvas: map.getCanvas(), context: gl, antialias: true});
@@ -166,6 +167,7 @@ function makeBusScene(map, gl) {
   // in a GPU instance matrix would lose sub-metre precision at street scale.
   const origin = MercatorCoordinate.fromLngLat([24.94, 60.17]);
   const metres = origin.meterInMercatorCoordinateUnits();
+  const platforms = createPlatformScene(scene, map, origin, metres, amenities, stops);
   const local = new THREE.Matrix4()
     .makeTranslation(origin.x, origin.y, 0)
     .multiply(new THREE.Matrix4().makeScale(metres, -metres, metres))
@@ -197,7 +199,7 @@ function makeBusScene(map, gl) {
   }
 
   function render(input, vehicles, now, getSun) {
-    if (!vehicles.length) return;
+    platforms.update(vehicles, now);
     if (now - lastLight >= 1000) {
       const light = getSun?.();
       if (light) {
@@ -294,6 +296,7 @@ function makeBusScene(map, gl) {
   }
 
   function dispose() {
+    platforms.dispose();
     for (const model of detailed.values()) disposeU12Model(model);
     detailed.clear();
     for (const batch of batches) batch.dispose();
@@ -304,24 +307,47 @@ function makeBusScene(map, gl) {
     signTexture.dispose();
     renderer.dispose();
   }
-  return {render, dispose};
+  const envelope = new THREE.Box3(new THREE.Vector3(-1.3, 0, -6.1), new THREE.Vector3(1.3, 3.4, 6.1));
+  function pick(point) {
+    const canvas = map.getCanvas();
+    const x = (2 * point.x) / canvas.clientWidth - 1,
+      y = 1 - (2 * point.y) / canvas.clientHeight;
+    const inverse = camera.projectionMatrix.clone().invert();
+    const start = new THREE.Vector3(x, y, -1).applyMatrix4(inverse);
+    const direction = new THREE.Vector3(x, y, 1).applyMatrix4(inverse).sub(start).normalize();
+    const raycaster = new THREE.Raycaster(start, direction);
+    let hit = platforms.pick(raycaster);
+    for (const [id, model] of detailed) {
+      if (!model.visible) continue;
+      const ray = raycaster.ray.clone().applyMatrix4(model.matrixWorld.clone().invert());
+      const intersection = ray.intersectBox(envelope, new THREE.Vector3());
+      if (!intersection) continue;
+      const distance = intersection.applyMatrix4(model.matrixWorld).distanceTo(start);
+      if (!hit || distance < hit.distance) hit = {kind: 'bus', id, distance};
+    }
+    return hit;
+  }
+  return {render, dispose, pick};
 }
 
 /** getFrame(timeMs, bounds) supplies currently visible, interpolated vehicle poses. */
-export function createBusLayer(map, getFrame, getSun) {
+export function createBusLayer(map, getFrame, getSun, amenities, stops) {
   let world;
   let timer;
   return {
     id: 'helsinki-bus-models',
     type: 'custom',
     renderingMode: '3d',
+    pick(point) {
+      return world?.pick(point);
+    },
     render(gl, input) {
       const now = performance.now();
       const vehicles = getFrame(now, map.getBounds());
-      if (!vehicles.length) return;
-      if (!world) world = makeBusScene(map, gl);
+      if (!world && !vehicles.length && map.getZoom() < 17.8) return;
+      if (!world) world = makeBusScene(map, gl, amenities, stops);
       world.render(input, vehicles, now, getSun);
-      if (timer === undefined) {
+      if (vehicles.length && timer === undefined) {
         timer = setTimeout(() => {
           timer = undefined;
           map.triggerRepaint();

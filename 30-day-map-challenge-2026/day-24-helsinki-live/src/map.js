@@ -71,7 +71,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     hasSelection = false,
     showAllTripStops = false,
     renderPoints = empty;
-  let selectedShape, selectedRouteId, lastSplitOffset;
+  let selectedShape, selectedRouteId, lastSplitOffset, streetLayer;
   function routeFeatures(shape, properties) {
     if (!network.roundaboutGaps?.[shape]) return [feature('LineString', network.shapes[shape], properties)];
     return mappedSections(networkTrack(network, shape)).map((part) => feature('LineString', part, properties));
@@ -93,8 +93,21 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       : amenities[id]?.shelter
         ? 'sheltered-stop'
         : 'bus-stop';
+  const stopPoint = (id) => amenities[id]?.point ?? network.stops[id].coordinate;
+  const physical = (id) => Number.isFinite(amenities[id]?.bearing);
+  const physicalOpacity = [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    17.8,
+    1,
+    18.4,
+    ['case', ['get', 'physical'], 0, 1],
+  ];
   const allStops = fc(
-    Object.entries(network.stops).map(([id, s]) => feature('Point', s.coordinate, {id, sign: signKind(id)})),
+    Object.keys(network.stops).map((id) =>
+      feature('Point', stopPoint(id), {id, sign: signKind(id), physical: physical(id)}),
+    ),
   );
   const roofs = fc(
     Object.entries(amenities).flatMap(([id, data]) =>
@@ -327,6 +340,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         type: 'symbol',
         source: 'hsl-stops',
         minzoom: 13.5,
+        paint: {'icon-opacity': physicalOpacity},
         layout: {...stopLayout, 'icon-size': width(0.46, 0.86)},
       });
       add({
@@ -348,7 +362,17 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         type: 'symbol',
         source: 'hsl-calls',
         filter: ['!', ['get', 'highlight']],
-        paint: {'icon-opacity': ['case', ['boolean', ['get', 'passed'], false], 0.52, 1]},
+        paint: {
+          'icon-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            17.8,
+            ['case', ['get', 'passed'], 0.52, 1],
+            18.4,
+            ['case', ['get', 'physical'], 0, ['get', 'passed'], 0.52, 1],
+          ],
+        },
         layout: {
           ...stopLayout,
           'icon-image': ['concat', 'trip-', ['get', 'sign']],
@@ -362,6 +386,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         type: 'symbol',
         source: 'hsl-calls',
         filter: ['get', 'highlight'],
+        paint: {'icon-opacity': physicalOpacity},
         layout: {
           ...stopLayout,
           'icon-image': ['concat', 'trip-', ['get', 'sign']],
@@ -428,15 +453,17 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         },
         paint: {'text-color': '#12394e', 'text-halo-color': '#fff', 'text-halo-width': 1.6},
       });
-      if (!map.getLayer('helsinki-bus-models'))
-        map.addLayer(
-          createBusLayer(
-            map,
-            (time, bounds) =>
-              map.getZoom() >= 14.7 ? handlers.visible(time, bounds).filter((b) => b.onRoute) : [],
-            () => controller.getThemeController()?.getSun(),
-          ),
+      if (!map.getLayer('helsinki-bus-models')) {
+        streetLayer = createBusLayer(
+          map,
+          (time, bounds) =>
+            map.getZoom() >= 14.7 ? handlers.visible(time, bounds).filter((b) => b.onRoute) : [],
+          () => controller.getThemeController()?.getSun(),
+          amenities,
+          network.stops,
         );
+        map.addLayer(streetLayer);
+      }
     } finally {
       settingUp = false;
     }
@@ -481,6 +508,8 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         distance = d;
       }
     }
+    const object = map.getZoom() >= 17.8 && streetLayer?.pick(e.point);
+    if (object) return handlers.select(object.kind, object.id, 'inPlace');
     if (hit && distance <= 6) return handlers.select('bus', hit);
     const sign = placesAt(e.point, 0, stopLayers)[0];
     if (sign) return handlers.select('stop', sign.properties.id);
@@ -583,8 +612,9 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         [...new Set(progress?.currentStop ? [...ids, progress.currentStop] : ids)]
           .filter((id) => network.stops[id])
           .map((id) =>
-            feature('Point', network.stops[id].coordinate, {
+            feature('Point', stopPoint(id), {
               id,
+              physical: physical(id),
               name: network.stops[id].name,
               sign: signKind(id),
               passed: fullTrip && passedStops.has(id),
