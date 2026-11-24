@@ -107,7 +107,7 @@ function visible(time, bounds) {
       selected,
       stopped: bus.status === 1 && (bus.speed == null || bus.speed < 1),
       doors: selected && door?.key === bus.key && door.time > now() - 8 ? door.open : null,
-      wheelDistance: bus.track && isNobinaU12(bus.id) ? tripOffset(bus, time) : undefined,
+      wheelDistance: bus.track ? tripOffset(bus, time) : undefined,
       line: network.routes[bus.route].number,
     });
   }
@@ -550,7 +550,7 @@ function busDetail(id) {
     nextLine +
     '<div class="vehicle-type">Bus ' +
     escape(id.split('/').at(-1)) +
-    (isNobinaU12(id) ? ' · Nobina Yutong U12' : '') +
+    (isNobinaU12(id) ? ' · Nobina Yutong U12' : ' · Representative HSL model') +
     '</div>' +
     (platform
       ? '<span class="boarding-status">' +
@@ -567,7 +567,7 @@ function busDetail(id) {
     locateIcon +
     (following ? 'Following' : 'Follow') +
     '</button>' +
-    (isNobinaU12(id) && b.track ? '<button class="action" data-action="closeup">Street view</button>' : '') +
+    (b.track ? '<button class="action" data-action="closeup">Street view</button>' : '') +
     '</div></article><section class="itinerary" aria-label="Itinerary">' +
     '<div class="itinerary-top">' +
     section('Upcoming stops') +

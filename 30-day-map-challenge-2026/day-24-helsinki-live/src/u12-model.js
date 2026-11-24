@@ -566,13 +566,17 @@ function materials() {
 
 /** Create an exportable metre-scale U12. Texture canvases hold original drawings, not photographs. */
 export function createU12Model(vehicle = {}) {
+  return createCityBusModel(vehicle, true);
+}
+
+export function createCityBusModel(vehicle, nobinaLivery = isNobinaU12(vehicle.id)) {
   const root = new T.Group();
-  root.name = 'Nobina Yutong U12-B';
+  root.name = nobinaLivery ? 'Nobina Yutong U12-B' : 'Representative HSL city bus';
   const fixed = new T.Group();
   fixed.name = 'Body and interior';
   root.add(fixed);
-  const fleet = String(vehicle.id || '').match(namedFleet)?.[1] || '';
-  const plate = fleet ? 'YMN-' + (Number(fleet) - 600) : '';
+  const fleet = String(vehicle.id || '').split('/')[1]?.replace(/^0+(?=\d)/, '') || '';
+  const plate = isNobinaU12(vehicle.id) ? 'YMN-' + (Number(fleet) - 600) : '';
   const m = materials();
   const leaves = [];
   const axles = AXLES.map((z) => {
@@ -583,7 +587,7 @@ export function createU12Model(vehicle = {}) {
   });
   box(fixed, m.black, 0, 0.33, 0, 2.1, 0.29, 10.8, 0.1);
   for (const side of [-1, 1]) {
-    const artwork = imageMaterial(sideArt(side, fleet));
+    const artwork = imageMaterial(sideArt(side, fleet, nobinaLivery));
     const shell = sideWall(side === 1);
     skinSection(shell, side, artwork, fixed);
     skinSection(shell, side, m.glass, fixed, HALF - 0.024);
@@ -611,8 +615,8 @@ export function createU12Model(vehicle = {}) {
         box(fixed, m.chrome, 1.272, 0.245, door.z, 0.022, 0.04, door.width - 0.02);
       }
   }
-  nose(fixed, true, imageMaterial(endArt(true, fleet, plate)), m.glass);
-  nose(fixed, false, imageMaterial(endArt(false, fleet, plate)), m.glass);
+  nose(fixed, true, imageMaterial(endArt(true, fleet, plate, nobinaLivery)), m.glass);
+  nose(fixed, false, imageMaterial(endArt(false, fleet, plate, nobinaLivery)), m.glass);
   const brakeLights = new T.Group();
   brakeLights.name = 'Brake lamps';
   root.add(brakeLights);

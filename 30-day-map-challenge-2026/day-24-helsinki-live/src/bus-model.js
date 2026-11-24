@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {MercatorCoordinate} from 'maplibre-gl';
-import {createU12Model, isNobinaU12, updateU12Model, disposeU12Model} from './u12-model.js';
+import {createCityBusModel, updateU12Model, disposeU12Model} from './u12-model.js';
 
 const BLUE = '#007ac4';
 const WHITE = '#eff8fa';
@@ -105,46 +105,26 @@ function leavesGeometry(side) {
   return finish();
 }
 
-// Matching vehicles retain their characteristic blue-to-white livery and 6 m wheelbase
-// at neighbourhood scale. Subpixel glazing, lamps and interior fittings are reserved for close-ups.
-function u12Overview() {
-  const {box, add, finish} = partsBuilder();
-  box(0, 1.55, 0, 2.51, 2.47, 12.12, WHITE, 0.15);
-  box(0, 1.55, -1.9, 2.55, 2.49, 8.34, BLUE, 0.14);
-  box(0, 2.12, 0, 2.55, 1.55, 12.14, '#1d303b', 0.16);
-  box(0, 3.0, 0, 2.54, 0.35, 12.02, WHITE, 0.14);
-  box(0, 3.01, -1.91, 2.55, 0.35, 8.29, BLUE, 0.14);
-  box(0, 3.17, 0.8, 1.6, 0.035, 1.13, '#84959a');
-  for (const side of [-1, 1]) {
-    // These flat panels retain the glazing and white diagonal of the Helsinki livery
-    // when the detailed model would occupy only a few dozen screen pixels.
-    for (const z of [-4.0, -2.65, -1.3, 0.05, 1.4, 2.75, 4.1, 5.12]) {
-      box(side * 1.28, 2.16, z, 0.016, 0.96, 1.16, '#344e5c');
-    }
-    add(
-      new THREE.BoxGeometry(0.024, 0.13, 3.0),
-      WHITE,
-      side * 1.282,
-      0.92,
-      1.7,
-      new THREE.Euler(-0.22, 0, 0),
-    );
-    for (const z of [-3.18, 2.82]) {
-      const axle = new THREE.Euler(0, 0, Math.PI / 2);
-      add(new THREE.CylinderGeometry(0.48, 0.48, 0.22, 14), '#1b252c', side * 1.2, 0.48, z, axle);
-      add(new THREE.CylinderGeometry(0.27, 0.27, 0.035, 14), STEEL, side * 1.316, 0.48, z, axle);
-    }
-    box(side * 1.036, 0.683, -6.022, 0.13, 0.4, 0.024, '#e6eff1', 0.04);
+// At street scale, favour the selected bus and those nearest the middle of the screen.
+function streetModels(map, vehicles, detailed) {
+  const zoom = map.getZoom();
+  if (zoom < 16.35) return new Set();
+  const selected = vehicles.find((bus) => bus.selected);
+  const ids = new Set(selected ? [selected.id] : []);
+  if (zoom < 17) return ids;
+  const {clientWidth: width, clientHeight: height} = map.getCanvas();
+  const candidates = [];
+  for (const bus of vehicles) {
+    if (bus.selected) continue;
+    const {x, y} = map.project(bus.coordinate);
+    if (x < 0 || x > width || y < 0 || y > height) continue;
+    // Keep small GPS changes from repeatedly rebuilding a model near the cutoff.
+    const distance = Math.hypot(x - width / 2, y - height / 2) - (detailed.has(bus.id) ? 45 : 0);
+    candidates.push({id: bus.id, distance});
   }
-  for (const [z, w] of [
-    [-5.1, 1.33],
-    [0.44, 1.34],
-    [4.63, 0.78],
-  ]) {
-    box(1.277, 1.43, z, 0.028, 2.18, w, '#20313a');
-    box(1.292, 1.65, z, 0.016, 1.5, w - 0.1, '#3b5663');
-  }
-  return finish();
+  candidates.sort((a, b) => a.distance - b.distance);
+  for (const candidate of candidates.slice(0, 3 - ids.size)) ids.add(candidate.id);
+  return ids;
 }
 
 function makeBusScene(map, gl) {
@@ -164,7 +144,7 @@ function makeBusScene(map, gl) {
   const material = new THREE.MeshLambertMaterial({vertexColors: true});
   const brake = partsBuilder();
   for (const side of [-1, 1]) brake.box(side * 1.07, 1.25, 6.007, 0.145, 0.4, 0.032, '#ff4442');
-  const geometries = [bodyGeometry(), leavesGeometry(-1), leavesGeometry(1), brake.finish(), u12Overview()];
+  const geometries = [bodyGeometry(), leavesGeometry(-1), leavesGeometry(1), brake.finish()];
   const detailed = new Map();
   const signCanvas = document.createElement('canvas');
   signCanvas.width = 256;
@@ -233,10 +213,8 @@ function makeBusScene(map, gl) {
     }
     resize(vehicles.length);
     let braking = 0,
-      generic = 0,
-      overview = 0,
-      nearby = 0;
-    const used = new Set();
+      generic = 0;
+    const used = streetModels(map, vehicles, detailed);
     for (const item of detailed.values()) item.visible = false;
     const zoom = map.getZoom();
     sign.visible = false;
@@ -256,25 +234,19 @@ function makeBusScene(map, gl) {
         travel = door.value + THREE.MathUtils.clamp(target - door.value, -step, step);
       }
       doorTravel.set(bus.id, {value: travel, at: now});
-      if (isNobinaU12(bus.id)) {
-        if ((bus.selected && zoom >= 16.35) || (!bus.selected && zoom >= 18.1 && nearby < 2)) {
-          if (!bus.selected) nearby++;
-          let model = detailed.get(bus.id);
-          if (!model) {
-            model = createU12Model(bus);
-            model.matrixAutoUpdate = false;
-            detailed.set(bus.id, model);
-            scene.add(model);
-          }
-          used.add(bus.id);
-          model.userData.lastVisible = now;
-          model.visible = true;
-          model.matrix.copy(pose.matrix);
-          model.matrixWorldNeedsUpdate = true;
-          updateU12Model(model, bus, travel / 0.52);
-        } else {
-          batches[4].setMatrixAt(overview++, pose.matrix);
+      if (used.has(bus.id)) {
+        let model = detailed.get(bus.id);
+        if (!model) {
+          model = createCityBusModel(bus);
+          model.matrixAutoUpdate = false;
+          detailed.set(bus.id, model);
+          scene.add(model);
         }
+        model.userData.lastVisible = now;
+        model.visible = true;
+        model.matrix.copy(pose.matrix);
+        model.matrixWorldNeedsUpdate = true;
+        updateU12Model(model, bus, travel / 0.52);
         continue;
       }
       const index = generic++;
@@ -312,7 +284,7 @@ function makeBusScene(map, gl) {
     }
     for (const [id, state] of doorTravel) if (now - state.at > 5000) doorTravel.delete(id);
     batches.forEach((batch, i) => {
-      batch.count = i === 3 ? braking : i === 4 ? overview : generic;
+      batch.count = i === 3 ? braking : generic;
       batch.instanceMatrix.needsUpdate = true;
     });
     camera.projectionMatrix.fromArray(input.defaultProjectionData.mainMatrix).multiply(local);
