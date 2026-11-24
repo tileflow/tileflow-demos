@@ -29,12 +29,8 @@ const color = {
   "labels.halo": "#fff",
   "labels.muted": "#397b75",
 };
-const opacitySelection = [
-  "case",
-  ["boolean", ["feature-state", "selected"], false],
-  1,
-  0,
-];
+const selected = ["boolean", ["feature-state", "selected"], false];
+const hovered = ["boolean", ["feature-state", "hover"], false];
 export const config = defineMap({
   id: "atlas-agua",
   name: "Drinking Water Atlas",
@@ -128,21 +124,20 @@ export const config = defineMap({
         paint: {
           "circle-radius": [
             "case",
-            ["boolean", ["feature-state", "selected"], false],
-            3.4,
+            selected, 3.4,
+            hovered, 3,
             2.15,
           ],
           "circle-color": ["get", "color"],
           "circle-stroke-width": [
             "case",
-            ["boolean", ["feature-state", "selected"], false],
-            1.65,
+            selected, 1.65,
+            hovered, 1.2,
             0.65,
           ],
           "circle-stroke-color": [
             "case",
-            ["boolean", ["feature-state", "selected"], false],
-            ink.selection,
+            ["any", selected, hovered], ink.selection,
             "#f0fff4",
           ],
           "circle-pitch-alignment": "map",
@@ -151,13 +146,9 @@ export const config = defineMap({
       },
     ]),
     eoutline: overlay("countries", [
-      {
-        ...line("pais-activo", ink.selection, 2.15),
-        paint: {
-          ...line("x", ink.selection, 2.15).paint,
-          "line-opacity": opacitySelection,
-        },
-      },
+      line("pais-activo", ink.selection,
+        ["case", selected, 2.15, 1.4],
+        ["case", selected, 1, hovered, 0.65, 0]),
     ]),
   },
 });

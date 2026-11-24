@@ -11,7 +11,6 @@ export const atlasInks = {
   selection: "#18665e",
   missing: "#c4d5c8",
   coverage: ["#fa8871", "#f9b77c", "#f5da78", "#a6dba4", "#41b69a"],
-  hover: ["#fa947e", "#fac18d", "#f8e18d", "#b4e2b2", "#57c1a7"],
 };
 export const oceanBands = [
   { depth: 200, ink: "#90d9d5" },

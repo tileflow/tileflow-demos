@@ -20,6 +20,9 @@ import { countryFrame } from "./country-framing.js";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 
 const start = [-10, 18];
+// Zoom is logarithmic: 1.25 levels changes the visible scale by about 2.4×.
+const glassDismissZoom = 1.25;
+const atlasCameraEvent = { atlasFraming: true };
 const tau = Math.PI * 2,
   rad = Math.PI / 180,
   fieldOfView = 6;
@@ -62,10 +65,6 @@ export function coverageColor(n) {
     ? ink.missing
     : ink.coverage[n < 25 ? 0 : n < 50 ? 1 : n < 75 ? 2 : n < 90 ? 3 : 4];
 }
-const highlight = Object.fromEntries(
-  ink.coverage.map((color, i) => [color, ink.hover[i]]),
-);
-highlight[ink.missing] = "#cedcd1";
 function hash(n) {
   n = Math.imul(n ^ (n >>> 16), 0x21f0aaad);
   n = Math.imul(n ^ (n >>> 15), 0x735a2d97);
@@ -79,8 +78,6 @@ function mapData(rows) {
     properties: {
       code: f.properties.code,
       color: coverageColor(byCode.get(f.properties.code)?.value),
-      hoverColor:
-        highlight[coverageColor(byCode.get(f.properties.code)?.value)],
     },
   }));
   const byArea = new Map();
@@ -100,7 +97,6 @@ function mapData(rows) {
       ...point([row.lon, row.lat], {
         code: row.code,
         color: coverageColor(row.value),
-        hoverColor: highlight[coverageColor(row.value)],
       }),
       id: i + 1,
     }));
@@ -151,7 +147,7 @@ function viewport(container) {
   };
 }
 // Reserve the largest unobstructed region beside the glass (above it on phones).
-// Its dimensions determine both the maximum scale and the camera composition.
+// The available space determines the initial framing for the selected country.
 function inspectionFrame(view, focus, card) {
   const { w, h, worldRadius } = view;
   const portrait = w / h < 0.98 || w < 620;
@@ -206,9 +202,10 @@ export async function createGlobe(
   {
     rows = [],
     onPick = () => {},
+    onZoomDismiss = () => {},
     onReady = () => {},
     onView = () => {},
-    onHover = () => {},
+    overGlass = () => false,
   } = {},
 ) {
   const data = mapData(rows);
@@ -238,10 +235,10 @@ export async function createGlobe(
     notifyFrame = 0,
     flight = 0;
   let focus = null,
-    locked = false,
-    bearing = 0,
-    pendingLock = 0;
-  let suspendedInputs = [];
+    glassOpen = false,
+    inspectionZoomDelta = 0,
+    bearing = 0;
+  let hoverPoint = null;
   const card = document.querySelector(".card");
   let composition = inspectionFrame(view, focus, card.getBoundingClientRect());
   const focusCache = new Map();
@@ -256,8 +253,6 @@ export async function createGlobe(
   mount.style.opacity = "0";
   mount.style.pointerEvents = "auto";
   mount.setAttribute("aria-hidden", "true");
-  const shield = positionElement("div", host);
-  shield.style.touchAction = "none";
   function notifyView() {
     if (!notifyFrame && !destroyed)
       notifyFrame = requestAnimationFrame(() => {
@@ -314,26 +309,24 @@ export async function createGlobe(
       .rotate([-center[0], -center[1]])
       .angle(bearing);
   }
+  function trackInspectionZoom(delta) {
+    if (!glassOpen) return;
+    inspectionZoomDelta += delta;
+    if (Math.abs(inspectionZoomDelta) < glassDismissZoom) return;
+    glassOpen = false;
+    onZoomDismiss();
+  }
   function readCamera(event) {
     if (!native) return;
+    const previousLevel = level;
     const c = map.getCenter();
     center = [c.lng, c.lat];
-    const previousZoom = zoom;
     zoom = map.getZoom();
     bearing = map.getBearing();
     level = zoom - zoomAt(0, c.lat, view);
-    if (
-      !locked &&
-      !pendingLock &&
-      event?.originalEvent &&
-      zoom > previousZoom &&
-      level >= composition.cap - 0.001
-    ) {
-      pendingLock = requestAnimationFrame(() => {
-        pendingLock = 0;
-        if (!destroyed && !locked) setStage(3);
-      });
-    }
+    // Smoothed wheel frames can arrive without their original DOM event.
+    if (event && !event.atlasFraming && map.isZooming())
+      trackInspectionZoom(level - previousLevel);
     updateProjection();
     schedule();
     notifyView();
@@ -421,10 +414,7 @@ export async function createGlobe(
       if (!inView(bbox)) continue;
       ctx.beginPath();
       path(f);
-      ctx.fillStyle =
-        f.properties.code === hovered
-          ? f.properties.hoverColor
-          : f.properties.color;
+      ctx.fillStyle = f.properties.color;
       ctx.fill();
       ctx.strokeStyle = ink.boundary;
       ctx.lineWidth = 0.74;
@@ -474,13 +464,10 @@ export async function createGlobe(
       const active =
         p.properties.code === selected || p.properties.code === hovered;
       ctx.arc(x, y, active ? 3.4 : 2.15, 0, tau);
-      ctx.fillStyle =
-        p.properties.code === hovered
-          ? p.properties.hoverColor
-          : p.properties.color;
+      ctx.fillStyle = p.properties.color;
       ctx.fill();
-      ctx.strokeStyle = active ? "#004946" : "#f0fff4";
-      ctx.lineWidth = active ? 1.65 : 0.65;
+      ctx.strokeStyle = active ? ink.selection : "#f0fff4";
+      ctx.lineWidth = p.properties.code === selected ? 1.65 : active ? 1.2 : 0.65;
       ctx.stroke();
     }
     if (selected || hovered) {
@@ -489,7 +476,8 @@ export async function createGlobe(
           ctx.beginPath();
           path(f);
           ctx.strokeStyle = ink.selection;
-          ctx.lineWidth = 2.15;
+          ctx.globalAlpha = f.properties.code === selected ? 1 : 0.65;
+          ctx.lineWidth = f.properties.code === selected ? 2.15 : 1.4;
           ctx.stroke();
         }
     }
@@ -498,7 +486,8 @@ export async function createGlobe(
   function schedule() {
     if (!frame && !destroyed) frame = requestAnimationFrame(render);
   }
-  function setFallbackCamera(c, l) {
+  function setFallbackCamera(c, l, userZoom = false) {
+    const previousLevel = level;
     center = [wrap(c[0]), clamp(c[1], -85, 85)];
     level = clamp(
       l,
@@ -506,6 +495,7 @@ export async function createGlobe(
       21 - zoomAt(0, center[1], view),
     );
     zoom = zoomAt(level, center[1], view);
+    if (userZoom) trackInspectionZoom(level - previousLevel);
     updateProjection();
     schedule();
     notifyView();
@@ -516,52 +506,33 @@ export async function createGlobe(
     view = next;
     composition = inspectionFrame(view, focus, card.getBoundingClientRect());
     if (native) {
-      map.resize();
+      map.resize(atlasCameraEvent);
       readCamera();
     } else {
       level = zoom - zoomAt(0, center[1], view);
       setFallbackCamera(center, level);
     }
-    if (locked) setStage(3, { animate: false });
+    if (glassOpen) setStage(3, { animate: false });
   }
   function setStage(stage, { animate = true } = {}) {
     stage = clamp(Math.round(stage), 0, 3);
-    cancelAnimationFrame(pendingLock);
-    pendingLock = 0;
-    locked = stage >= 2;
-    shield.style.pointerEvents = locked ? "auto" : "none";
-    host.style.cursor = locked ? "default" : "grab";
-    if (locked || stage === 0) {
+    glassOpen = stage >= 2;
+    inspectionZoomDelta = 0;
+    host.style.cursor = "grab";
+    if (glassOpen || stage === 0) {
       mark(hovered, "hover", false);
       hovered = null;
     }
     const target = focus?.center || (stage ? [3, 35] : start);
-    const to = locked ? composition.cap : stage ? composition.fit : 0;
-    const duration = animate && !reduced() ? (locked ? 690 : 400) : 0;
-    const targetBearing = locked ? composition.bearing : 0;
-    const offset = locked
+    const to = glassOpen ? composition.cap : stage ? composition.fit : 0;
+    const duration = animate && !reduced() ? (glassOpen ? 690 : 400) : 0;
+    const targetBearing = glassOpen ? composition.bearing : 0;
+    const offset = glassOpen
       ? [composition.pixel[0] - view.cx, composition.pixel[1] - view.cy]
       : [0, 0];
     if (native) {
       map.stop();
-      if (locked && !suspendedInputs.length) {
-        suspendedInputs = [
-          map.dragPan,
-          map.dragRotate,
-          map.touchZoomRotate,
-          map.touchPitch,
-          map.scrollZoom,
-          map.doubleClickZoom,
-          map.keyboard,
-          map.boxZoom,
-        ].filter((handler) => handler?.isEnabled());
-        for (const handler of suspendedInputs) handler.disable();
-      } else if (!locked && suspendedInputs.length) {
-        for (const handler of suspendedInputs) handler.enable();
-        suspendedInputs = [];
-      }
       const targetZoom = zoomAt(to, target[1], view);
-      map.setMaxZoom(locked ? targetZoom : 21);
       map.easeTo({
         center: target,
         zoom: targetZoom,
@@ -571,12 +542,12 @@ export async function createGlobe(
         offset,
         duration,
         easing: (t) => t * t * (3 - 2 * t),
-      });
+      }, atlasCameraEvent);
       notifyView();
       return;
     }
     cancelAnimationFrame(flight);
-    const destination = locked
+    const destination = glassOpen
       ? anchorCamera(target, to, composition.pixel, targetBearing, target[0])
       : target;
     const fromBearing = bearing;
@@ -603,7 +574,6 @@ export async function createGlobe(
     { center: recenter = true, animate = true, stage = code ? 1 : 0 } = {},
   ) {
     code = data.byCode.has(code) ? code : null;
-    if (locked && !recenter) return;
     if (selected !== code) {
       mark(selected, "selected", false);
       selected = code;
@@ -657,8 +627,7 @@ export async function createGlobe(
         return f.properties.code;
     return null;
   }
-  function hover(code, xy) {
-    if (locked || pendingLock) return;
+  function hover(code) {
     if (code !== hovered) {
       mark(hovered, "hover", false);
       hovered = code;
@@ -666,7 +635,10 @@ export async function createGlobe(
       if (!native) schedule();
     }
     host.style.cursor = code ? "pointer" : "grab";
-    onHover(code, xy);
+  }
+  function refreshHover() {
+    if (!hoverPoint) return;
+    hover(glassOpen && overGlass(...hoverPoint) ? null : findCountry(...hoverPoint));
   }
   function where(e) {
     const b = host.getBoundingClientRect();
@@ -718,10 +690,6 @@ export async function createGlobe(
       : null;
   }
   function zoomAtPoint(xy, delta) {
-    if (delta > 0 && level + delta >= composition.cap) {
-      setStage(3);
-      return;
-    }
     cancelAnimationFrame(flight);
     const next = clamp(
       level + delta,
@@ -729,7 +697,7 @@ export async function createGlobe(
       21 - zoomAt(0, center[1], view),
     );
     const ll = anchorAt(xy);
-    setFallbackCamera(ll ? anchorCamera(ll, next, xy) : center, next);
+    setFallbackCamera(ll ? anchorCamera(ll, next, xy) : center, next, true);
   }
   const pointers = new Map();
   let gesture = null;
@@ -751,7 +719,7 @@ export async function createGlobe(
       : null;
   }
   function down(e) {
-    if (locked || native || e.button !== 0) return;
+    if (native || e.button !== 0) return;
     cancelAnimationFrame(flight);
     const xy = where(e);
     pointers.set(e.pointerId, { xy, start: xy, moved: false });
@@ -760,21 +728,13 @@ export async function createGlobe(
     host.style.cursor = "grabbing";
   }
   function move(e) {
-    if (locked || pendingLock) return;
-    if (native) {
-      if (!e.buttons && e.pointerType !== "touch") {
-        const [x, y] = where(e);
-        hover(findCountry(x, y), { x, y });
-      }
-      return;
+    const xy = where(e);
+    if (!e.buttons && e.pointerType !== "touch") {
+      hoverPoint = xy;
+      refreshHover();
     }
-    const xy = where(e),
-      p = pointers.get(e.pointerId);
-    if (!p) {
-      if (e.pointerType !== "touch")
-        hover(findCountry(...xy), { x: xy[0], y: xy[1] });
-      return;
-    }
+    const p = pointers.get(e.pointerId);
+    if (native || !p) return;
     p.xy = xy;
     p.moved ||= Math.hypot(xy[0] - p.start[0], xy[1] - p.start[1]) >= 3;
     const g = currentGesture();
@@ -784,10 +744,6 @@ export async function createGlobe(
       (g.count > 1 && g.distance && gesture.distance
         ? Math.log2(g.distance / gesture.distance)
         : 0);
-    if (g.count > 1 && next > level && next >= composition.cap) {
-      setStage(3);
-      return;
-    }
     const c = gesture.anch
       ? anchorCamera(gesture.anch, next, g.mid)
       : [
@@ -798,7 +754,7 @@ export async function createGlobe(
               Math.max(0.1, latitudeFactor(center[1])),
           gesture.center[1] + (g.mid[1] - gesture.mid[1]) / view.r / rad,
         ];
-    setFallbackCamera(c, next);
+    setFallbackCamera(c, next, g.count > 1);
   }
   function up(e) {
     if (native) return;
@@ -808,39 +764,17 @@ export async function createGlobe(
     if (host.hasPointerCapture(e.pointerId))
       host.releasePointerCapture(e.pointerId);
     startGesture();
-    if (!locked && !pointers.size) host.style.cursor = "grab";
+    if (!pointers.size) host.style.cursor = "grab";
   }
-  // At the last scale this transparent surface freezes the selected map. Reverse
-  // wheel and pinch gestures return to exploration, as do the location controls.
-  shield.addEventListener(
-    "wheel",
-    (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.deltaY > 0) setStage(selected ? 1 : 0);
-    },
-    { passive: false },
-  );
-  shield.addEventListener("dblclick", (e) => {
-    e.stopPropagation();
-    if (e.shiftKey) setStage(selected ? 1 : 0);
-  });
-  const contacts = new Map();
-  let pinchGap = 0, tap = null;
-  const separation = () => {
-    const [a, b] = contacts.values();
-    return Math.hypot(a[0] - b[0], a[1] - b[1]);
-  };
-  // Detect taps on both the live map and the locked shield. A drag or pinch
-  // cancels selection, even if the gesture changes which surface is on top.
+  // A second pointer or drag cancels the pending tap on both renderers.
+  let tap = null;
   host.addEventListener(
     "pointerdown",
     (e) => {
       const xy = where(e);
       tap = e.isPrimary && e.button === 0 ? { id: e.pointerId, xy } : null;
-      if (e.pointerType !== "touch") return;
-      contacts.set(e.pointerId, xy);
-      if (contacts.size === 2) pinchGap = separation();
+      hoverPoint = null;
+      hover(null);
     },
     true,
   );
@@ -850,13 +784,6 @@ export async function createGlobe(
       const xy = where(e);
       if (tap?.id === e.pointerId && Math.hypot(xy[0] - tap.xy[0], xy[1] - tap.xy[1]) >= 4)
         tap = null;
-      if (!contacts.has(e.pointerId)) return;
-      contacts.set(e.pointerId, xy);
-      if (contacts.size === 2) {
-        const gap = separation();
-        if (locked && gap < pinchGap * 0.955) setStage(selected ? 1 : 0);
-        pinchGap = locked ? Math.max(pinchGap, gap) : gap;
-      }
     },
     true,
   );
@@ -864,40 +791,17 @@ export async function createGlobe(
     host.addEventListener(
       type,
       (e) => {
-        contacts.delete(e.pointerId);
         if (tap?.id !== e.pointerId) return;
         const [x, y] = where(e);
         const distance = Math.hypot(x - tap.xy[0], y - tap.xy[1]);
         tap = null;
-        if (type !== "pointerup" || distance >= 4) return;
+        if (type !== "pointerup" || distance >= 4 || (glassOpen && overGlass(x, y))) return;
         const code = findCountry(x, y);
         if (code || anchorAt([x, y])) onPick(code, x, y);
       },
       true,
     );
   }
-  function lockKeys(e) {
-    if (!locked || e.target.closest?.("select,details,a")) return;
-    if (["-", "_", "PageDown"].includes(e.key)) {
-      e.preventDefault();
-      e.stopPropagation();
-      setStage(selected ? 1 : 0);
-    } else if (
-      [
-        "+",
-        "=",
-        "PageUp",
-        "ArrowUp",
-        "ArrowRight",
-        "ArrowDown",
-        "ArrowLeft",
-      ].includes(e.key)
-    ) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }
-  window.addEventListener("keydown", lockKeys, true);
   // These listeners own only the Canvas fallback. A live MapLibre canvas receives
   // its original input events untouched, including wheel, pinch and drag inertia.
   host.addEventListener("pointerdown", down);
@@ -905,23 +809,22 @@ export async function createGlobe(
   host.addEventListener("pointerup", up);
   host.addEventListener("pointercancel", up);
   host.addEventListener("pointerleave", () => {
-    if (hovered) hover(null, { x: 0, y: 0 });
+    hoverPoint = null;
+    hover(null);
   });
   host.addEventListener(
     "wheel",
     (e) => {
       if (native) return;
       e.preventDefault();
-      const [x, y] = where(e),
-        code = findCountry(x, y);
-      if (code !== hovered) hover(code, { x, y });
       const units = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? view.h : 1;
       zoomAtPoint(where(e), -e.deltaY * units * (e.ctrlKey ? 0.01 : 0.003));
+      refreshHover();
     },
     { passive: false },
   );
   host.addEventListener("dblclick", (e) => {
-    if (locked || native) return;
+    if (native) return;
     e.preventDefault();
     zoomAtPoint(where(e), e.shiftKey ? -1 : 1);
   });
@@ -932,8 +835,6 @@ export async function createGlobe(
     cancelAnimationFrame(frame);
     cancelAnimationFrame(flight);
     cancelAnimationFrame(notifyFrame);
-    cancelAnimationFrame(pendingLock);
-    window.removeEventListener("keydown", lockKeys, true);
     observer.disconnect();
     map?.remove();
     host.remove();
@@ -941,9 +842,9 @@ export async function createGlobe(
   const api = {
     setCountry,
     setStage,
-    isLocked: () => locked,
+    isGlassOpen: () => glassOpen,
     glassOrigin: () => ({ x: composition.pixel[0], y: composition.pixel[1] }),
-    getProgress: () => (locked ? 3 : clamp(level / composition.fit, 0, 1)),
+    getProgress: () => (glassOpen ? 3 : clamp(level / composition.fit, 0, 1)),
     countryAt: findCountry,
     getView: () => ({ lon: center[0], lat: center[1], zoom, bearing }),
     project,
@@ -965,26 +866,6 @@ export async function createGlobe(
         source.maxzoom = 8;
         source.tolerance = 0.5;
       }
-    }
-    for (const layer of style.layers) {
-      if (layer.id === "pais" || layer.id === "islas")
-        layer.paint[layer.id === "pais" ? "fill-color" : "circle-color"] = [
-          "case",
-          ["boolean", ["feature-state", "hover"], false],
-          ["get", "hoverColor"],
-          ["get", "color"],
-        ];
-      if (layer.id === "pais-activo")
-        layer.paint["line-opacity"] = [
-          "case",
-          [
-            "any",
-            ["boolean", ["feature-state", "selected"], false],
-            ["boolean", ["feature-state", "hover"], false],
-          ],
-          1,
-          0,
-        ];
     }
     map = new LibreMap({
       container: mount,
@@ -1008,13 +889,7 @@ export async function createGlobe(
     host.append(css);
     mount.classList.add("atlas-geo-viewport");
     map.on("move", readCamera);
-    map.on("wheel", (e) => {
-      if (!locked && !map.isZooming()) {
-        const [x, y] = where(e.originalEvent),
-          code = findCountry(x, y);
-        if (code !== hovered) hover(code, { x, y });
-      }
-    });
+    map.on("moveend", refreshHover);
     function ready() {
       if (destroyed) return;
       native = webgl = loaded = true;
@@ -1030,7 +905,7 @@ export async function createGlobe(
     map.on("webglcontextrestored", () => {
       if (destroyed) return;
       native = true;
-      map.jumpTo({ center, zoom });
+      map.jumpTo({ center, zoom }, atlasCameraEvent);
       map.once("idle", ready);
     });
   } catch {

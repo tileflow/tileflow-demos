@@ -100,6 +100,7 @@ async function smokeDemo({
   cwd,
   origin,
   assetBases = ['/tileflow'],
+  validatePage,
   map = 'madrid',
   theme = 'light',
 }) {
@@ -120,6 +121,7 @@ async function smokeDemo({
     const html = await requestText(origin);
     assert.match(html, /<html/u, `${name} did not serve an HTML document.`);
 
+    if (validatePage) await validatePage({origin, html});
     for (const assetBase of assetBases) await validateAssets({assetBase, map, name, origin, theme});
     console.log(`Validated ${name} at ${origin}.`);
   } finally {
@@ -165,4 +167,32 @@ await smokeDemo({
   origin: `http://127.0.0.1:${sniffPort}`,
   map: 'scent-trail',
   theme: 'dawn',
+});
+
+const atlasDirectory = join(repositoryRoot, '30-day-map-challenge-2026/day-23-drinking-water-atlas');
+const atlasPort = await reserveFreePort();
+await smokeDemo({
+  name: 'Drinking Water Atlas',
+  executable: join(atlasDirectory, 'node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', String(atlasPort), '--strictPort'],
+  cwd: atlasDirectory,
+  origin: `http://127.0.0.1:${atlasPort}`,
+  assetBases: [], // This demo compiles the Tileflow style into its JavaScript.
+  async validatePage({origin, html}) {
+    const entry = html.match(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/u)?.[1];
+    assert.ok(entry, 'Atlas HTML must reference its entry module.');
+    const script = await fetch(new URL(entry, origin), {redirect: 'error'});
+    assert.equal(script.status, 200);
+    assert.match(script.headers.get('content-type') ?? '', /javascript/u);
+    await script.body?.cancel();
+
+    const {world, countries} = await requestJson(new URL('data/agua.json', origin));
+    assert.equal(world.code, 'WLD');
+    assert.ok(countries.length > 0);
+    const places = [world, ...countries];
+    assert.equal(new Set(places.map(place => place.code)).size, places.length, 'Duplicate atlas location.');
+    for (const {code, value} of places) {
+      assert.ok(Number.isFinite(value) && value >= 0 && value <= 100, `Invalid coverage for ${code}.`);
+    }
+  },
 });

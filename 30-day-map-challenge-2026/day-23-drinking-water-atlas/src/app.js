@@ -15,7 +15,7 @@ let glassVisible=false,reveal=0,opacity=0,previousTime=0,currentTime=0;
 
 function updateAddress(){
   if(location.protocol==='file:'||!map||!selected)return;
-  const stage=glassVisible?3:map.getProgress()>.55?1:0;
+  const stage=map.isGlassOpen()?3:selected.code!=='WLD'&&map.getProgress()>.55?1:0;
   const url=new URL(location.href);
   if(selected.code==='WLD')url.searchParams.delete('country');else url.searchParams.set('country',selected.code);
   url.searchParams.delete('pais');url.searchParams.delete('etapa');
@@ -28,11 +28,13 @@ function requestDraw(){
 function paint(now){
   animation=0;
   if(!map||!selected||document.hidden)return;
-  const visible=map.isLocked();
+  const visible=map.isGlassOpen();
   if(visible!==glassVisible){
     glassVisible=visible;
-    if(visible&&reveal===0){
+    if(visible){
+      reveal=0;
       currentTime=0;
+      glass.configure(selected);
       glass.setOrigin(map.glassOrigin());
     }
   }
@@ -42,8 +44,7 @@ function paint(now){
     opacity=reveal=visible?1:0;
   }else{
     opacity=visible?Math.min(1,opacity+elapsed/160):Math.max(0,opacity-elapsed/240);
-    // On zoom-out the whole overlay fades while any beads in flight keep moving.
-    // A quick reversal resumes the same trajectories and never takes over the camera.
+    // Beads already in flight keep moving as the glass fades out.
     if(visible||opacity>0){
       reveal=Math.min(1,reveal+elapsed/3100);
       currentTime+=Math.min(.05,elapsed/1000);
@@ -65,14 +66,10 @@ function select(code,{center=false,stage,animate=true}={}){
   const row=rows.get(code);if(!row)return;
   const changed=selected?.code!==code;
   if(changed){
-    if(center&&stage===3&&map?.isLocked()){
-      glassVisible=false;
-      reveal=0;
-    }
+    if(center&&stage===3)glassVisible=false;
     selected=row;place.value=row.code;
     const proxy=row.method==='proxy',good=Math.round(row.value*10);
     const value=proxy?'≈'+Math.round(row.value):row.value.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1});
-    glass.configure(row);
     document.querySelector('#value').textContent=value;
     document.querySelector('#meter-fill').style.width=row.value+'%';
     document.querySelector('#safe').textContent=String(good);
@@ -88,18 +85,13 @@ function select(code,{center=false,stage,animate=true}={}){
   cameraChanged();
 }
 function choose(code){
-  if(code===selected?.code&&map?.isLocked()&&code!=='WLD')return;
+  if(code===selected?.code && (code==='WLD' ? !map?.isGlassOpen() : map?.isGlassOpen()))return;
   select(code,{center:true,stage:code==='WLD'?0:3});
 }
 place.addEventListener('change',()=>choose(place.value));
-// A hover changes only the subject of the measurement. The map remains under
-// the pointer so moving directly from one country to another never flies away.
-function hover(code){
-  if(code&&rows.has(code)&&selected?.code!==code)select(code);
-}
 window.addEventListener('keydown',e=>{
   if(!map||e.altKey||e.ctrlKey||e.metaKey)return;
-  if(e.target.closest?.('select,details,a')&&!(e.key==='Escape'&&map.isLocked()))return;
+  if(e.target.closest?.('select,details,a')&&!(e.key==='Escape'&&map.isGlassOpen()))return;
   if(e.key==='Escape'||e.key==='Home'){e.preventDefault();select('WLD',{center:true,stage:0});}
   if(e.key==='End'){e.preventDefault();map.setStage(3,{animate:!reduced.matches});}
 });
@@ -117,11 +109,9 @@ async function start(){
   if(globalThis.__atlasCsv)document.querySelector('#download').href=URL.createObjectURL(new Blob([globalThis.__atlasCsv],{type:'text/csv;charset=utf-8'}));
   const resize=()=>{glass.resize();map?.resize();requestDraw();};
   const observer=new ResizeObserver(resize);observer.observe(scene);resize();
-  map=await createGlobe(document.querySelector('#globe'),{rows:data.countries,onHover:hover,
-    onPick:(code,x,y)=>{
-      if(map.isLocked()&&glass.contains(x,y))return;
-      choose(code??'WLD');
-    },onView:cameraChanged});
+  map=await createGlobe(document.querySelector('#globe'),{rows:data.countries,overGlass:(x,y)=>glass.contains(x,y),
+    onPick:code=>choose(code??'WLD'),
+    onZoomDismiss:()=>{select('WLD');updateAddress();},onView:cameraChanged});
   const stage=initial.has('stage')?stageNames.indexOf(initial.get('stage')):oldStages.indexOf(initial.get('etapa'));
   select(initialCode,{center:true,animate:false,stage:stage>=0?stage:(initialCode==='WLD'?0:1)});
 }
