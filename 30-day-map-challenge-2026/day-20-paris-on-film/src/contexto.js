@@ -1,6 +1,8 @@
 // Keep the compiled Tileflow Streets hierarchy while printing it in pearl and graphite.
 const root=new URL(import.meta.env.BASE_URL,location.origin).href.replace(/\/$/,'');
 
+const atCityScale=(city,street)=>['interpolate',['linear'],['zoom'],12.9,city,14.55,street];
+
 export function atlasStyle(previous,spec){
   const labels=[],paper=[];
   for(const layer of spec.layers){
@@ -24,12 +26,14 @@ export function atlasStyle(previous,spec){
     }
     if(l.type==='fill'){
       const source=l['source-layer'];
-      const color=source==='water'?'#d6e1e5':source==='landcover'?['match',['get','class'],'trees','#e8ece4','urban','#efebed','#f4f3ed']:
+      const color=source==='water'?atCityScale('#b5cbd1','#d6e1e5'):source==='landcover'?['match',['get','class'],'trees','#e8ece4','urban','#efebed','#f4f3ed']:
         source==='landuse'?['match',['get','class'],['park','wood','garden','forest'],'#e7ebe2','residential','#eeeced','#f2f0eb']:'#edeae6';
       delete l.paint['fill-pattern'];l.paint['fill-color']=color;l.paint['fill-outline-color']=color;
     }else if(l.type==='line'){
       const source=l['source-layer'];
-      l.paint['line-color']=source==='admin'?'#c0bac4':source==='waterway'?'#c2d5da':l.id.includes('casing')?'#d7d3d7':l.id.includes('path')?'#dedbd9':'#d9d6d7';
+      const street=source==='admin'?'#c0bac4':source==='waterway'?'#c2d5da':l.id.includes('casing')?'#d7d3d7':l.id.includes('path')?'#dedbd9':'#d9d6d7';
+      const city=source==='waterway'?'#a7c4ca':source==='admin'?'#aaa2ae':l.id.includes('casing')?'#b6aeb4':l.id.includes('path')?'#cfcac2':'#c6bfc2';
+      l.paint['line-color']=atCityScale(city,street);
     }else continue;
     paper.push(l);
   }
