@@ -385,5 +385,81 @@ export async function nativeTerrain(lat, lon, {signal, radius = 10000} = {}) {
   };
 }
 
+// A contiguous Web Mercator elevation mosaic around a point, for map-aligned rasters.
+// Tiles that the release omits read as sea level.
+export async function terrainMosaic(lat, lon, {signal, radius = 20000, zoom = 11} = {}) {
+  if (!Number.isFinite(lat) || Math.abs(lat) > LIMIT || !Number.isFinite(lon) || !(radius > 0))
+    throw new RangeError('The relief mosaic needs a valid location and radius.');
+  lon = wrap(lon);
+  const source = await describe(signal);
+  const dim = source.tileSize;
+  zoom = Math.max(source.minzoom, Math.min(zoom, source.baseMaxzoom));
+  const yAtLat = (at) => (1 - Math.asinh(Math.tan(at * RAD)) / Math.PI) / 2;
+  let bounds;
+  for (; zoom >= source.minzoom; zoom--) {
+    const pixels = 2 ** zoom * dim,
+      metres = (2 * Math.PI * R * Math.cos(lat * RAD)) / pixels;
+    const cx = ((lon + 180) / 360) * pixels,
+      cy = yAtLat(lat) * pixels,
+      span = radius / metres;
+    const left = Math.floor((cx - span) / dim),
+      right = Math.floor((cx + span) / dim);
+    const top = Math.max(0, Math.floor((cy - span) / dim)),
+      bottom = Math.min(2 ** zoom - 1, Math.floor((cy + span) / dim));
+    if ((right - left + 1) * (bottom - top + 1) <= MAX_REQUESTS) {
+      bounds = {left, right, top, bottom, cx, cy, metres};
+      break;
+    }
+  }
+  if (!bounds) throw new Error('The relief mosaic exceeds the terrain tile limit.');
+  const {left, right, top, bottom} = bounds,
+    n = 2 ** zoom,
+    cols = right - left + 1,
+    rows = bottom - top + 1;
+  const width = cols * dim,
+    height = rows * dim,
+    heights = new Float32Array(width * height);
+  const metrics = {tileFetchMs: 0, tileDecodeMs: 0, tileBytes: 0, tileCacheHits: 0};
+  let next = 0;
+  async function work() {
+    while (next < cols * rows) {
+      check(signal);
+      const index = next++,
+        tx = index % cols,
+        ty = Math.floor(index / cols);
+      const x = (((left + tx) % n) + n) % n;
+      const tile = await getTile(source, zoom, x, top + ty, signal, metrics);
+      for (let r = 0; r < dim; r++) {
+        const row = (ty * dim + r) * width + tx * dim;
+        for (let c = 0; c < dim; c++) {
+          const v = tile ? tile[r * dim + c] : 0;
+          heights[row + c] = Number.isFinite(v) ? v : 0;
+        }
+      }
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(4, cols * rows)}, work));
+  check(signal);
+  const lngLat = (px, py) => {
+    const gx = left * dim + px,
+      gy = top * dim + py;
+    return [
+      (gx / (n * dim)) * 360 - 180,
+      Math.atan(Math.sinh(Math.PI * (1 - (2 * gy) / (n * dim)))) / RAD,
+    ];
+  };
+  return {
+    zoom,
+    width,
+    height,
+    heights,
+    metres: bounds.metres,
+    centre: {x: bounds.cx - left * dim, y: bounds.cy - top * dim},
+    lngLat,
+    release: source.release,
+    metrics,
+  };
+}
+
 export {gridTerrain};
 export const TerrainProjection = {point, offset};

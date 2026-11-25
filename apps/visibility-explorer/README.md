@@ -8,6 +8,8 @@ Move the pointer across the terrain to read the distance, elevation profile and 
 
 **Observer map** shows the Outdoors map from the hiker’s coordinates, with the camera 1.7 m above the rendered ground by default. Change **Eye height above ground** in Settings to try a seated or elevated viewpoint. Aiming turns the camera toward the selected point. Zooming out on the main map or enlarging the preview keeps the eye in place. On desktop, the profile sits at the lower left and the observer map at the lower right. On mobile, tap **Observer map** below the profile to open or close it.
 
+Within 15 km of the hiker, the map darkens the ground that nearby ridges shade from a low north-west light and the valley floors that see less of the sky. A worker computes this from Tileflow Terrain at about 32 m per pixel each time the hiker moves. Add `?shadows=0` to the address to compare the map without it.
+
 The card’s ellipsis opens visible peaks, the 360° horizon, a close-up of the hiker and settings for radius, observer height and Earth curvature.
 
 ## Eye height and visibility

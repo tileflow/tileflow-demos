@@ -111,6 +111,48 @@ const madeira = {lat: 32.7355, lon: -16.9289},
 const isMadeira = (p) =>
   Math.abs(p.lat - madeira.lat) < 1e-8 && Math.abs(p.lon - madeira.lon) < 1e-8;
 const job = new Worker(new URL('./analysis.worker.js', import.meta.url), {type: 'module'});
+// Cast shadows and sky visibility around the observer; ?shadows=0 turns them off.
+const reliefJob =
+  new URLSearchParams(window.location.search).get('shadows') === '0'
+    ? null
+    : new Worker(new URL('./relief.worker.js', import.meta.url), {type: 'module'});
+let reliefId = 0,
+  pendingRelief = null;
+function setRelief(r) {
+  if (!styleReady) {
+    pendingRelief = r;
+    return;
+  }
+  pendingRelief = null;
+  const canvas = document.createElement('canvas');
+  canvas.width = r.w;
+  canvas.height = r.h;
+  canvas.getContext('2d').putImageData(new ImageData(r.rgba, r.w, r.h), 0, 0);
+  if (map.getLayer('relief-shadows')) map.removeLayer('relief-shadows');
+  if (map.getSource('relief-shadows')) map.removeSource('relief-shadows');
+  map.addSource('relief-shadows', {type: 'canvas', canvas, coordinates: r.coords, animate: false});
+  const before = map.getLayer('tileflow-terrain-contour-minor') ? 'tileflow-terrain-contour-minor' : undefined;
+  map.addLayer(
+    {
+      id: 'relief-shadows',
+      type: 'raster',
+      source: 'relief-shadows',
+      paint: {'raster-resampling': 'linear', 'raster-fade-duration': 0},
+    },
+    before,
+  );
+  document.documentElement.dataset.relief = 'ready';
+  window.reliefMetrics = r.metrics;
+}
+if (reliefJob)
+  reliefJob.onmessage = ({data}) => {
+    if (data.id !== reliefId) return;
+    if (data.type === 'relief') setRelief(data);
+    else console.warn('Relief shading failed:', data.message);
+  };
+function requestRelief(p) {
+  reliefJob?.postMessage({type: 'relief', id: ++reliefId, lat: p.lat, lon: p.lon});
+}
 const eye = () => el('eye').valueAsNumber;
 const radius = () => Number(el('radius').value);
 function zoomForRadius(r, lat) {
@@ -584,6 +626,7 @@ function pick(p, zoom = true) {
   aim.set(initial, {fixed: false, source: 'initial'});
   job.postMessage({type: 'load', id: S.id, lat: p.lat, lon: p.lon, cachedMadeira: isMadeira(p),
     terrainIdentity: atlas.terrainIdentity()});
+  requestRelief(p);
   return ringsReady;
 }
 let sliderTimer = null,
@@ -1281,6 +1324,7 @@ try {
     });
     if (S.point) field.setObserver(S.point, radius());
     if (pendingParts) setRaster(pendingParts);
+    if (pendingRelief) setRelief(pendingRelief);
     observerModel = Observer3D.createLayer(atlas.observerElement());
     map.addLayer(observerModel);
     atlas.setObserverModelVisible?.(true);
