@@ -1781,10 +1781,11 @@
       "maxzoom": 24,
       "paint": {
         "hillshade-accent-color": "#A0AD95",
-        "hillshade-exaggeration": 0.25,
+        "hillshade-exaggeration": 0.6,
         "hillshade-highlight-color": "#FFFFFF",
         "hillshade-illumination-anchor": "map",
         "hillshade-illumination-direction": 315,
+        "hillshade-method": "igor",
         "hillshade-shadow-color": "#7F8976"
       },
       "metadata": {
