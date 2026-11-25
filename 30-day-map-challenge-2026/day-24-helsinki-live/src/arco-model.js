@@ -20,7 +20,9 @@ const stations = [
   [-4.85, 1.29, .32, 3.21], [firstJamb, 1.29, .32, 3.21], [lastJamb, 1.29, .32, 3.21],
   [4.95, 1.29, .32, 3.21], [5.48, 1.28, .33, 3.19], [5.75, 1.20, .39, 3.09], [5.85, 1.02, .55, 2.91],
 ];
-const glass = '#466775', reflection = '#a4c3c6', ceramic = '#dce5e2', aluminium = '#91a8ae';
+const glass = {day: '#d4d9da', night: '#90989a'};
+const reflection = {day: '#d5dada', night: '#929a9b'};
+const gasket = '#52585b', ceramic = '#dce5e2', aluminium = '#91a8ae';
 const signedPower = (x, n) => Math.sign(x) * Math.abs(x) ** n;
 const rake = (z, y) => z - .20 * (1.61 - y) * Math.max(0, -z / 5.86) ** 4;
 const rimX = (y, w, b, t) => w * Math.max(0, 1 - Math.abs(2 * (y - b) / (t - b) - 1) ** exponent) ** (1 / exponent);
@@ -96,26 +98,52 @@ function batch() {
     const g = geometry.index ? geometry.toNonIndexed() : geometry;
     if (g !== geometry) geometry.dispose();
     for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
-    const n = g.getAttribute('normal'), base = new THREE.Color(hex);
+    const n = g.getAttribute('normal');
+    const base = new THREE.Color(hex.day ?? hex);
+    const smoke = hex.night && new THREE.Color(hex.night);
+    const heights = g.getAttribute('position');
     const colors = new Float32Array(n.count * 3);
+    const nightColors = smoke && new Float32Array(colors.length);
     for (let i = 0; i < n.count; i++) {
       const x = n.getX(i), y = n.getY(i), z = n.getZ(i);
       // A stable, neutral skylight keeps a curved shoulder visible with the
       // unlit fleet material, whatever the active delay or route colour.
-      const light = shade ? .59 + .34 * Math.max(0, y) + .07 * Math.max(0, .45*x + .80*y - .39*z) : 1;
+      let light = shade ? .59 + .34 * Math.max(0, y) + .07 * Math.max(0, .45*x + .80*y - .39*z) : 1;
+      // The upper edge of a pane picks up more sky than the lower edge.
+      if (hex === glass) light *= .72 + .28 * THREE.MathUtils.clamp((heights.getY(i) - 1.26) / 1.28, 0, 1);
       colors.set([base.r * light, base.g * light, base.b * light], 3 * i);
+      if (nightColors) nightColors.set([smoke.r * light, smoke.g * light, smoke.b * light], 3 * i);
     }
     g.setAttribute('color', new THREE.BufferAttribute(colors,3));
+    if (nightColors) g.userData.nightColors = nightColors;
     parts.push(g);
   }
   function finish() {
     const result = mergeGeometries(parts);
+    if (parts.some(p => p.userData.nightColors)) {
+      const day = result.getAttribute('color').array, night = day.slice();
+      let start = 0;
+      for (const part of parts) {
+        if (part.userData.nightColors) night.set(part.userData.nightColors, start);
+        start += part.getAttribute('color').array.length;
+      }
+      result.userData.glazing = {day, night};
+    }
     for (const p of parts) p.dispose();
     result.computeBoundingBox();
     result.computeBoundingSphere();
     return result;
   }
   return {add, finish};
+}
+
+export function setArcoGlassLight(geometries, light) {
+  for (const geometry of geometries) {
+    const colors = geometry.getAttribute('color'), next = geometry.userData.glazing?.[light];
+    if (!next || colors.array === next) continue;
+    colors.array = next;
+    colors.needsUpdate = true;
+  }
 }
 
 // The two leaf batches reuse one half-door twice. X/Y are already in vehicle
@@ -178,8 +206,8 @@ export function createArcoGeometries() {
   panel(doorPaint,1,0,leafY,roundedRect(.744,lintel-sill,.055),'#ffffff',.037,true,true);
   panel(doorGlass,1,0,leafY+.18,roundedRect(.585,1.333,.15),glass,.084,true,true);
   // Narrow split, bottom rail and rounded gasket sit on each sliding leaf.
-  for (const z of [-.355,.355]) panel(doorGlass,1,z,leafY,roundedRect(.026,1.93,.013),glass,.070,true,true);
-  for (const h of [sill+.038,lintel-.036]) panel(doorGlass,1,0,h,roundedRect(.685,.039,.018),glass,.070,true,true);
+  for (const z of [-.355,.355]) panel(doorGlass,1,z,leafY,roundedRect(.026,1.93,.013),gasket,.070,true,true);
+  for (const h of [sill+.038,lintel-.036]) panel(doorGlass,1,0,h,roundedRect(.685,.039,.018),gasket,.070,true,true);
 
   function disc(target,radius,depth,x,y,z,color) {
     const g = new THREE.CylinderGeometry(radius,radius,depth,24,1).rotateZ(Math.PI/2).translate(x,y,z);

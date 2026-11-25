@@ -867,14 +867,14 @@ button.row:hover {
   padding: 3px 6px;
   border-radius: 4px;
   vertical-align: .1em;
-  background: color-mix(in srgb, #d67727 17%, var(--paper));
-  color: color-mix(in srgb, #8f421b 80%, var(--ink));
+  background: color-mix(in srgb, var(--timing-day) 17%, var(--paper));
+  color: color-mix(in srgb, var(--timing-day) 42%, var(--ink));
   font: 650 1rem/1.15 Geist, system-ui, sans-serif;
   letter-spacing: normal;
 }
 :root:is([data-daylight='dusk'],[data-daylight='night']) #timing-percent {
-  background: color-mix(in srgb, #edb47c 19%, var(--paper));
-  color: #ffd2a5;
+  background: color-mix(in srgb, var(--timing-night) 17%, var(--paper));
+  color: color-mix(in srgb, var(--timing-night) 72%, var(--ink));
 }
 #timing-legend { display: grid; gap: 7px; margin: 0 0 12px; font-size: .75rem; line-height: 1.2; }
 #timing-legend > div { display: grid; grid-template-columns: 7.6em minmax(0,1fr); gap: 10px; align-items: center; }

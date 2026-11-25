@@ -6,15 +6,15 @@ export const overviewStart = 13.4;
 export const busModelZoom = 14.7;
 export const timingPalette = {
   'on-time': {
-    day: '#00875d', night: '#78e0bc', label: 'On time or early',
+    day: '#00875d', night: '#78e0bc', dayInk: '#00825a', label: 'On time or early',
     hint: 'Expected before the timetable or less than 2 minutes late.',
   },
   late: {
-    day: '#bc7835', night: '#edb47c', label: '2–5 min late',
+    day: '#db690d', night: '#ffae50', dayInk: '#ad4a00', label: '2–5 min late',
     hint: 'At least 2 minutes late and less than 5 minutes late.',
   },
   'very-late': {
-    day: '#c83358', night: '#ff7575', label: '5+ min late', hint: 'At least 5 minutes late.',
+    day: '#bd2d40', night: '#ff7483', label: '5+ min late', hint: 'At least 5 minutes late.',
   },
   unknown: {
     day: '#69767c', night: '#91a0a6', label: 'Unknown',
@@ -24,8 +24,10 @@ export const timingPalette = {
 export const timingGroup = (status) => status === 'early' ? 'on-time' :
   Object.hasOwn(timingPalette, status) ? status : 'unknown';
 
-export function timingColor(status, period) {
-  return timingPalette[timingGroup(status)][period === 'dusk' || period === 'night' ? 'night' : 'day'];
+export function timingColor(status, period, daySwatch = 'day') {
+  const band = timingPalette[timingGroup(status)];
+  if (period === 'dusk' || period === 'night') return band.night;
+  return band[daySwatch] ?? band.day;
 }
 
 // Both swatches are tested against every semantic fill (WCAG AA at normal text sizes).
@@ -33,20 +35,45 @@ export function timingTextColor(status, period) {
   return period === 'night' || period === 'dusk' || timingGroup(status) === 'late' ? '#07141b' : '#ffffff';
 }
 
-export function timingColorExpression(period, property = 'punctuality') {
+export function timingColorExpression(period, property = 'punctuality', daySwatch = 'day') {
+  const color = status => timingColor(status, period, daySwatch);
   return [
     'match', ['get', property],
-    ['early', 'on-time'], timingColor('on-time', period),
-    'late', timingColor('late', period),
-    'very-late', timingColor('very-late', period),
-    timingColor('unknown', period),
+    ['early', 'on-time'], color('on-time'),
+    'late', color('late'),
+    'very-late', color('very-late'),
+    color('unknown'),
   ];
 }
-export const guideMinZoom = 9;
-
 const lineIds = lineColors.map((_, i) => 'hsl-trail-' + i);
 export const trailLayerIds = [...lineIds, ...Object.keys(timingPalette).map((key) => 'hsl-timing-' + key)];
 const zoom = (...stops) => ['interpolate', ['linear'], ['zoom'], ...stops];
+
+export function forwardHaloLayers(period) {
+  // Widths grow with the bus so the ribbon fits within its lane, even close up.
+  const strokes = [
+    {prefix: 'hsl-halo-glow-', width: [4.4, 5.5, 10, 21, 66], blur: [1.4, 1.8, 3, 6, 16], opacity: .30},
+    {prefix: 'hsl-halo-', width: [2.1, 2.8, 5.4, 11, 40], blur: [.25, .35, .55, .95, 2.5], opacity: .91},
+  ];
+  const scale = ([a, b, c, d, e]) => ['interpolate', ['exponential', 2], ['zoom'],
+    busModelZoom, a, 16, b, 17, c, 18, d, 20, e];
+  return strokes.flatMap(({prefix, width, blur, opacity}) => Object.keys(timingPalette).map(status => {
+    const color = timingColor(status, period);
+    return {
+      id: prefix + status,
+      type: 'line',
+      source: 'hsl-previews',
+      minzoom: busModelZoom,
+      filter: ['==', ['get', 'punctuality'], status],
+      layout: {'line-cap': 'round', 'line-join': 'round'},
+      paint: {
+        'line-width': scale(width), 'line-blur': scale(blur), 'line-opacity': opacity,
+        'line-gradient': ['interpolate', ['linear'], ['line-progress'],
+          0, color, .30, color, .56, color + 'bb', .82, color + '45', 1, color + '00'],
+      },
+    };
+  }));
+}
 const strength = ['case', ['get', 'stale'], 0.38, ['get', 'secondary'], 0.78, 1];
 const presence = ['case', ['==', ['get', 'punctuality'], 'unknown'], 0.45, 1];
 const overviewStrength = ['*', strength, presence];

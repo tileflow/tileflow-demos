@@ -8,7 +8,7 @@ import {lineColor, lineColors, lineIndex} from './line-colors.js';
 import {createBusLayer} from './bus-model.js';
 import {createFleetBadges} from './fleet-badges.js';
 import {
-  busModelZoom, fleetLightLayers, guideMinZoom, overviewEnd, trailLayerIds, timingColorExpression,
+  busModelZoom, fleetLightLayers, forwardHaloLayers, overviewEnd, trailLayerIds, timingColorExpression,
   timingGroup,
 } from './fleet-lights.js';
 import {terminalLayers, berthLayers, berthZoom, terminalLabelPaint, addPlatformBadge} from './station-symbols.js';
@@ -82,6 +82,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   const buildingOcclusion = createBuildingOcclusion(map);
   map.hslBuildingOcclusion = buildingOcclusion;
   let lights = fleetLightLayers(timeOfDay);
+  let halos = forwardHaloLayers(timeOfDay);
   let current = null,
     previews = empty,
     focus = empty,
@@ -298,16 +299,6 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     else map.addImage('hsl-current-node', pixels, {pixelRatio: 2});
     nodeSpriteColour = colour;
   }
-  const guideLayers = [
-    {id: 'hsl-preview-glow', day: '#244d67', night: '#6bc4de', width: width(3.5, 4.4), blur: 1.8},
-    {id: 'hsl-preview', day: '#296683', night: '#7dc6da', width: width(1.65, 2.15), blur: 0},
-    {id: 'hsl-preview-shine', day: '#d6effa', night: '#e4faff', width: width(0.5, 0.8), blur: 0},
-  ];
-  function guideGradient(layer) {
-    const tint = lowLight() ? layer.night : layer.day;
-    return ['interpolate', ['linear'], ['line-progress'],
-      0, tint + 'd9', 0.32, tint + 'd9', 0.68, tint + '80', 1, tint + '00'];
-  }
   function syncSelectionColors() {
     if (map.getLayer('hsl-next-node')) paintNextNode();
     for (const [id, property, value] of [
@@ -323,11 +314,11 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   function syncDaylightColors() {
     syncSelectionColors();
     if (map.getLayer('hsl-preview-name')) {
-      map.setPaintProperty('hsl-preview-name', 'text-color', timingColorExpression(timeOfDay));
+      map.setPaintProperty('hsl-preview-name', 'text-color', timingColorExpression(timeOfDay, 'punctuality', 'dayInk'));
       map.setPaintProperty('hsl-preview-name', 'text-halo-color', lowLight() ? '#17242b' : '#fffcf3');
     }
-    for (const layer of guideLayers) {
-      if (map.getLayer(layer.id)) map.setPaintProperty(layer.id, 'line-gradient', guideGradient(layer));
+    for (const {id, paint} of halos) {
+      if (map.getLayer(id)) map.setPaintProperty(id, 'line-gradient', paint['line-gradient']);
     }
     map.triggerRepaint();
   }
@@ -399,21 +390,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         building,
       );
       for (const layer of lights) if (layer.type === 'line') add(layer, building);
-      for (const layer of guideLayers) {
-        add({
-          id: layer.id,
-          type: 'line',
-          source: 'hsl-previews',
-          minzoom: guideMinZoom,
-          layout: {'line-join': 'round', 'line-cap': 'round'},
-          paint: {
-            'line-width': layer.width,
-            'line-blur': layer.blur,
-            'line-gradient': guideGradient(layer),
-            'line-opacity': ['interpolate', ['linear'], ['zoom'], guideMinZoom, 0.25, 12, 0.66, 15, 0.92],
-          },
-        }, building);
-      }
+      for (const layer of halos) add(layer, building);
       for (const [id, color, routeWidth] of [
         ['hsl-route-case', routeCase(), width(4.3, 6.6)],
         ['hsl-route', routeColor(), width(2.7, 4.8)],
@@ -447,7 +424,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
           'text-max-width': 18,
           'symbol-sort-key': ['get', 'arrival'],
         },
-        paint: {'text-color': timingColorExpression(timeOfDay),
+        paint: {'text-color': timingColorExpression(timeOfDay, 'punctuality', 'dayInk'),
           'text-halo-color': lowLight() ? '#17242b' : '#fffcf3', 'text-halo-width': 1.7},
       });
       for (const [phase, id] of directionIds.entries()) add(
@@ -582,6 +559,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     if (timeOfDay === next) return;
     timeOfDay = next;
     lights = fleetLightLayers(next);
+    halos = forwardHaloLayers(next);
     controller.update({timeOfDay});
     if (map.getLayer('hsl-terminals')) {
       for (const [key, value] of Object.entries(terminalLabelPaint(lowLight()))) {
@@ -645,7 +623,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     const stop = placesAt(e.point, 7, stopLayers)[0];
     if (stop) return selectPlace('stop', stop.properties.id);
     // Route strokes are visual guides. Keep the open details when a stroke is tapped.
-    if (placesAt(e.point, 5, ['hsl-route', 'hsl-network', 'hsl-preview', ...trailLayerIds]).length) return;
+    if (placesAt(e.point, 5, ['hsl-route', 'hsl-network', ...halos.map(layer => layer.id), ...trailLayerIds]).length) return;
     handlers.dismiss();
   });
   map.on('mousemove', (e) => {
@@ -718,7 +696,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       map.triggerRepaint();
     },
     drawPreviews(items) {
-      if (!items.length && !previews.features.length && !arrows.features.length) return;
+      if (!items.length && !previews.features.length) return;
       const firstArrivalByStop = new Map();
       previews = fc(
         items.map(({id, line, path, call, punctuality}) => {
@@ -735,29 +713,12 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
                 }),
               );
           }
-          return feature('LineString', path, {id});
+          return feature('LineString', path, {id, punctuality: timingGroup(punctuality)});
         }),
       );
       previewStops = fc([...firstArrivalByStop.values()]);
       set('hsl-preview-stops', previewStops);
       set('hsl-previews', previews);
-      if (selectedShape) return;
-      const marks = new Map();
-      if (map.getZoom() >= 15.5) {
-        const canvas = map.getCanvas();
-        const width = canvas.clientWidth, height = canvas.clientHeight;
-        for (const {shape, stations} of items) {
-          for (const {index, coordinate, bearing} of stations ?? []) {
-            const key = shape + '/' + index;
-            if (marks.has(key)) continue;
-            const p = map.project(coordinate);
-            if (p.x < 0 || p.x > width || p.y < 0 || p.y > height) continue;
-            marks.set(key, feature('Point', coordinate, {station: key, phase: index % 3, bearing}));
-          }
-        }
-      }
-      arrows = fc([...marks.values()]);
-      set('hsl-arrows', arrows);
     },
     geometry(patterns, ids, progress, routeId, call) {
       const fullTrip = Boolean(progress && patterns.length);

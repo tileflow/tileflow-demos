@@ -1,6 +1,6 @@
 // A low-floor city bus in metres. Local +X is the door side, +Y is up and the nose points north (-Z).
 import * as THREE from 'three';
-import {ARCO, createArcoGeometries} from './arco-model.js';
+import {ARCO, createArcoGeometries, setArcoGlassLight} from './arco-model.js';
 import {MercatorCoordinate} from 'maplibre-gl';
 import {createPlatformScene, showPlatformModels} from './platform-model.js';
 import {lineColors, lineIndex} from './line-colors.js';
@@ -88,7 +88,9 @@ function makeBusScene(map, gl, amenities, stops) {
   function render(input, vehicles, now, getSun, period) {
     const changedPlatforms = platforms.refresh();
     platforms.update(vehicles, now);
+    const lightPeriod = period === 'dusk' || period === 'night' ? 'night' : 'day';
     if (now - lastLight >= 1000) {
+      setArcoGlassLight(geometries, lightPeriod);
       const light = getSun?.();
       if (light) {
         const [east, north, up] = light.direction;
@@ -105,7 +107,7 @@ function makeBusScene(map, gl, amenities, stops) {
     poses.clear();
     const [body, fittings, doorPaint, doorGlass, axles] = batches;
     const zoom = map.getZoom();
-    const delays = delayPalette[period === 'dusk' || period === 'night' ? 'night' : 'day'];
+    const delays = delayPalette[lightPeriod];
     let changedColors = false;
     outline.visible = false;
     const scale = THREE.MathUtils.clamp(2 ** (15.5 - zoom), 1, 3);

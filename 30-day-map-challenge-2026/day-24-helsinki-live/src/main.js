@@ -7,7 +7,7 @@ import {helsinkiTimeOfDay} from './daylight.js';
 import {sidePanel} from './place-card.js';
 import {createBusPicker} from './bus-picker.js';
 import {createBusViewport} from './bus-viewport.js';
-import {guideMinZoom, overviewEnd, timingGroup, timingPalette} from './fleet-lights.js';
+import {busModelZoom, overviewEnd, timingGroup, timingPalette} from './fleet-lights.js';
 import {alreadyArrived, vehiclePunctuality, stopPunctuality} from './punctuality.js';
 import {choosePattern, move, progress as tripOffset, recentTrail, samplePose} from './transit.js';
 import {isNobinaU12} from './u12-model.js';
@@ -90,6 +90,9 @@ function mapStatus(id) {
 }
 let fleetTimingCounts;
 const timingBands = new Map();
+const timingPercent = $('timing-percent');
+timingPercent.style.setProperty('--timing-day', timingPalette.late.day);
+timingPercent.style.setProperty('--timing-night', timingPalette.late.night);
 for (const status of ['on-time', 'late', 'very-late']) {
   const colour = timingPalette[status];
   const entry = document.createElement('div');
@@ -143,7 +146,7 @@ function updateTimingPanel() {
   $('timing-late-count').textContent = delayed;
   $('timing-base').textContent = 'of ' + covered + (covered === 1 ? ' bus' : ' buses');
   $('timing-outlook').textContent = hasEstimate ? (delayed === 1 ? 'is expected late' : 'are expected late') : 'Expected late';
-  $('timing-percent').textContent = hasEstimate ? Math.round(100 * delayed / covered) + '%' : '—';
+  timingPercent.textContent = hasEstimate ? Math.round(100 * delayed / covered) + '%' : '—';
   $('timing-coverage').textContent = !current ? 'Waiting for live data and timetable'
     : total ? covered + ' of ' + total + (total === 1 ? ' bus analysed' : ' buses analysed')
     : 'No recent bus positions in the HSL feed';
@@ -479,40 +482,32 @@ let lastPreviewUpdate = -Infinity;
 function drawPreviews(t) {
   if (!view) return;
   const zoom = view.map.getZoom();
-  if (t - lastPreviewUpdate < (zoom >= 16 ? 150 : 600)) return;
+  if (t - lastPreviewUpdate < 100) return;
   lastPreviewUpdate = t;
   const items = [];
   const map = view.map;
-  if (zoom >= guideMinZoom) {
-    // Mercator metres per CSS pixel at the centre of the view. Include half the model
-    // length at street scale so the luminous tip stays visible beyond its windscreen.
+  if (zoom >= busModelZoom) {
+    // Start under the twelve-metre model, whose size increases at neighbourhood zoom.
+    // The ribbon extends another one or two bus lengths beyond the windscreen.
     const metresPerPixel = 40075017 * Math.cos(map.getCenter().lat * Math.PI / 180) / (512 * 2 ** zoom);
-    const pixelsAhead = Math.max(22, Math.min(64, 22 + (zoom - 12) * 7));
-    const guideLength = Math.min(650, 6 + pixelsAhead * metresPerPixel);
-    const bounds = map.getBounds();
-    const align = zoom >= 15 ? view.align : undefined;
-    for (const bus of visibleFleet) {
-      if (
-        !bus.track ||
-        now() - bus.timestamp > 30 ||
-        !bounds.contains(bus.coordinate)
-      )
-        continue;
-      const patternForBus = pattern(bus);
-      const fullTrip = selection.fullTrip && selection.id === bus.id && patternForBus?.shape;
-      if (fullTrip) continue;
-      const stations = zoom >= 15.5 && !selection.fullTrip ? [] : undefined;
-      const offset = tripOffset(bus, t);
-      const line = network.routes[bus.route].number;
-      const trip = zoom >= 15.5 && freshArrivals() ? predictions.get(bus.key) : undefined;
+    const halfModelLength = 6 * Math.max(1, 2 ** (15.5 - zoom));
+    const guideLength = halfModelLength + Math.max(12, Math.min(28, 18 * metresPerPixel));
+    const showArrivals = zoom >= 15.5 && freshArrivals();
+    for (const model of visible(t, map.getBounds())) {
+      if (!model.onRoute || model.fullTrip) continue;
+      const bus = vehicles.get(model.id);
+      const offset = model.wheelDistance;
+      const align = view.align.covers(bus.coordinate) ? view.align : undefined;
+      const path = routePreview(bus.track, offset, guideLength, align);
+      if (path.length < 2) continue;
+      const trip = showArrivals && now() - bus.timestamp <= 30 ? predictions.get(bus.key) : undefined;
       const call = trip && futureArrivals(bus, trip)[0];
+      const patternForBus = call && pattern(bus);
       const index = call && patternForBus?.stops.findIndex(
         (id, i) => id === call.id && patternForBus.stopOffsets?.[i] >= offset - 4,
       );
       const metres = Number.isInteger(index) && index >= 0 ? patternForBus.stopOffsets[index] - offset : Infinity;
       const stop = call && network.stops[call.id];
-      const path = routePreview(bus.track, offset, guideLength, align, stations);
-      if (path.length < 2) continue;
       // A valid upcoming platform may be beyond the tip of the guide.
       let passingStop = false;
       if (stop && metres <= 550) {
@@ -521,13 +516,10 @@ function drawPreviews(t) {
       }
       const arrival = call && (call.arrival || call.departure);
       items.push({
-        id: bus.id,
-        line,
-        punctuality: mapStatus(bus.id),
-        selected: selection.kind === 'bus' && selection.id === bus.id,
+        id: model.id,
+        line: model.line,
+        punctuality: model.punctuality,
         path,
-        stations,
-        shape: patternForBus?.shape,
         call: passingStop && arrival ? {id: call.id, name: stop.name, eta: eta(arrival), arrival} : undefined,
       });
     }
@@ -1051,6 +1043,8 @@ $('detail').addEventListener('click', (e) => {
     following = false;
     selection.fullTrip = true;
     updateGeometry();
+    lastPreviewUpdate = -Infinity;
+    drawPreviews(performance.now());
     revealSelectedBus = false;
     followAnchor = null;
     frameMap(true);
