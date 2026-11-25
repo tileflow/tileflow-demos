@@ -1,0 +1,24 @@
+{
+  "size": 129,
+  "spacing": 5,
+  "tiles": [
+    {
+      "z": 12,
+      "x": 1855,
+      "y": 1653,
+      "available": true
+    }
+  ],
+  "release": "terrain-release-mapterhorn-0.0.13-ac3cc496bff7",
+  "descriptorSha256": "b8540993a1f96eff186994367f34a631b8d0baaa4a169ca0388228ddc112efc5",
+  "lat": 32.7355,
+  "lon": -16.9289,
+  "zoom": 12,
+  "validCells": 16641,
+  "tileCount": 1,
+  "missingTiles": 0,
+  "attribution": "<a href=\"https://tileflow.dev/copyright\">© Tileflow</a>",
+  "errors": [],
+  "gridSha256": "220264fce1b7f8d7fd1dbf6822ddf7ba4a98aada73a78723d05f9c76c47faf77",
+  "sampling": "spherical azimuthal equidistant; bilinear at source pixel centers"
+}

@@ -14,6 +14,7 @@ const maps = {
   'paris-on-film': '30-day-map-challenge-2026/day-20-paris-on-film',
   sniff: '30-day-map-challenge-2026/day-19-sniff',
   'sun-on-the-street': '30-day-map-challenge-2026/day-17-sun-on-the-street',
+  'visibility-explorer': 'apps/visibility-explorer',
 };
 
 const root = fileURLToPath(new URL('../..', import.meta.url));

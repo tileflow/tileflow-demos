@@ -1,0 +1,26 @@
+{
+  "name": "@tileflow-demos/visibility-explorer",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test test/observer-map-camera.mjs test/sightline.mjs test/terrain-source.mjs",
+    "test:eye-view": "node test/eye-view-accuracy.mjs",
+    "test:browser": "node test/browser.mjs",
+    "test:relocation": "node test/relocation.mjs"
+  },
+  "dependencies": {
+    "@mapbox/vector-tile": "2.0.4",
+    "@tileflow/core": "0.1.0-alpha.55",
+    "maplibre-gl": "6.16.0",
+    "pbf": "4.0.1"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "vite": "8.0.16"
+  }
+}

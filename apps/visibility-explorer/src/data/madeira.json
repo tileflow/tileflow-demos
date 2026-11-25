@@ -1,0 +1,60 @@
+{
+  "width": 401,
+  "height": 401,
+  "cellSizeM": 50.0,
+  "cellSize": 50.0,
+  "latitude": 32.7355,
+  "longitude": -16.9289,
+  "center": [
+    -16.9289,
+    32.7355
+  ],
+  "rowOrder": "north to south",
+  "colOrder": "west to east",
+  "dtype": "little-endian float32",
+  "noData": "NaN",
+  "projection": "spherical azimuthal equidistant",
+  "earthRadiusM": 6371008.8,
+  "zoom": 11,
+  "tileSize": 512,
+  "source": "Tileflow Terrain (Mapterhorn)",
+  "attribution": "<a href=\"https://tileflow.dev/copyright\">\u00a9 Tileflow</a>",
+  "sourceUrl": "https://api.tileflow.dev/tiles/terrain/tiles.json",
+  "attributionUrl": "https://tileflow.dev/copyright",
+  "sourceAttributionUrl": "https://mapterhorn.com/attribution",
+  "release": "terrain-release-mapterhorn-0.0.13-ac3cc496bff7",
+  "descriptorSha256": "b8540993a1f96eff186994367f34a631b8d0baaa4a169ca0388228ddc112efc5",
+  "resampling": "bilinear at source pixel centers",
+  "sourceApproxPixelSizeM": 32.11256359619194,
+  "tiles": [
+    {
+      "x": 927,
+      "y": 826,
+      "webpSha256": "80b84f7b0063877a0323c0e70e4daf4394c911bd18227364f523d0e70fe2d52f",
+      "argbSha256": "128f9e03cdd60466f592260f1374475c72e886685b71c8355fe0ee70baceb857"
+    },
+    {
+      "x": 927,
+      "y": 827,
+      "webpSha256": "b46ddc336ac3b646f31b66a0a2e0fd403c70b401a2b248bf5b9c4d8b190eb1df",
+      "argbSha256": "7f9bc10af83249788f29f8c463cc8f8bd15d45f18b5fb34ada808b8eaae114f4"
+    },
+    {
+      "x": 928,
+      "y": 826,
+      "webpSha256": "6bce19978e4c12b700d5aa9a17724c091ed44c664397716d1dba3cdb282f2c29",
+      "argbSha256": "e4ede54e5e9a93419ca03335aae5a86805d1f22305b7d51f2055ab3301398c20"
+    },
+    {
+      "x": 928,
+      "y": 827,
+      "webpSha256": "85633ccae2b37c718d2e9c16012752f6e79916804f32b34cb2468736b5483fa1",
+      "argbSha256": "bb1d94bc30d5a1f828a4be642787d39da2d816fec46ed45fa088511eb3eaacd8"
+    }
+  ],
+  "validCells": 160801,
+  "centerElevationM": 1795.1514892578125,
+  "maxElevationM": 1854.5513916015625,
+  "minElevationM": 0.0,
+  "gridSha256": "e1b4c27e388701cb3bc7df2b16603eb14787d0430f90f0efbf1a3c34037010bc"
+}

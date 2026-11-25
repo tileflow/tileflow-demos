@@ -1,0 +1,85 @@
+.tileflow-hiker.maplibregl-marker {
+  box-sizing: border-box;
+  display: block;
+  width: var(--hiker-hit-width, 44px);
+  height: var(--hiker-hit-height, 44px);
+  border: 0;
+  border-radius: 9px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: grab;
+  touch-action: none;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tileflow-hiker.maplibregl-marker:active {
+  cursor: grabbing;
+}
+.tileflow-hiker.maplibregl-marker:focus-visible {
+  outline: 2px solid #12634b;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #fff8e4;
+}
+.tileflow-hiker.maplibregl-marker.maplibregl-marker-covered {
+  visibility: hidden;
+  pointer-events: none;
+}
+.tileflow-hiker .hiker-visual {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 44px;
+  height: 44px;
+  transform: translateX(-50%);
+  opacity: var(--hiker-opacity, 1);
+  pointer-events: none;
+}
+.tileflow-hiker .hiker-person {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: auto;
+  height: var(--hiker-height, 32px);
+  max-width: none;
+  transform: translateX(-50%) scaleX(var(--hiker-facing, 1));
+  filter: drop-shadow(1px 0 0 #fff8e4) drop-shadow(-1px 0 0 #fff8e4)
+    drop-shadow(0 1px 1px #2e312797);
+}
+.tileflow-hiker .hiker-ground {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 18px;
+  height: 5px;
+  border-radius: 50%;
+  background: #24362562;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 1px #fff9df88;
+}
+.tileflow-hiker .hiker-direction {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  width: 29px;
+  height: 17px;
+  transform: translateX(-50%);
+  overflow: visible;
+  pointer-events: none;
+}
+.tileflow-hiker .hiker-far-disc {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%);
+  border-radius: 100%;
+  background: #fff8e6ed;
+  border: 1px solid #7a624cc4;
+  box-shadow: 0 1px 3px #243b2934;
+  opacity: var(--hiker-disc, 0);
+}

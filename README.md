@@ -6,6 +6,7 @@ Public demos for Tileflow packages.
 
 - `apps/vite-basic`: React + Vite map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/vite`.
 - `apps/next-basic`: React + Next.js map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/next`.
+- [Visibility Explorer](apps/visibility-explorer) shows which terrain is visible from an observer on the worldwide Outdoors 3D map. [Explore the map](https://maps.tileflow.dev/visibility-explorer/).
 
 ## 30 Day Map Challenge 2026
 

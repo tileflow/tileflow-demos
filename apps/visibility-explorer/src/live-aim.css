@@ -1,0 +1,76 @@
+.live-aim.maplibregl-marker {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+}
+.live-aim[data-fixed='true'] {
+  pointer-events: auto;
+}
+.live-aim[data-dragging='true'] {
+  cursor: grabbing;
+}
+.live-aim:focus-visible {
+  outline: 2px solid #285e50;
+  outline-offset: 0;
+}
+.live-aim-sight {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  background: #fffcf1a6;
+  border: 2px solid #804727;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px #fffdf1,
+    0 1px 5px 2px #29382b4d;
+  pointer-events: none;
+}
+.live-aim-sight:after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: #7c3d22;
+  border-radius: 50%;
+}
+.live-aim[data-fixed='true'] .live-aim-sight {
+  background: #a9542e;
+  border-color: #71391f;
+}
+.live-aim[data-fixed='true'] .live-aim-sight:after {
+  border-radius: 1px;
+  background: #fffdf1;
+  width: 7px;
+  height: 7px;
+}
+@media (hover: none), (pointer: coarse) {
+  .live-aim.maplibregl-marker {
+    pointer-events: auto;
+  }
+  .live-aim-sight {
+    width: 23px;
+    height: 23px;
+  }
+}
+#world.is-placing .live-aim.maplibregl-marker {
+  visibility: hidden;
+  pointer-events: none;
+}
+#world .tileflow-hiker.maplibregl-marker {
+  z-index: 2;
+}
