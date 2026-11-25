@@ -86,7 +86,6 @@ function makeBusScene(map, gl, amenities, stops) {
   }
 
   function render(input, vehicles, now, getSun, period) {
-    const changedPlatforms = platforms.refresh();
     platforms.update(vehicles, now);
     const lightPeriod = period === 'dusk' || period === 'night' ? 'night' : 'day';
     if (now - lastLight >= 1000) {
@@ -194,7 +193,15 @@ function makeBusScene(map, gl, amenities, stops) {
     renderer.resetState();
     renderer.render(scene, camera);
     renderer.resetState();
-    return changedPlatforms;
+  }
+
+  function clearVehicles(now) {
+    if (!poses.size) return false;
+    poses.clear();
+    outline.visible = false;
+    for (const batch of batches) batch.count = 0;
+    platforms.update([], now);
+    return true;
   }
 
   function dispose() {
@@ -257,7 +264,8 @@ function makeBusScene(map, gl, amenities, stops) {
     }
     return hit;
   }
-  return {render, dispose, pick, roofPoint, platformPoint: id => platforms.flagPoint(id, camera, map.getCanvas())};
+  return {render, dispose, pick, roofPoint, clearVehicles, refreshPlatforms: platforms.refresh,
+    platformPoint: id => platforms.flagPoint(id, camera, map.getCanvas())};
 }
 
 /** getFrame(timeMs, bounds) supplies currently visible, interpolated vehicle poses. */
@@ -286,10 +294,18 @@ export function createBusLayer(map, getFrame, getSun, amenities, stops, getPerio
     render(gl, input) {
       const now = performance.now();
       const vehicles = getFrame(now, map.getBounds());
-      if (!world && !vehicles.length && !showPlatformModels(map)) return;
+      const showPlatforms = showPlatformModels(map);
+      if (!world && !vehicles.length && !showPlatforms) return;
       if (!world) world = makeBusScene(map, gl, amenities, stops);
-      const changedPlatforms = world.render(input, vehicles, now, getSun, getPeriod?.());
-      if (changedPlatforms) notifyPlatforms(changedPlatforms);
+      if (showPlatforms || hasPlatforms) {
+        const changedPlatforms = world.refreshPlatforms();
+        if (changedPlatforms) notifyPlatforms(changedPlatforms);
+      }
+      if (!vehicles.length && !hasPlatforms) {
+        if (world.clearVehicles(now)) onBadgesFrame?.([]);
+        return;
+      }
+      world.render(input, vehicles, now, getSun, getPeriod?.());
       onBadgesFrame?.(vehicles, world.roofPoint);
       if (vehicles.length && timer === undefined) {
         timer = setTimeout(() => {

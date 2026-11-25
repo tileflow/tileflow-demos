@@ -1,4 +1,5 @@
 import {lineColors} from './line-colors.js';
+import {distance} from './route-track.js';
 
 export const overviewEnd = 14.6;
 export const overviewStart = 13.4;
@@ -45,9 +46,54 @@ export function timingColorExpression(period, property = 'punctuality', daySwatc
     color('unknown'),
   ];
 }
-const lineIds = lineColors.map((_, i) => 'hsl-trail-' + i);
-export const trailLayerIds = [...lineIds, ...Object.keys(timingPalette).map((key) => 'hsl-timing-' + key)];
+export const trailLayerIds = ['hsl-fleet-trail'];
 const zoom = (...stops) => ['interpolate', ['linear'], ['zoom'], ...stops];
+
+// One feature per visual band can hold many disconnected journeys. Keep the
+// original road vertices and split by metres so sparse fixes fade consistently.
+const trailAlphas = [.14, .46, .74, .94];
+export function appendFleetTrail(features, coordinates, properties, groups) {
+  if (!coordinates || coordinates.length < 2) return;
+  const offsets = [0];
+  for (let i = 1; i < coordinates.length; i++) {
+    offsets.push(offsets[i - 1] + distance(coordinates[i - 1], coordinates[i]));
+  }
+  const length = offsets.at(-1);
+  if (!(length > 0)) return;
+  const {punctuality, ink, secondary, stale} = properties;
+  const color = punctuality === undefined ? {ink} : {punctuality: timingGroup(punctuality)};
+  const key = [color.punctuality ?? ink, secondary, stale].join('|');
+  let bands = groups.get(key);
+  if (!bands) {
+    bands = trailAlphas.map(trailAlpha => {
+      const lines = [];
+      features.push({
+        type: 'Feature',
+        geometry: {type: 'MultiLineString', coordinates: lines},
+        properties: {...color, secondary, stale, trailAlpha},
+      });
+      return lines;
+    });
+    groups.set(key, bands);
+  }
+  let start = coordinates[0];
+  let next = 1;
+  for (let i = 0; i < bands.length; i++) {
+    const end = length * ((i + 1) / bands.length);
+    const part = [start];
+    while (next < coordinates.length && offsets[next] <= end) {
+      if (offsets[next] > offsets[next - 1]) part.push(coordinates[next]);
+      next++;
+    }
+    if (next < coordinates.length && offsets[next - 1] < end) {
+      const a = coordinates[next - 1], b = coordinates[next];
+      const fraction = (end - offsets[next - 1]) / (offsets[next] - offsets[next - 1]);
+      part.push([a[0] + (b[0] - a[0]) * fraction, a[1] + (b[1] - a[1]) * fraction]);
+    }
+    bands[i].push(part);
+    start = part.at(-1);
+  }
+}
 
 export function forwardHaloLayers(period) {
   // Widths grow with the bus so the ribbon fits within its lane, even close up.
@@ -85,62 +131,27 @@ export function fleetLightLayers(period) {
   const night = period === 'dusk' || period === 'night';
   const colors = lineColors.map((c) => (night ? c.body : c.ink));
   const ink = ['match', ['get', 'ink'], ...colors.flatMap((color, i) => [i, color]), colors[0]];
-  const timingColours = Object.keys(timingPalette).map((key) => [key, timingColor(key, period)]);
   const hasStatus = ['has', 'punctuality'];
   const statusInk = timingColorExpression(period);
   const fleetInk = ['case', hasStatus, statusInk, ink];
   const source = 'hsl-vehicles';
   const rank = {'circle-sort-key': ['case', ['get', 'selected'], 2, ['get', 'secondary'], 0, 1]};
-  const trails = [
-    ...colors.map((colour, i) => ({
-      id: lineIds[i], colour, match: ['all', ['!', ['has', 'punctuality']], ['==', ['get', 'ink'], i]],
-    })),
-    ...timingColours.map(([key, colour]) => ({
-      id: 'hsl-timing-' + key, colour, statusTrail: true, match: key === 'on-time'
-        ? ['in', ['get', 'punctuality'], ['literal', ['early', 'on-time']]]
-        : ['==', ['get', 'punctuality'], key],
-    })),
-  ].map(({id, colour: color, match, statusTrail}) => ({
-    id,
-    type: 'line',
-    source,
-    maxzoom: statusTrail ? busModelZoom : overviewEnd,
-    filter: ['all', ['==', ['geometry-type'], 'LineString'], match],
-    layout: {'line-cap': 'round', 'line-join': 'round'},
-    paint: {
-      'line-gradient': [
-        'interpolate',
-        ['linear'],
-        ['line-progress'],
-        0,
-        color + '00',
-        0.30,
-        color + '60',
-        0.74,
-        color + 'dc',
-        1,
-        color,
-      ],
-      'line-width': night ? zoom(7, 1.8, 11, 3.3, overviewStart, 4.3) : zoom(7, 1.6, 11, 2.85, overviewStart, 3.8),
-      'line-opacity': statusTrail
-        ? zoom(overviewStart, overviewStrength, overviewEnd, ['*', overviewStrength, .78])
-        : zoom(overviewStart, overviewStrength, overviewEnd, 0),
-    },
-  }));
-  const trailGlows = trails.filter(layer => layer.id.startsWith('hsl-timing-')).map(layer => ({
-    ...layer,
-    id: layer.id + '-glow',
-    maxzoom: overviewEnd,
-    paint: {
-      ...layer.paint,
-      'line-width': night ? zoom(7, 5.5, 11, 10, overviewStart, 13) : zoom(7, 4.5, 11, 8.5, overviewStart, 11),
-      'line-blur': zoom(7, 2.5, 11, 4.5, overviewStart, 6),
-      'line-opacity': zoom(overviewStart, ['*', overviewStrength, night ? 0.8 : 0.38], overviewEnd, 0),
-    },
-  }));
+  const trailStrength = ['*', overviewStrength, ['number', ['get', 'trailAlpha']]];
   return [
-    ...trailGlows,
-    ...trails,
+    {
+      id: trailLayerIds[0],
+      type: 'line',
+      source,
+      maxzoom: busModelZoom,
+      filter: ['has', 'trailAlpha'],
+      layout: {'line-cap': 'butt', 'line-join': 'round'},
+      paint: {
+        'line-color': fleetInk,
+        'line-width': night ? zoom(7, 1.8, 11, 3.3, overviewStart, 4.3) : zoom(7, 1.6, 11, 2.85, overviewStart, 3.8),
+        'line-opacity': zoom(overviewStart, trailStrength, overviewEnd,
+          ['case', hasStatus, ['*', trailStrength, .78], 0]),
+      },
+    },
     {
       id: 'hsl-vehicle-glow',
       type: 'circle',

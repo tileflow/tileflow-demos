@@ -8,7 +8,7 @@ import {lineColor, lineColors, lineIndex} from './line-colors.js';
 import {createBusLayer} from './bus-model.js';
 import {createFleetBadges} from './fleet-badges.js';
 import {
-  busModelZoom, fleetLightLayers, forwardHaloLayers, overviewEnd, trailLayerIds, timingColorExpression,
+  appendFleetTrail, busModelZoom, fleetLightLayers, forwardHaloLayers, overviewEnd, trailLayerIds, timingColorExpression,
   timingGroup,
 } from './fleet-lights.js';
 import {terminalLayers, berthLayers, berthZoom, terminalLabelPaint, addPlatformBadge} from './station-symbols.js';
@@ -376,7 +376,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
           stretchY: [[5, 19]],
         });
       }
-      sources('hsl-vehicles', renderPoints, {lineMetrics: true, tolerance: 0.12, maxzoom: 18});
+      sources('hsl-vehicles', renderPoints, {tolerance: 0.12, maxzoom: 18});
       add(
         {
           id: 'hsl-network',
@@ -679,6 +679,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     align,
     drawVehicles(buses) {
       const features = [];
+      const trailGroups = new Map();
       for (const bus of buses) {
         const {coordinate, trail, punctuality, ...properties} = bus;
         const ink = lineIndex(bus.line);
@@ -692,10 +693,10 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
           }),
         );
         if (trail?.length) {
-          features.push(feature('LineString', trail, {
-            id: bus.id, ink, secondary: bus.secondary, stale: bus.stale,
+          appendFleetTrail(features, trail, {
+            ink, secondary: bus.secondary, stale: bus.stale,
             ...(bus.punctuality ? {punctuality: bus.punctuality} : {}),
-          }));
+          }, trailGroups);
         }
       }
       renderPoints = fc(features);

@@ -449,6 +449,13 @@ function updateFleet() {
   if (view) busPicker.update(visibleFleet);
 }
 let lastFleetDraw = -Infinity;
+function refreshFleetDrawing(t = performance.now(), interval = 0) {
+  if (!view) return;
+  // Across the city a bus travels only a few screen pixels during a gesture.
+  // Leave time for camera frames between updates of the entire GeoJSON source.
+  if (view.map.getZoom() < overviewEnd && view.map.isMoving()) interval = 900;
+  if (t - lastFleetDraw >= interval) draw(t);
+}
 function draw(t = performance.now()) {
   if (!view) return;
   lastFleetDraw = t;
@@ -596,7 +603,7 @@ function feedMessage({data: {name, data, timestamp, error}}) {
     patternCache.clear();
     for (const trip of data) predictions.set(trip.key, trip);
   }
-  draw();
+  refreshFleetDrawing();
   updateGeometry();
   paint();
 }
@@ -962,7 +969,7 @@ function trackSelectedBus(coordinate, roof, t) {
   }
 }
 function animate(t) {
-  if (view && view.map.getZoom() < overviewEnd && t - lastFleetDraw >= 400) draw(t);
+  if (view && view.map.getZoom() < overviewEnd) refreshFleetDrawing(t, 400);
   drawPreviews(t);
   view?.pulseDirections(t);
   if (view && selection.kind === 'bus') {
@@ -1175,5 +1182,5 @@ setInterval(() => {
   updateFleet();
   updateGeometry();
   paint();
-  draw();
+  refreshFleetDrawing();
 }, 1500);
