@@ -1,9 +1,16 @@
 // Keep the native menu stable while someone is choosing a bus from the live fleet.
-export function createBusPicker(select, describe, choose) {
+export function createBusPicker(select, caption, describe, choose) {
   const order = new Intl.Collator('en', {numeric: true});
   const groups = new Map(), options = new Map();
   const supportsOpen = CSS.supports('selector(:open)');
   let fleet = [], selected = '';
+  function showSelection() {
+    const option = options.get(selected);
+    const value = option?.value ?? '';
+    const label = option?.dataset.line || 'Bus';
+    if (select.value !== value) select.value = value;
+    if (caption.textContent !== label) caption.textContent = label;
+  }
   function sync(force = false) {
     if (!force && (supportsOpen ? select.matches(':open') : select === document.activeElement)) return;
     const active = new Set(), changed = new Set();
@@ -28,6 +35,7 @@ export function createBusPicker(select, describe, choose) {
       if (option.text !== title || option.parentElement !== group) {
         option.text = title;
         option.dataset.destination = destination;
+        option.dataset.line = line;
         group.append(option);
         changed.add(group);
       }
@@ -56,7 +64,7 @@ export function createBusPicker(select, describe, choose) {
     if (groupOrderChanged) {
       select.append(...[...groups].sort(([a], [b]) => order.compare(a, b)).map(([, group]) => group));
     }
-    if (select.value !== selected) select.value = options.has(selected) ? selected : '';
+    showSelection();
   }
   select.addEventListener('pointerdown', () => sync(true));
   select.addEventListener('change', () => { choose(select.value); sync(true); });
@@ -65,7 +73,7 @@ export function createBusPicker(select, describe, choose) {
     update(buses) { fleet = buses; sync(); },
     select(id) {
       selected = id || '';
-      if (select.value !== selected) select.value = options.has(selected) ? selected : '';
+      showSelection();
     },
   };
 }

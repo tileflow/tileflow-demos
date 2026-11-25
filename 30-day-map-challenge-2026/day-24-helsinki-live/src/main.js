@@ -24,6 +24,11 @@ function openMobilePanel(panel) {
   toolsButton.setAttribute('aria-expanded', String(panel === 'tools'));
   arrivalsButton.setAttribute('aria-expanded', String(panel === 'arrivals'));
 }
+function closeMobilePanel() {
+  if (!mobileToolbar.dataset.open) return false;
+  openMobilePanel('');
+  return true;
+}
 toolsButton.addEventListener('click', event => {
   const open = mobileToolbar.dataset.open !== 'tools';
   openMobilePanel(open ? 'tools' : '');
@@ -34,7 +39,8 @@ arrivalsButton.addEventListener('click', () => {
 });
 function dismissMobilePanel(event) {
   const panel = mobileToolbar.dataset.open;
-  if (!panel) return;
+  // The map handles the same touch as a gesture or click. Let it dismiss one layer.
+  if (!panel || event.target.closest('.maplibregl-canvas-container')) return;
   const inside = panel === 'tools' ? '#mobile-tools, #camera-controls' : '#punctuality-panel';
   if (!event.target.closest(inside)) openMobilePanel('');
 }
@@ -87,7 +93,7 @@ let lastGeometry,
   revealSelectedBus = false;
 const reducedCameraMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const patternCache = new Map();
-const busPicker = createBusPicker($('bus-picker'), (bus) => ({
+const busPicker = createBusPicker($('bus-picker'), $('bus-picker-caption'), (bus) => ({
   line: network.routes[bus.route].number,
   destination: titleFor(bus),
 }), (id) => {
@@ -389,7 +395,7 @@ function navigationLabel() {
 }
 function select(kind, id, camera = 'keep', options = {}) {
   if (!network || !['home', 'bus', 'stop', 'terminal'].includes(kind)) return;
-  if (mobileToolbar.dataset.open) openMobilePanel('');
+  closeMobilePanel();
   const restored = options.restore;
   if (kind === 'bus' && !vehicles.has(id) && !restored) return;
   if (kind === 'terminal' && !network.terminals[id]) return;
@@ -1159,14 +1165,22 @@ async function init() {
   function dismissPlaceOrBus() {
     if (['bus', 'stop', 'terminal'].includes(selection.kind)) select('home', undefined, 'inPlace');
   }
-  view = await makeMap(network, {visible, select, detach, dismiss: dismissPlaceOrBus}, timeOfDay, amenities);
-  view.map.on('movestart', event => { cameraChasing = event.busChase === true; });
+  view = await makeMap(network, {visible, select, detach, closeMobilePanel, dismiss: dismissPlaceOrBus}, timeOfDay, amenities);
+  view.map.on('movestart', event => {
+    cameraChasing = event.busChase === true;
+    if (event.originalEvent) closeMobilePanel();
+  });
   view.map.on('moveend', () => { cameraChasing = false; });
   busPicker.update(visibleFleet);
   view.setTimeOfDay(timeOfDay);
   updateGeometry();
   draw();
+  const credits = [...$('map').querySelectorAll('.tileflow-branding, .maplibregl-ctrl-bottom-right')];
   const frame = new ResizeObserver((entries) => {
+    if (entries.some(({target}) => credits.includes(target))) {
+      const height = Math.max(...credits.map(element => element.offsetHeight));
+      $('map').parentElement.style.setProperty('--map-credit-height', height + 'px');
+    }
     const resized = entries.some(({target}) => target === $('map'));
     if (resized) {
       followAnchor = null;
@@ -1175,6 +1189,7 @@ async function init() {
     // Changing the contents of a floating card must not shift the street under the pointer.
     if (resized || selection.kind === 'home') frameMap();
   });
+  for (const control of credits) frame.observe(control);
   frame.observe($('map'));
   sidePanel.addEventListener('change', paint);
   frame.observe($('dock'));

@@ -604,6 +604,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   for (const event of ['mousedown', 'touchstart']) map.on(event, () => { dragged = false; });
   map.on('click', (e) => {
     if (dragged || e.originalEvent?.target?.closest?.('button, a, input, select, .maplibregl-ctrl')) return;
+    if (handlers.closeMobilePanel()) return;
     const touch = e.originalEvent?.pointerType === 'touch' || e.originalEvent?.sourceCapabilities?.firesTouchEvents;
     let hit, distance = touch ? 15 : 8;
     for (const bus of handlers.visible(performance.now(), map.getBounds())) {
