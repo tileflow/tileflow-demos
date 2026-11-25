@@ -2,7 +2,6 @@ import * as maplibregl from 'maplibre-gl';
 import {maxObserverHeight, observerModelOpacity, observerSymbolHeight} from './observer-3d';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import {registerTileflowContourProtocol} from '@tileflow/core/internal';
-import official from './data/outdoors-style.json';
 import {registerSummitSymbols} from './summit-symbols';
 
 maplibregl.setWorkerUrl(mapWorkerUrl);
@@ -10,10 +9,26 @@ registerTileflowContourProtocol(maplibregl);
 const detailCredit =
   '<a href="https://mapterhorn.com/attribution">© Mapterhorn</a> · <a href="https://www.naturalearthdata.com/">Natural Earth</a>';
 
+let official = null;
+
+// The Tileflow Vite plugin compiles Outdoors from tileflow.config.ts and serves it with the
+// app, so the style always matches the SDK release the demo installs.
+export async function loadOutdoorsStyle() {
+  if (official) return;
+  const manifestUrl = new URL(import.meta.env.BASE_URL + 'tileflow/manifest.json', window.location.origin);
+  const manifest = await (await fetch(manifestUrl)).json();
+  const map = manifest.maps.visibility;
+  const styleUrl = new URL(map.themes[map.defaultTheme].styleUrl, manifestUrl);
+  const style = await (await fetch(styleUrl)).json();
+  if (typeof style.sprite === 'string') style.sprite = new URL(style.sprite, styleUrl).href;
+  // Sightlines are measured on real heights, so the rendered ground is not exaggerated.
+  if (style.terrain) style.terrain.exaggeration = 1;
+  official = style;
+}
+
 export function outdoorsStyle() {
-  const style = structuredClone(official);
-  style.sprite = new URL(import.meta.env.BASE_URL + 'outdoors/sprite', window.location.origin).href;
-  return style;
+  if (!official) throw new Error('Load the Outdoors style before creating a map.');
+  return structuredClone(official);
 }
 
 function buildStyle(peaks) {

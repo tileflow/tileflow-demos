@@ -239,6 +239,12 @@ importers:
       '@tileflow/core':
         specifier: 0.1.0-alpha.55
         version: 0.1.0-alpha.55
+      '@tileflow/maps':
+        specifier: 0.1.0-alpha.25
+        version: 0.1.0-alpha.25(@tileflow/core@0.1.0-alpha.55)
+      '@tileflow/vite':
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)(vite@8.0.16(@types/node@25.9.3)(jiti@2.7.0))
       maplibre-gl:
         specifier: 6.16.0
         version: 6.16.0
@@ -249,6 +255,9 @@ importers:
       playwright:
         specifier: 1.62.1
         version: 1.62.1
+      tileflow:
+        specifier: 0.1.0-alpha.28
+        version: 0.1.0-alpha.28(@types/node@25.9.3)
       vite:
         specifier: 8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)

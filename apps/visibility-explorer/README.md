@@ -52,4 +52,4 @@ From the repository root, run `pnpm install --frozen-lockfile` and `pnpm --filte
 
 Run the camera and sightline checks with `pnpm --filter @tileflow-demos/visibility-explorer test`. For the browser checks, install Chromium with `pnpm --filter @tileflow-demos/visibility-explorer exec playwright install chromium`. With the app running, set `MAP_URL` to its URL and run the app’s `test:eye-view`, `test:browser` and `test:relocation` scripts.
 
-The map uses Tileflow Outdoors, Tileflow World and Tileflow Terrain. Madeira includes a bundled 50 m elevation grid for the opening view. Other observer positions fetch terrain at runtime. The peak search includes a local gazetteer and can look up additional places online.
+The map uses Tileflow Outdoors, Tileflow World and Tileflow Terrain. `tileflow.config.ts` extends the official Outdoors map, and the Tileflow Vite plugin compiles it with the installed SDK during development and builds. Madeira includes a bundled 50 m elevation grid for the opening view. Other observer positions fetch terrain at runtime. The peak search includes a local gazetteer and can look up additional places online.

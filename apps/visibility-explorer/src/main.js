@@ -1,5 +1,5 @@
 import * as maplibregl from 'maplibre-gl';
-import {createWorldMap} from './world-map';
+import {createWorldMap, loadOutdoorsStyle} from './world-map';
 import PeakSearch from './peak-search';
 import MapProbes from './map-probes';
 import DiscoveryMap from './discovery-map';
@@ -1205,6 +1205,7 @@ el('globe').onclick = () => {
   atlas?.fitWorld();
 };
 try {
+  await loadOutdoorsStyle();
   const sceneZoom = zoomForRadius(radius(), madeira.lat);
   atlas = createWorldMap(el('world'), {
     peaks: PeakSearch.scenarios,
