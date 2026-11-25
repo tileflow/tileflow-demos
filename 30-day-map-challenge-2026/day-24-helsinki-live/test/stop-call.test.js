@@ -40,3 +40,9 @@ test('a reused fleet number cannot borrow door readings from another start or se
   assert(!matchesService(key, {oday: '2026-11-25', start: '01:15'}));
   assert(!matchesService(key, {oday: '2026-11-24', start: '01:45'}));
 });
+
+test('a newer moving fix releases the platform even before the last door reading expires', () => {
+  const moving = {...bus, timestamp: 102, speed: 4};
+  assert.equal(vehicleAtStop(moving, door, stops, 102), null);
+  assert.equal(callForBus({...moving, stopId: 'b'}, null, ['b'], door, stops, 102).id, 'b');
+});

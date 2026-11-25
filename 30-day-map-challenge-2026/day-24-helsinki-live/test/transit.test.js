@@ -108,5 +108,5 @@ test('a trail starts after the last unresolved crossing and has a bounded length
   };
   assert.deepEqual(recentTrail(bus, 625, 110), []);
   assert.deepEqual(recentTrail(bus, 1000, 110)[0], atOffset(track, 400));
-  assert.deepEqual(recentTrail({...bus, offset: 1300}, 1000, 110)[0], atOffset(track, 750));
+  assert.deepEqual(recentTrail({...bus, offset: 1300}, 1000, 110)[0], atOffset(track, 500));
 });

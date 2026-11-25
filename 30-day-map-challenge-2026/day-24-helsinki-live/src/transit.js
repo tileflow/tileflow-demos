@@ -41,7 +41,8 @@ export function progress(bus, time) {
 
 // Only consecutive, route-matched fixes contribute to a tail. Keep the observation just
 // before the cutoff so the tail retreats continuously when a vehicle stops.
-const trailSeconds = 32;
+const trailSeconds = 60;
+const trailExpiry = 32;
 function recordOffsets(previous, timestamp, offset) {
   if (offset == null) return [];
   const fixes = previous ? previous.recentOffsets.slice() : [];
@@ -53,8 +54,9 @@ function recordOffsets(previous, timestamp, offset) {
 
 export function recentTrail(bus, time, clockSeconds) {
   const fixes = bus.recentOffsets;
-  const cutoff = clockSeconds - trailSeconds;
-  if (!bus.track || fixes.length < 2 || bus.timestamp <= cutoff) return [];
+  const age = Math.max(0, clockSeconds - bus.timestamp);
+  if (!bus.track || fixes.length < 2 || age >= trailExpiry) return [];
+  const cutoff = bus.timestamp - trailSeconds * (1 - age / trailExpiry);
   const end = progress(bus, time);
   let i = 0;
   while (i + 1 < fixes.length && fixes[i + 1][0] <= cutoff) i++;
@@ -64,7 +66,7 @@ export function recentTrail(bus, time, clockSeconds) {
     const [nextStamp, nextOffset] = fixes[i + 1];
     start += ((cutoff - stamp) / (nextStamp - stamp)) * (nextOffset - offset);
   }
-  start = Math.max(start, end - 550);
+  start = Math.max(start, end - 800);
   for (const [entry, exit] of bus.track.gaps ?? []) {
     if (entry > end) break;
     if (end <= exit) return [];

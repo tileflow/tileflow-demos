@@ -26,7 +26,8 @@ export function vehicleAtStop(bus, door, stops, now) {
   if (!bus || now - bus.timestamp > 20) return null;
   const reading = door?.key === bus.key && Math.abs(now - door.time) < 8 ? door : null;
   const slow = bus.speed == null || bus.speed < 1;
-  const open = Boolean(reading?.open);
+  // A newer moving fix supersedes the last door telegram while leaving the platform.
+  const open = Boolean(reading?.open && (slow || bus.timestamp <= reading.time));
   if (!open && !(bus.status === 1 && slow && now - (bus.statusTime ?? bus.timestamp) <= 20)) return null;
   const id = (open && reading.stopId) || bus.stopId;
   const stop = stops[id];

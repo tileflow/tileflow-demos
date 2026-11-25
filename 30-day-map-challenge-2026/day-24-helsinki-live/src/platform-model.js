@@ -1,7 +1,9 @@
 // Local coordinates are metres. The platform runs along Z, with the kerb on the negative X side.
 import * as THREE from 'three';
+import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {MercatorCoordinate} from 'maplibre-gl';
+import {ARCO} from './arco-model.js';
 
 function solid(parts) {
   const geometries = parts.map(([geometry, colour, x, y, z]) => {
@@ -11,7 +13,12 @@ function solid(parts) {
     triangles.deleteAttribute('uv');
     const tint = new THREE.Color(colour);
     const colors = new Float32Array(triangles.attributes.position.count * 3);
-    for (let i = 0; i < colors.length; i += 3) tint.toArray(colors, i);
+    const normals = triangles.getAttribute('normal');
+    // A little form shading keeps small symbols legible in every Streets lighting preset.
+    for (let i = 0; i < normals.count; i++) {
+      const light = 0.78 + 0.17 * Math.max(0, normals.getY(i)) - 0.05 * normals.getX(i);
+      colors.set([tint.r * light, tint.g * light, tint.b * light], i * 3);
+    }
     triangles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     return triangles;
   });
@@ -27,88 +34,83 @@ const tube = (x, y, z, top, bottom, h, colour) => [
   y,
   z,
 ];
-const oval = (x, y, z, w, h, d, colour) => [
-  new THREE.SphereGeometry(1, 10, 8).scale(w, h, d),
-  colour,
-  x,
-  y,
-  z,
-];
+function bevel(x, y, z, w, h, d, radius, colour) {
+  return [new RoundedBoxGeometry(w, h, d, 1, radius), colour, x, y, z];
+}
+
+// A few elliptical sections describe a garment or a head without facial detail.
+function profile(x, y, z, sections, depth, colour) {
+  const outline = sections.map(([radius, height]) => new THREE.Vector2(radius, height));
+  const shape = new THREE.LatheGeometry(outline, 12).scale(1, 1, depth);
+  return [shape, colour, x, y, z];
+}
+
+function passenger(coat, trousers, skin, cap, scarf) {
+  const sleeve = [[0, 0], [0.066, 0.02], [0.076, 0.21], [0.082, 0.32], [0.054, 0.39], [0, 0.42]];
+  const body = solid([
+    profile(0, 0.72, 0,
+      [[0, 0], [0.19, 0], [0.225, 0.045], [0.223, 0.15], [0.182, 0.57], [0.14, 0.62], [0, 0.63]],
+      0.74, coat),
+    ...[-1, 1].map((side) => profile(side * 0.191, 0.875, -0.014, sleeve, 0.96, coat)),
+    profile(0, 1.37, 0,
+      [[0, 0], [0.105, 0.014], [0.145, 0.065], [0.15, 0.19], [0.122, 0.235], [0, 0.242]],
+      0.91, skin),
+    profile(0, 1.533, 0,
+      [[0, 0], [0.151, 0], [0.158, 0.035], [0.151, 0.109], [0.119, 0.152], [0.063, 0.173], [0, 0.179]],
+      0.94, cap),
+    profile(0, 1.321, 0, [[0, 0], [0.155, 0], [0.166, 0.018], [0.151, 0.074], [0, 0.076]], 0.90, scarf),
+    bevel(0.080, 1.265, -0.118, 0.084, 0.15, 0.038, 0.014, scarf),
+  ]);
+  const leg = solid([
+    profile(0, -0.64, 0,
+      [[0, 0], [0.057, 0], [0.068, 0.19], [0.071, 0.34], [0.085, 0.63], [0, 0.66]],
+      1.02, trousers),
+    bevel(0, -0.669, -0.043, 0.145, 0.117, 0.215, 0.045, '#354758'),
+  ]);
+  return {body, leg};
+}
 
 function platformKit() {
-  const green = '#355e5a',
-    metal = '#93abad',
-    trim = '#47877d',
-    wood = '#c99564';
+  const frame = '#35576a', jade = '#65a7a2', honey = '#ffd16a', glassTint = '#99d9db';
   const pole = solid([
-    tube(0, 1.65, 0, 0.055, 0.065, 3.3, metal),
-    box(0, 2.97, 0, 0.075, 0.67, 0.54, '#e8e9dc'),
-    box(0, 2.37, 0, 0.08, 0.4, 0.56, '#f8f7e6'),
-    box(0, 1.64, 0, 0.11, 0.5, 0.31, '#637c83'),
-    box(-0.061, 1.64, 0, 0.012, 0.43, 0.25, '#eceddf'),
+    tube(0, 1.65, 0, 0.052, 0.062, 3.3, '#a5b7bc'),
+    bevel(0, 2.79, 0, 0.09, 1.085, 0.57, 0.036, frame),
+    bevel(0, 1.64, 0, 0.11, 0.50, 0.31, 0.027, frame),
+    box(-0.064, 1.64, 0, 0.025, 0.40, 0.23, '#dbe6df'),
   ]);
   const shelter = [
-    box(1.55, 2.55, 2.1, 1.82, 0.07, 4.7, '#80a8a3'),
-    box(0.675, 2.52, 2.1, 0.095, 0.17, 4.72, green),
-    box(2.43, 2.49, 2.1, 0.09, 0.17, 4.72, green),
-    box(0.72, 2.44, 2.1, 0.035, 0.046, 4.52, '#ffe9a6'),
+    // The familiar glass bay, with the bus's rounded cap and narrow warm reveal.
+    bevel(1.55, 2.48, 2.1, 1.82, 0.13, 4.72, 0.058, frame),
+    bevel(1.55, 2.574, 2.1, 1.84, 0.076, 4.73, 0.032, honey),
+    bevel(1.55, 2.655, 2.1, 1.86, 0.135, 4.75, 0.062, jade),
+    bevel(1.55, 2.726, 2.1, 0.94, 0.018, 3.44, 0.008, '#a1cec4'),
+    bevel(2.251, 1.58, 0.49, 0.096, 0.77, 0.61, 0.040, frame),
+    box(2.193, 1.58, 0.49, 0.027, 0.64, 0.50, '#e5efea'),
+    box(2.174, 1.76, 0.49, 0.015, 0.072, 0.49, '#518ca3'),
+    box(2.293, 1.12, 2.10, 0.046, 0.055, 4.30, '#abd6d0'),
   ];
-  for (const z of [-0.13, 2.1, 4.33]) shelter.push(box(2.34, 1.24, z, 0.085, 2.48, 0.085, green));
   for (const z of [-0.13, 4.33]) {
-    shelter.push(box(1.56, 2.46, z, 1.7, 0.14, 0.09, green), box(1.22, 1.22, z, 0.065, 2.44, 0.07, trim));
-  }
-  // Four slightly crowned roof lights and thin aluminium glazing bars read in an oblique view.
-  for (const z of [0.41, 1.54, 2.67, 3.8]) {
     shelter.push(
-      box(1.54, 2.595, z, 1.62, 0.038, 1.08, '#a4c9c1'),
-      box(1.55, 2.62, z + 0.55, 1.82, 0.032, 0.035, metal),
+      bevel(2.34, 1.21, z, 0.11, 2.43, 0.11, 0.03, frame),
+      bevel(1.22, 1.21, z, 0.083, 2.43, 0.083, 0.026, frame),
+      box(1.77, 1.12, z, 1.13, 0.055, 0.05, '#abd6d0'),
     );
   }
-  const glass = [box(2.33, 1.28, 2.1, 0.035, 2.18, 4.36, '#95cfcb')];
-  for (const z of [-0.13, 4.33]) glass.push(box(1.77, 1.28, z, 1.11, 2.18, 0.036, '#95cfcb'));
-  for (const y of [0.92, 1.48]) {
-    shelter.push(box(2.3, y, 2.1, 0.017, 0.025, 4.28, '#cedfd7'));
-    for (const z of [-0.13, 4.33]) shelter.push(box(1.77, y, z, 1.1, 0.025, 0.042, '#dee8df'));
-  }
-  shelter.push(
-    box(2.23, 1.58, 0.49, 0.11, 0.8, 0.68, green),
-    box(2.162, 1.58, 0.49, 0.025, 0.69, 0.56, '#f0f1df'),
-    box(2.143, 1.81, 0.49, 0.016, 0.055, 0.47, '#2482a8'),
-  );
-  for (let n = 0; n < 7; n++) shelter.push(box(2.142, 1.72 - n * 0.06, 0.49, 0.016, 0.012, 0.43, metal));
-  const bench = [];
-  for (const x of [1.62, 1.77, 1.92]) bench.push(box(x, 0.5, 2.6, 0.13, 0.075, 1.92, wood));
-  for (const y of [0.74, 0.92]) bench.push(box(1.99, y, 2.6, 0.07, 0.12, 1.92, wood));
-  for (const z of [1.84, 3.36])
-    bench.push(box(1.76, 0.25, z, 0.085, 0.5, 0.12, green), box(1.95, 0.68, z, 0.07, 0.57, 0.07, green));
-  const palettes = [
-    ['#be573f', '#293b57', '#eeaf8b', '#eeb94b', '#513842'],
-    ['#427468', '#26394b', '#b97e59', '#e9d9bb', '#643f30'],
-    ['#d49b41', '#374852', '#825238', '#433e67', '#607c96'],
+  shelter.push(box(2.34, 1.21, 2.1, 0.08, 2.43, 0.08, frame));
+  const glass = [box(2.33, 1.28, 2.1, 0.035, 2.18, 4.36, glassTint)];
+  for (const z of [-0.13, 4.33]) glass.push(box(1.77, 1.28, z, 1.11, 2.18, 0.036, glassTint));
+  const bench = [
+    bevel(1.77, 0.50, 2.6, 0.45, 0.105, 1.92, 0.044, '#d4aa75'),
+    bevel(1.99, 0.84, 2.6, 0.09, 0.23, 1.92, 0.039, '#d4aa75'),
   ];
-  const people = palettes.map(([coat, trousers, skin, hat, bag]) => {
-    const body = solid([
-      oval(0, 1.07, 0, 0.225, 0.36, 0.155, coat),
-      tube(0, 0.88, 0, 0.19, 0.216, 0.25, coat),
-      oval(-0.22, 1.05, 0, 0.073, 0.25, 0.077, coat),
-      oval(0.22, 1.04, -0.035, 0.073, 0.25, 0.078, coat),
-      oval(-0.22, 0.815, 0, 0.064, 0.072, 0.068, skin),
-      oval(0.22, 0.81, -0.045, 0.063, 0.072, 0.068, skin),
-      oval(0, 1.53, -0.01, 0.139, 0.168, 0.135, skin),
-      oval(0, 1.646, 0.004, 0.146, 0.108, 0.145, hat),
-      tube(0, 1.604, 0.004, 0.15, 0.15, 0.052, hat),
-      oval(0, 1.75, 0.025, 0.047, 0.048, 0.047, hat),
-      oval(0, 1.373, 0, 0.167, 0.059, 0.143, hat),
-      box(0.102, 1.252, -0.138, 0.075, 0.21, 0.034, hat),
-      oval(0, 1.1, 0.147, 0.14, 0.213, 0.085, bag),
-    ]);
-    const leg = solid([
-      tube(0, -0.178, 0, 0.082, 0.061, 0.37, trousers),
-      tube(0, -0.5, 0.005, 0.064, 0.052, 0.3, trousers),
-      oval(0, -0.66, -0.041, 0.068, 0.071, 0.12, '#253139'),
-    ]);
-    return {body, leg};
-  });
+  for (const z of [1.84, 3.36]) {
+    bench.push(box(1.76, 0.23, z, 0.09, 0.46, 0.12, frame), box(1.96, 0.64, z, 0.065, 0.56, 0.065, frame));
+  }
+  const people = [
+    passenger('#77c5bb', '#354c63', '#bb805d', '#487492', honey),
+    passenger('#e9927d', '#464962', '#edbf9b', '#955a88', '#ffe1a2'),
+    passenger('#929acd', '#3d5064', '#9d7055', '#648587', '#c5e5d7'),
+  ];
   return {pole, shelter: solid(shelter), glass: solid(glass), bench: solid(bench), people};
 }
 
@@ -160,6 +162,13 @@ const waiting = [
   [0.68, 2.15],
   [0.44, 3.36],
 ];
+
+// From directly overhead a listing of platforms is more legible than the edge
+// of a metre-scale sign. Keep the 2D flag until the street furniture is useful.
+export function showPlatformModels(map) {
+  return map.getZoom() >= 18.4 && map.getPitch() >= 20;
+}
+
 export function createPlatformScene(scene, map, origin, metres, facilities, stops) {
   const grid = new Map(),
     active = new Map();
@@ -170,13 +179,12 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     grid.get(key).push({id, site, stop: stops[id]});
   }
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const opaque = new THREE.MeshLambertMaterial({vertexColors: true});
-  const glass = new THREE.MeshPhongMaterial({
+  const opaque = new THREE.MeshBasicMaterial({vertexColors: true});
+  const glass = new THREE.MeshBasicMaterial({
     vertexColors: true,
     transparent: true,
-    opacity: 0.27,
+    opacity: 0.22,
     depthWrite: false,
-    shininess: 55,
   });
   const face = new THREE.PlaneGeometry(0.53, 1.02);
   const shadeCanvas = document.createElement('canvas');
@@ -248,10 +256,10 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     active.delete(item.id);
   }
   function refresh() {
-    const bounds = map.getBounds(),
-      zoom = map.getZoom();
+    const bounds = map.getBounds();
+    const show = showPlatformModels(map);
     const key =
-      zoom < 17.8
+      !show
         ? 'far'
         : bounds
             .toArray()
@@ -261,7 +269,7 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     if (key === lastBounds) return;
     lastBounds = key;
     const nearby = [];
-    if (zoom >= 17.8) {
+    if (show) {
       const center = map.getCenter();
       for (let x = cell(bounds.getWest()); x <= cell(bounds.getEast()); x++)
         for (let y = cell(bounds.getSouth()); y <= cell(bounds.getNorth()); y++)
@@ -272,11 +280,12 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
       nearby.length = Math.min(nearby.length, 36);
     }
     const retained = new Set(nearby.map((e) => e.id));
+    if (retained.size === active.size && nearby.every(({id}) => active.has(id))) return;
     for (const item of active.values()) if (!retained.has(item.id)) release(item);
     for (const e of nearby) if (!active.has(e.id)) active.set(e.id, make(e));
+    return retained;
   }
   function update(vehicles, now) {
-    refresh();
     const bus = vehicles.find((b) => b.selected && b.doors && b.doorStop);
     const item = bus && active.get(bus.doorStop);
     if (!item || event?.bus !== bus.id || event?.stop !== bus.doorStop) event = undefined;
@@ -299,17 +308,15 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     const angle = bus.bearing * rad,
       size = MercatorCoordinate.fromLngLat(bus.coordinate).meterInMercatorCoordinateUnits() / metres;
     const seconds = (now - event.start) / 1000;
-    for (const [i, doorZ] of [
-      [0, -5.1],
-      [1, 0.44],
-    ]) {
+    for (let i = 0; i < 2; i++) {
       const person = item.figures[i],
         boarding = i === 0;
+      const doorZ = ARCO.doorZ + (boarding ? -0.2 : 0.2);
       const dest = item.group.worldToLocal(
         new THREE.Vector3(
-          busOrigin.x + size * (1.42 * Math.cos(angle) - doorZ * Math.sin(angle)),
+          busOrigin.x + size * (ARCO.boardingX * Math.cos(angle) - doorZ * Math.sin(angle)),
           0,
-          busOrigin.z + size * (1.42 * Math.sin(angle) + doorZ * Math.cos(angle)),
+          busOrigin.z + size * (ARCO.boardingX * Math.sin(angle) + doorZ * Math.cos(angle)),
         ),
       );
       // Suppress the exchange when the HFP and mapped kerb disagree or the bus is across the street.
@@ -365,6 +372,27 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     opaque.dispose();
     glass.dispose();
   }
+  // Project the centre and corners of the plate itself, using the same group
+  // transform as the physical pole (including altitude, orientation and scale).
+  const projected = new THREE.Vector3();
+  const flagMatrix = new THREE.Matrix4();
+  function flagPoint(id, camera, canvas) {
+    const item = active.get(id);
+    if (!item) return null;
+    flagMatrix.multiplyMatrices(camera.projectionMatrix, item.group.matrixWorld);
+    projected.set(0, 2.79, 0).applyMatrix4(flagMatrix);
+    if (projected.z < -1 || projected.z > 1) return null;
+    const w = canvas.clientWidth / 2, h = canvas.clientHeight / 2;
+    const x = (1 + projected.x) * w, y = (1 - projected.y) * h;
+    let left = x, right = x, top = y, bottom = y;
+    for (const z of [-.265, .265]) for (const dy of [-.51, .51]) {
+      projected.set(0, 2.79 + dy, z).applyMatrix4(flagMatrix);
+      const px = (1 + projected.x) * w, py = (1 - projected.y) * h;
+      left = Math.min(left, px); right = Math.max(right, px);
+      top = Math.min(top, py); bottom = Math.max(bottom, py);
+    }
+    return {x, y, left, right, top, bottom};
+  }
   function pick(raycaster) {
     const intersections = raycaster.intersectObjects(
       Array.from(active.values(), (item) => item.group),
@@ -378,5 +406,5 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
       }
     }
   }
-  return {update, dispose, pick};
+  return {refresh, update, dispose, pick, flagPoint};
 }

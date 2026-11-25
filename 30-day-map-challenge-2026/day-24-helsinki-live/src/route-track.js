@@ -116,9 +116,12 @@ function roadPoint(track, offset, align) {
 // Sample street corrections at fixed distances along the trip. A tile seam or a
 // change of nearest segment then cannot shift a moving bus sideways in one frame.
 function laneShift(track, offset, align) {
-  let cache = track.laneCache;
-  if (!cache || cache.align !== align || cache.version !== align.version) {
-    cache = track.laneCache = {align, version: align.version, samples: new Map()};
+  // Vehicle lanes and the displayed road centre use different matchers.
+  track.laneCaches ??= new WeakMap();
+  let cache = track.laneCaches.get(align);
+  if (!cache || cache.version !== align.version) {
+    cache = {version: align.version, samples: new Map()};
+    track.laneCaches.set(align, cache);
   }
   if (!cache.samples.has(offset)) {
     const base = roadPoint(track, offset).coordinate;
@@ -197,8 +200,12 @@ export function routePose(track, offset, align) {
   };
 }
 
-export function routePreview(track, offset, metres, align) {
-  const end = Math.min(track.length, offset + metres);
+export function routePreview(track, offset, metres, align, stations) {
+  const nextGap = track.gaps?.find(([, exit]) => exit >= offset);
+  const end = Math.min(track.length, offset + metres, nextGap?.[0] ?? Infinity);
+  // Direction marks are attached to the directed trip shape, measured from its origin.
+  const spacing = 36;
+  let nextMark = stations ? Math.ceil((offset + 4) / spacing) * spacing : Infinity;
   if (end - offset < 2) return [];
   const points = [];
   // Subdivide locally, also sampling every GTFS vertex so short bends are retained.
@@ -207,8 +214,13 @@ export function routePreview(track, offset, metres, align) {
     const p = lanePoint(track, at, align);
     if (p.uncertain) return points;
     points.push(p.coordinate);
+    if (at === nextMark) {
+      const pose = routePose(track, at, align);
+      if (!pose.uncertain) stations.push({index: at / spacing, coordinate: p.coordinate, bearing: pose.bearing});
+      nextMark += spacing;
+    }
     while (section < track.offsets.length && track.offsets[section] <= at) section++;
-    at = Math.min(at + 5, track.offsets[section] ?? end, end);
+    at = Math.min(at + 5, nextMark, track.offsets[section] ?? end, end);
   }
   const last = lanePoint(track, end, align);
   if (!last.uncertain) points.push(last.coordinate);
@@ -239,6 +251,107 @@ export function mappedSections(track, start = 0, end = track.length) {
     start = Math.max(start, b);
   }
   append(start, end);
+  return parts;
+}
+
+// Clip a directed WGS84 segment to the rectangular Streets tile coverage.
+// Both ends of a long HSL segment can be outside the loaded neighbourhood.
+export function coverageInterval(bounds, a, b) {
+  if (!bounds) return null;
+  const limits = Array.isArray(bounds) ? bounds :
+    [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+  let entry = 0, exit = 1;
+  for (let axis = 0; axis < 2; axis++) {
+    const step = b[axis] - a[axis];
+    if (!step) {
+      if (a[axis] < limits[axis] || a[axis] > limits[axis + 2]) return null;
+      continue;
+    }
+    const first = (limits[axis] - a[axis]) / step;
+    const last = (limits[axis + 2] - a[axis]) / step;
+    entry = Math.max(entry, Math.min(first, last));
+    exit = Math.min(exit, Math.max(first, last));
+    if (entry > exit) return null;
+  }
+  return [entry, exit];
+}
+
+// Keep original trip metres: a repeated visit, a stop offset and a passed /
+// remaining split must keep their meaning after small lateral corrections.
+export function displaySections(track, align) {
+  if (!track?.length) return [];
+  const dense = new Set();
+  const coverage = align?.bounds;
+  let bounds;
+  if (coverage) {
+    // Fixed ten-metre lane anchors can influence the next segment just outside
+    // coverage. Sample that margin too, so the line meets its original shape.
+    const dy = 10 / METRES, dx = dy / Math.cos((coverage.getNorth() + coverage.getSouth()) * 0.5 * DEG);
+    bounds = [coverage.getWest() - dx, coverage.getSouth() - dy,
+      coverage.getEast() + dx, coverage.getNorth() + dy];
+  }
+  if (align && coverage !== null) {
+    for (let i = 1; i < track.line.length; i++) {
+      const a = track.line[i - 1], b = track.line[i];
+      const start = track.offsets[i - 1], end = track.offsets[i];
+      if (end <= start) continue;
+      let interval = [0, 1];
+      if (bounds) interval = coverageInterval(bounds, a, b);
+      else if (align.intersects && !align.intersects(a, b)) continue;
+      if (!interval) continue;
+      const first = interval[0] === 0 ? start : start + interval[0] * (end - start);
+      const last = interval[1] === 1 ? end : start + interval[1] * (end - start);
+      dense.add(first);
+      dense.add(last);
+      for (let at = Math.ceil(first / 3) * 3; at < last; at += 3) dense.add(at);
+      for (const corner of [track.bends[i - 1], track.bends[i]]) {
+        if (!corner) continue;
+        if (corner.start > first && corner.start < last) dense.add(corner.start);
+        if (corner.end > first && corner.end < last) dense.add(corner.end);
+      }
+    }
+  }
+  const marks = [...new Set([...track.offsets, ...dense])].sort((a, b) => a - b);
+  const sections = [];
+  let cursor = 0;
+  function append(start, end) {
+    if (end <= start) return;
+    while (cursor < marks.length && marks[cursor] <= start) cursor++;
+    const offsets = [start];
+    while (cursor < marks.length && marks[cursor] < end) offsets.push(marks[cursor++]);
+    offsets.push(end);
+    const coordinates = offsets.map(at => {
+      const base = atOffset(track, at);
+      return dense.has(at) || align?.covers?.(base) ? lanePoint(track, at, align).coordinate : base;
+    });
+    sections.push({offsets, coordinates});
+  }
+  let start = 0;
+  for (const [entry, exit] of track.gaps ?? []) {
+    append(start, Math.min(track.length, entry));
+    start = Math.max(start, exit);
+  }
+  append(start, track.length);
+  return sections;
+}
+
+export function splitDisplaySections(sections, offset = 0) {
+  const parts = [];
+  for (const section of sections) {
+    const {offsets, coordinates} = section;
+    if (!(offset > offsets[0])) {
+      parts.push({coordinates, passed: false});
+    } else if (offset >= offsets.at(-1)) {
+      parts.push({coordinates, passed: true});
+    } else {
+      const i = sectionAt(section, offset);
+      const onVertex = offsets[i] === offset;
+      const point = onVertex ? coordinates[i] :
+        mix(coordinates[i - 1], coordinates[i], (offset - offsets[i - 1]) / (offsets[i] - offsets[i - 1]));
+      parts.push({coordinates: [...coordinates.slice(0, i), point], passed: true});
+      parts.push({coordinates: [point, ...coordinates.slice(onVertex ? i + 1 : i)], passed: false});
+    }
+  }
   return parts;
 }
 

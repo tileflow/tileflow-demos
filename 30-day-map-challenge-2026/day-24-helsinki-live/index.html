@@ -4,69 +4,75 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f9faf7" />
-    <title>Helsinki Live · 30 Day Map Challenge · Tileflow</title>
+    <title>Helsinki Buses · 30 Day Map Challenge · Tileflow</title>
     <link rel="icon" href="data:," />
   </head>
   <body>
     <main aria-label="Helsinki bus map">
       <div id="map" aria-label="Interactive map"></div>
-      <div class="map-top">
-        <div class="city">
-          <a
-            class="hsl-brand"
-            href="https://www.hsl.fi/en"
-            target="_blank"
-            rel="noreferrer"
-            title="Helsinki Region Transport"
-            ><img src="/hsl-hrt.png" alt="HSL HRT" width="62" height="24"
-          /></a>
-          <h1>Helsinki</h1>
-          <div class="city-meta">
-            <span id="live" role="status">Connecting</span
-            ><time id="clock" aria-label="Helsinki local time"></time>
+      <div class="map-toolbar">
+        <header class="map-top">
+          <div class="map-top-row">
+            <h1>Helsinki Buses</h1>
+            <label class="bus-picker-wrap">
+              <select id="bus-picker" aria-label="Choose a bus">
+                <option value="">Bus network</option>
+              </select>
+            </label>
+          </div>
+          <section id="punctuality-panel" aria-labelledby="timing-title">
+            <div class="timing-heading">
+              <h2 id="timing-title">Next arrivals</h2>
+              <span class="city-meta">
+                <span id="live" role="status" data-compact="Sync" title="Connecting">Connecting</span>
+                <time id="clock" aria-label="Helsinki local time"></time>
+              </span>
+            </div>
+            <p class="timing-value">
+              <span id="timing-sample" hidden><strong id="timing-late-count"></strong> <span id="timing-base"></span><br></span>
+              <span id="timing-outlook">Expected late</span> <strong id="timing-percent">—</strong>
+            </p>
+            <dl id="timing-legend" aria-label="Bus counts by expected arrival"></dl>
+            <footer class="timing-footer">
+              <span id="timing-coverage" title="Buses whose next arrival could be compared with the timetable">Waiting for live data</span>
+              <span id="timing-unknown"></span>
+            </footer>
+          </section>
+        </header>
+        <div class="map-controls" id="camera-controls" role="group" aria-label="Map controls">
+          <div class="nav">
+            <button type="button" id="overview" title="Network overview" aria-label="Network overview">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg>
+            </button>
+          </div>
+          <div class="nav">
+            <button type="button" id="plus" title="Zoom in" aria-label="Zoom in" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+            </button>
+            <button type="button" id="minus" title="Zoom out" aria-label="Zoom out" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+            </button>
+          </div>
+          <div class="nav">
+            <button type="button" id="map-view" aria-label="Switch to 2D" title="Switch to 2D" disabled>2D</button>
+            <div class="tilt-control">
+              <input type="range" id="map-tilt" min="0" max="60" step="1" value="0" aria-label="Map tilt" title="Map tilt" disabled/>
+            </div>
+          </div>
+          <div class="nav">
+            <button type="button" id="north" aria-label="Reset north" title="Reset north" disabled>
+              <span id="north-dial" aria-hidden="true">
+                <svg viewBox="0 0 32 32">
+                  <path d="M16 29v-2M3 16h2M29 16h-2M6.8 6.8l1.7 1.7M25.2 6.8l-1.7 1.7M6.8 25.2l1.7-1.7M25.2 25.2l-1.7-1.7" stroke-width="1"/>
+                  <path d="m16 1.5 2.5 5.5h-5z" fill="#d5453a" stroke="none"/>
+                </svg>
+              </span>
+              <span aria-hidden="true">N</span>
+            </button>
           </div>
         </div>
-        <div class="finder" role="search">
-          <label class="search">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="10.5" cy="10.5" r="6.5" />
-              <path d="m15.5 15.5 5 5" />
-            </svg>
-            <input
-              id="search"
-              type="search"
-              aria-label="Search for a route or stop"
-              placeholder="Route or stop"
-              autocomplete="off"
-              aria-controls="search-results"
-            />
-          </label>
-          <div id="search-results" aria-label="Search results" hidden></div>
-        </div>
-        <button id="nearby" class="nearby-control" type="button">Nearby stops</button>
       </div>
-      <div class="map-controls">
-        <div class="nav">
-          <button id="overview" title="Network overview" aria-label="Network overview">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
-            </svg>
-          </button>
-          <button id="plus" title="Zoom in" aria-label="Zoom in">+</button>
-          <button id="minus" title="Zoom out" aria-label="Zoom out">−</button>
-        </div>
-      </div>
-      <section id="dock" class="dock" aria-label="Transit information">
-        <button
-          id="fold"
-          class="dock-bar"
-          aria-controls="detail"
-          aria-expanded="true"
-          title="Collapse details"
-        >
-          <i id="map-key" aria-hidden="true"></i><span id="map-caption">Bus network</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-        </button>
+      <section id="dock" class="dock" aria-label="Transit information" hidden>
         <div id="detail" class="detail"></div>
       </section>
       <div id="map-error" class="map-error" role="status" hidden></div>
