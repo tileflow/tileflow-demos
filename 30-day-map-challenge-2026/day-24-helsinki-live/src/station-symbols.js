@@ -25,21 +25,23 @@ export function addPlatformBadge(map, tones) {
   const canvas = document.createElement('canvas');
   canvas.width = 40; canvas.height = 32;
   const ctx = canvas.getContext('2d');
-  for (const [id, edge] of [['hsl-berth-tag', '#49626a'], ...tones.map((c, i) => ['hsl-berth-' + i, c.ink])]) {
-    for (const highlighted of [false, true]) {
-      ctx.clearRect(0, 0, 40, 32);
-      // The square cream plate identifies the fixed platform, even over a similarly coloured bus.
-      ctx.beginPath(); ctx.roundRect(2, 2, 36, 28, 4);
-      ctx.fillStyle = highlighted ? '#ffdf91' : '#fff7de'; ctx.fill();
-      ctx.lineWidth = highlighted ? 4 : 2.4; ctx.strokeStyle = edge; ctx.stroke();
-      if (highlighted) {
-        ctx.fillStyle = edge;
-        ctx.fillRect(3, 5, 3, 22);
-      }
-      map.addImage(highlighted ? 'active-' + id : id, ctx.getImageData(0, 0, 40, 32), {
-        pixelRatio: 2, stretchX: [[12, 28]], stretchY: [[10, 22]], content: [8, 5, 32, 27],
-      });
-    }
+  function plate(id, fill, edge) {
+    ctx.clearRect(0, 0, 40, 32);
+    ctx.beginPath();
+    ctx.roundRect(2, 2, 36, 28, 7);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.lineWidth = 2.4;
+    ctx.strokeStyle = edge;
+    ctx.stroke();
+    map.addImage(id, ctx.getImageData(0, 0, 40, 32), {
+      pixelRatio: 2, stretchX: [[12, 28]], stretchY: [[10, 22]], content: [8, 5, 32, 27],
+    });
+  }
+  plate('hsl-berth-tag', '#fff7de', '#49626a');
+  for (const [i, tone] of tones.entries()) {
+    plate('hsl-eta-day-' + i, '#fffcf6', tone.ink);
+    plate('hsl-eta-night-' + i, '#1a2935', tone.body);
   }
 }
 

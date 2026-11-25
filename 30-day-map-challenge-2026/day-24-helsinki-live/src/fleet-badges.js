@@ -32,7 +32,7 @@ export function createFleetBadges(map, selectBus) {
     const rank = bus => bus.selected ? 0 : active.has(bus.id) ? 1 : 2;
     // Keep the previous winner when nearby vehicles move a few pixels.
     // The open trip shows its number in the card. Leave its label space to nearby buses.
-    const ordered = vehicles.filter(bus => !bus.fullTrip).sort((a, b) => rank(a) - rank(b));
+    const ordered = vehicles.filter(bus => !bus.fullTrip && !bus.secondary).sort((a, b) => rank(a) - rank(b));
     for (const bus of ordered) {
       const roof = roofPoint(bus.id);
       if (!roof || roof.x < 0 || roof.x > width || roof.y < 0 || roof.y > height) continue;

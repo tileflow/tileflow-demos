@@ -46,3 +46,18 @@ test('fleet lines with the same appearance share features without joining buses 
     assert.equal('line-gradient' in trails[0].paint, false);
   }
 });
+
+test('a selected line shares its trail bands across delay states and stays separate from other lines', () => {
+  const features = [], groups = new Map();
+  const road = [[24.95, 60.18], [24.951, 60.181]];
+  appendFleetTrail(features, road, {...state, sameLine: true}, groups);
+  appendFleetTrail(features, road, {...state, sameLine: true, punctuality: 'very-late'}, groups);
+  appendFleetTrail(features, road, state, groups);
+  assert.equal(features.length, 8);
+  for (const band of features.slice(0, 4)) {
+    assert.equal(band.properties.ink, state.ink);
+    assert.equal(band.properties.sameLine, true);
+    assert.equal(band.geometry.coordinates.length, 2);
+  }
+  assert.equal(features[4].properties.punctuality, state.punctuality);
+});

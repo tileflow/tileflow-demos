@@ -9,6 +9,7 @@ import {createBusPicker} from './bus-picker.js';
 import {createBusViewport} from './bus-viewport.js';
 import {busModelZoom, overviewEnd, timingGroup, timingPalette} from './fleet-lights.js';
 import {alreadyArrived, vehiclePunctuality, stopPunctuality} from './punctuality.js';
+import {indexRouteTrips, nextRouteArrivals, servedRouteStops} from './route-arrivals.js';
 import {choosePattern, move, progress as tripOffset, recentTrail, samplePose} from './transit.js';
 import {isNobinaU12} from './u12-model.js';
 import {distance, networkTrack, routePreview} from './route-track.js';
@@ -121,6 +122,8 @@ function closeDetails(kind) {
 }
 let timetable, timingClock = -Infinity;
 const busTimings = new Map(), reportedFleet = new Map();
+const positionsByTrip = new Map();
+let tripsByRoute = new Map();
 function mapStatus(id) {
   return busTimings.get(id)?.status ?? 'unknown';
 }
@@ -260,7 +263,19 @@ function placeFix(previous, update, time) {
   return move(previous, update, time, {pattern: p, track});
 }
 
+function activeTripBus() {
+  if (selection.kind === 'bus') return vehicles.get(selection.id);
+  const origin = selection.routeService;
+  if (!origin) return;
+  const current = vehicles.get(origin.id);
+  return current?.key === origin.key ? current : origin;
+}
+function selectedBusLine() {
+  const bus = activeTripBus();
+  return bus && network.routes[bus.route]?.number;
+}
 function visible(time, bounds, selectedOnly = false) {
+  const selectedLine = selectedBusLine();
   let fleet = visibleFleet;
   if (selectedOnly) {
     const bus = selection.fullTrip && selection.kind === 'bus' && vehicles.get(selection.id);
@@ -278,6 +293,7 @@ function visible(time, bounds, selectedOnly = false) {
       y > extent[1][1] + 0.001
     )
       continue;
+    const line = network.routes[bus.route].number;
     const selected = selection.kind === 'bus' && selection.id === bus.id;
     const pose = displayedPose(bus, time);
     results.push({
@@ -287,13 +303,15 @@ function visible(time, bounds, selectedOnly = false) {
       onRoute: Boolean(bus.track) && !pose.uncertain,
       destination: selected ? titleFor(bus) : undefined,
       selected,
+      sameLine: line === selectedLine,
+      secondary: selectedLine != null && line !== selectedLine,
       fullTrip: selected && selection.fullTrip,
       speed: bus.speed,
       stopped: bus.status === 1 && (bus.speed == null || bus.speed < 1),
       doors: selected && door?.key === bus.key && door.time > now() - 8 ? door.open : null,
       doorStop: selected && door?.open ? vehicleAtStop(bus, door, network.stops, now())?.id : undefined,
       wheelDistance: bus.track ? tripOffset(bus, time) : undefined,
-      line: network.routes[bus.route].number,
+      line,
     });
   }
   return results;
@@ -426,7 +444,11 @@ function select(kind, id, camera = 'keep', options = {}) {
     });
     if (navigation.length > 12) navigation.shift();
   }
+  // A stop opened from the trip is a drill-down into the same line.
+  const routeService = kind === 'stop' ? activeTripBus() : undefined;
   selection = restored?.selection ?? {
+    routeBus: routeService?.id,
+    routeService,
     kind,
     id,
     fullTrip: Boolean(bus),
@@ -501,21 +523,25 @@ function draw(t = performance.now()) {
   const clock = Date.now() / 1000;
   const overview = view.map.getZoom() < overviewEnd;
   refreshTimings();
+  const selectedLine = selectedBusLine();
   view.drawVehicles(
     visibleFleet.map((bus) => {
       const pose = displayedPose(bus, t);
+      const line = network.routes[bus.route].number;
+      const secondary = selectedLine != null && line !== selectedLine;
       const fullTrip = Boolean(selection.fullTrip && selection.kind === 'bus' && selection.id === bus.id);
       return {
         fullTrip,
-        trail: overview && !fullTrip && !pose.uncertain ? recentTrail(bus, t, clock) : undefined,
+        trail: overview && !secondary && !fullTrip && !pose.uncertain ? recentTrail(bus, t, clock) : undefined,
         punctuality: mapStatus(bus.id),
         stale: clock - bus.timestamp > 30,
         id: bus.id,
-        line: network.routes[bus.route].number,
+        line,
+        sameLine: line === selectedLine,
         coordinate: pose.coordinate,
         onRoute: Boolean(bus.track) && !pose.uncertain,
         selected: selection.kind === 'bus' && selection.id === bus.id,
-        secondary: selection.kind === 'bus' && selection.id !== bus.id,
+        secondary,
       };
     }),
   );
@@ -534,9 +560,9 @@ function drawPreviews(t) {
     const metresPerPixel = 40075017 * Math.cos(map.getCenter().lat * Math.PI / 180) / (512 * 2 ** zoom);
     const halfModelLength = 6 * Math.max(1, 2 ** (15.5 - zoom));
     const guideLength = halfModelLength + Math.max(12, Math.min(28, 18 * metresPerPixel));
-    const showArrivals = zoom >= 15.5 && freshArrivals();
+    const showArrivals = zoom >= 15.5 && !activeTripBus() && freshArrivals();
     for (const model of visible(t, map.getBounds())) {
-      if (!model.onRoute || model.fullTrip) continue;
+      if (!model.onRoute || model.fullTrip || model.secondary) continue;
       const bus = vehicles.get(model.id);
       const offset = model.wheelDistance;
       const align = view.align.covers(bus.coordinate) ? view.align : undefined;
@@ -574,36 +600,43 @@ function updateGeometry() {
   let patterns = [],
     ids = [],
     progress,
-    call;
-  if (kind === 'bus') {
-    const bus = vehicles.get(id),
-      p = pattern(bus);
-    if (p) {
-      const trip = freshArrivals() ? predictions.get(bus.key) : null;
-      const remaining = remainingCalls(bus, p, trip).map(s => s.id);
-      patterns = selection.fullTrip ? [p] : [];
-      const skipped = new Set(trip?.stops.filter((stop) => stop.skipped).map((stop) => stop.id));
-      ids = selection.fullTrip ? p.stops.filter((stop) => !skipped.has(stop)) : remaining;
-      call = callForBus(bus, p, remaining, door, network.stops, now());
-      progress = {currentStop: call?.id};
+    call,
+    routeId,
+    stopArrivals = new Map();
+  const bus = activeTripBus();
+  if (bus) {
+    const p = pattern(bus);
+    routeId = bus.route;
+    const clock = now();
+    const trip = freshArrivals() ? predictions.get(bus.key) : null;
+    const remaining = remainingCalls(bus, p, trip).map(s => s.id);
+    const fullTrip = selection.fullTrip || kind === 'stop';
+    patterns = fullTrip && p ? [p] : [];
+    ids = fullTrip ? servedRouteStops(p, trip, clock, stamps.arrivals) : remaining;
+    if (fullTrip) {
+      stopArrivals = nextRouteArrivals(tripsByRoute.get(routeId)?.[bus.direction], ids,
+        positionsByTrip, timetable, clock, stamps.arrivals);
     }
+    call = p && callForBus(bus, p, remaining, door, network.stops, clock);
+    if (call && !ids.includes(call.id)) call = undefined;
+    progress = {currentStop: kind === 'stop' ? id : call?.id};
   } else if (kind === 'stop') {
     ids = [id];
   }
   const key = JSON.stringify([
     kind,
     id,
+    routeId,
     patterns.map((p) => p.shape),
     ids,
     progress?.currentStop,
     call,
+    [...stopArrivals],
     timeOfDay,
   ]);
   if (key !== lastGeometry) {
     lastGeometry = key;
-    const routeId = kind === 'bus' ? vehicles.get(id)?.route : undefined;
-    view.geometry(patterns, ids, progress, routeId, call);
-
+    view.geometry(patterns, ids, progress, routeId, call, stopArrivals);
   }
 }
 function feedMessage({data: {name, data, timestamp, error}}) {
@@ -617,9 +650,11 @@ function feedMessage({data: {name, data, timestamp, error}}) {
   timingClock = -Infinity;
   if (name === 'positions') {
     reportedFleet.clear();
+    positionsByTrip.clear();
     for (const v of data) {
       if (now() - v.timestamp > 90) continue;
       reportedFleet.set(v.id, v);
+      if (v.timestamp >= (positionsByTrip.get(v.key)?.timestamp ?? 0)) positionsByTrip.set(v.key, v);
       const previous = vehicles.get(v.id);
       const fix = placeFix(previous, {...v, statusTime: v.timestamp}, performance.now());
       // A newer HFP location can arrive before this GTFS report carries its new stop.
@@ -641,6 +676,7 @@ function feedMessage({data: {name, data, timestamp, error}}) {
     predictions.clear();
     patternCache.clear();
     for (const trip of data) predictions.set(trip.key, trip);
+    tripsByRoute = indexRouteTrips(predictions.values());
   }
   refreshFleetDrawing();
   updateGeometry();
@@ -772,45 +808,67 @@ function terminalDetail(id) {
 }
 function stopHeadline(id, arrivals, byTrip) {
   const source = selection.fromBus;
-  const entry = source
-    ? arrivals.find(({t, call}) => !t.ambiguous && t.key === source.key &&
-      (source.sequence == null || call.sequence === source.sequence))
-    : arrivals.reduce((first, visit) => !first || (visit.arrival || visit.at) < (first.arrival || first.at)
-      ? visit : first, null);
-  const bus = source ? vehicles.get(source.id) : entry && !entry.t.ambiguous && byTrip.get(entry.t.key);
-  const active = bus && now() - bus.timestamp < 90 && (!source || bus.key === source.key);
-  const here = active && vehicleAtStop(bus, null, network.stops, now())?.id === id &&
-    (!source || source.sequence == null || bus.stopSequence == null || source.sequence === bus.stopSequence);
-  const at = entry?.arrival || entry?.call.departure;
-  const line = source?.line ?? (entry && network.routes[entry.t.route].number);
-  const destination = source?.destination ?? (entry && titleFor(entry.t));
+  let line, destination, wait, caption, fallback, footer = '', linkedBus;
+  if (!source && selection.routeBus) {
+    const bus = activeTripBus();
+    if (bus) {
+      const route = network.routes[bus.route];
+      line = route.number;
+      const trips = tripsByRoute.get(bus.route)?.[bus.direction];
+      wait = nextRouteArrivals(trips, [id], positionsByTrip, timetable, now(), stamps.arrivals).get(id);
+      // A direction can branch. Advertise a terminus only if every matching pattern at this platform agrees.
+      const headsigns = new Set(route.patterns
+        .filter(p => p.direction === bus.direction && p.stops.includes(id))
+        .map(p => p.headsign));
+      destination = headsigns.size === 1 ? [...headsigns][0] || 'Selected direction' : 'Selected direction';
+    }
+    caption = wait && wait !== 'Due' ? 'Next bus in' : 'Next bus';
+    fallback = 'Live arrival unavailable';
+  } else {
+    const entry = source
+      ? arrivals.find(({t, call}) => !t.ambiguous && t.key === source.key &&
+        (source.sequence == null || call.sequence === source.sequence))
+      : arrivals.reduce((first, visit) => !first || (visit.arrival || visit.at) < (first.arrival || first.at)
+        ? visit : first, null);
+    const bus = source ? vehicles.get(source.id) : entry && !entry.t.ambiguous && byTrip.get(entry.t.key);
+    const active = bus && now() - bus.timestamp < 90 && (!source || bus.key === source.key);
+    const here = active && vehicleAtStop(bus, null, network.stops, now())?.id === id &&
+      (!source || source.sequence == null || bus.stopSequence == null || source.sequence === bus.stopSequence);
+    const at = entry?.arrival || entry?.call.departure;
+    line = source?.line ?? (entry && network.routes[entry.t.route].number);
+    destination = source?.destination ?? (entry && titleFor(entry.t));
+    linkedBus = active ? bus : undefined;
+    wait = here ? 'Now' : at ? eta(at) : '';
+    caption = here ? 'At this stop' : !wait || wait === 'Now' ? (source ? 'Your bus' : 'Next bus')
+      : entry?.arrival ? (source ? 'Your bus arrives in' : 'Next bus in') : 'Departs in';
+    fallback = source ? 'Live time unavailable' : freshArrivals() ? 'No live departures' : 'Awaiting live times';
+    footer = here ? 'At stop now' : at ? time(at) + ' estimated' : '';
+  }
   const service = line ? badge(line) + '<span>' + escape(destination) + '</span>' : '';
-  const serviceLink = !service ? '' : active
-    ? '<button class="stop-service" ' + target('bus', bus.id) + ' aria-label="Show bus ' +
+  const serviceLink = !service ? '' : linkedBus
+    ? '<button class="stop-service" ' + target('bus', linkedBus.id) + ' aria-label="Show bus ' +
       escape(line + ' to ' + destination) + '">' + service + '</button>'
     : '<span class="stop-service">' + service + '</span>';
-  const wait = here ? 'Now' : at ? eta(at) : '';
-  const caption = here ? 'At this stop' : !wait || wait === 'Now' ? (source ? 'Your bus' : 'Next bus')
-    : entry?.arrival ? (source ? 'Your bus arrives in' : 'Next bus in') : 'Departs in';
-  const fallback = source ? 'Live time unavailable' : freshArrivals() ? 'No live departures' : 'Awaiting live times';
   const value = wait ? '<strong class="stop-wait">' +
     wait.replace(' min', ' <small>min</small>') + '</strong>' : '<span class="stop-no-time">' + fallback + '</span>';
   return '<div class="stop-arrival"><div><span class="stop-caption">' + caption + '</span>' +
     value + '</div>' + serviceLink + '</div><footer class="stop-footer"><span>' +
-    (here ? 'At stop now' : at ? time(at) + ' estimated' : '') + '</span>' +
+    footer + '</span>' +
     '<button class="bus-more" data-action="stop-details" aria-expanded="' + Boolean(selection.detailsOpen) +
     '" aria-controls="stop-details">Stop details</button></footer>';
 }
 function stopDetail(id) {
   const s = network.stops[id], parent = network.parentOf.get(id),
     arrivals = [];
+  const routeContext = !selection.fromBus && Boolean(selection.routeBus);
+  const fullBoard = !routeContext || selection.detailsOpen;
   const numbers = [...new Set((servedBy.get(id) ?? []).map((route) => network.routes[route].number))];
   const routes = escape(numbers.join(' · '));
   const routeList = numbers.length > 8
     ? '<details class="place-routes" data-stop="' + escape(id) + '"><summary>' + numbers.length +
       ' routes serve this stop</summary><div class="route-info">' + routes + '</div></details>'
     : numbers.length ? '<div class="route-info">Routes ' + routes + '</div>' : '';
-  if (freshArrivals()) {
+  if (fullBoard && freshArrivals()) {
     for (const t of predictions.values()) {
       if (t.timestamp && now() - t.timestamp > 75) continue;
       for (const call of t.stops) {
@@ -826,7 +884,7 @@ function stopDetail(id) {
     }
   }
   arrivals.sort((a, b) => a.at - b.at);
-  const byTrip = new Map(visibleFleet.map((b) => [b.key, b]));
+  const byTrip = fullBoard ? new Map(visibleFleet.map((b) => [b.key, b])) : null;
   return (
     '<article class="place-panel stop-panel"><header class="place-heading"><div class="stop-caption">Bus stop · ' +
     escape(s.code || id) +
@@ -841,7 +899,7 @@ function stopDetail(id) {
       ? '<button class="route-link" ' + target('terminal', parent) + '>All boarding points at ' + escape(network.terminals[parent].name) + '</button>'
       : '') +
     routeList +
-    section('Upcoming departures') +
+    section(routeContext ? 'All upcoming departures' : 'Upcoming departures') +
     (arrivals.length
       ? arrivals
           .slice(0, 15)
@@ -890,7 +948,7 @@ function paint() {
   signal.textContent = signal.title = feedStatus;
   signal.dataset.compact = ok ? 'Live' : feedStatus === 'No signal' ? 'Offline' : 'Sync';
   if (!network) return;
-  const back = selection.kind === 'terminal' && navigation.length
+  const back = (selection.kind === 'terminal' || selection.routeBus) && navigation.length
     ? '<button class="return-link" data-action="back">← Back to ' +
       escape(navigation.at(-1).label) +
       '</button>'

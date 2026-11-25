@@ -201,7 +201,7 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     depthWrite: false,
   });
   const footprint = new THREE.PlaneGeometry(0.74, 0.6).rotateX(-Math.PI / 2);
-  let kit, lastBounds, event;
+  let kit, lastBounds, lastTripStops, event;
   function local(point) {
     const p = MercatorCoordinate.fromLngLat(point);
     return new THREE.Vector3((p.x - origin.x) / metres, 0, (p.y - origin.y) / metres);
@@ -255,7 +255,7 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
     item.nameplate.dispose();
     active.delete(item.id);
   }
-  function refresh() {
+  function refresh(tripStops) {
     const bounds = map.getBounds();
     const show = showPlatformModels(map);
     const key =
@@ -266,15 +266,16 @@ export function createPlatformScene(scene, map, origin, metres, facilities, stop
             .flat()
             .map((v) => v.toFixed(5))
             .join('/');
-    if (key === lastBounds) return;
+    if (key === lastBounds && tripStops === lastTripStops) return;
     lastBounds = key;
+    lastTripStops = tripStops;
     const nearby = [];
     if (show) {
       const center = map.getCenter();
       for (let x = cell(bounds.getWest()); x <= cell(bounds.getEast()); x++)
         for (let y = cell(bounds.getSouth()); y <= cell(bounds.getNorth()); y++)
           for (const entry of grid.get(gridKey(x, y)) ?? [])
-            if (bounds.contains(entry.site.point)) nearby.push(entry);
+            if ((!tripStops || tripStops.has(entry.id)) && bounds.contains(entry.site.point)) nearby.push(entry);
       const dist = (e) => Math.hypot((center.lng - e.site.point[0]) * 0.5, center.lat - e.site.point[1]);
       nearby.sort((a, b) => dist(a) - dist(b));
       nearby.length = Math.min(nearby.length, 36);

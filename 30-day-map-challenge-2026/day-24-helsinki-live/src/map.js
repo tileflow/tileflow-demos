@@ -93,7 +93,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     previewStops = empty,
     hasSelection = false,
     renderPoints = empty;
-  let selectedShape, selectedRouteId, streetLayer;
+  let selectedShape, selectedRouteId, streetLayer, tripStops = null;
   function routeFeatures(shape, properties) {
     if (!network.roundaboutGaps?.[shape]) return [feature('LineString', network.shapes[shape], properties)];
     return mappedSections(networkTrack(network, shape)).map((part) => feature('LineString', part, properties));
@@ -250,37 +250,38 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     return lineColor(network.routes[selectedRouteId]?.number).body;
   };
   const routeCase = () => lowLight() ? '#101b25' : '#354858';
-  // Trip rings replace ordinary flags. Numbered boarding points keep their platform badges.
   let modelIds = new Set();
+  const backgroundStops = ['hsl-station', 'hsl-platform-sign', ...terminalLayers, 'hsl-preview-name'];
   function syncStopFilters() {
-    const selected = calls.features.map(f => f.properties);
+    const ids = calls.features.map(f => f.properties.id);
     const containsId = ids => ['in', ['get', 'id'], ['literal', ids]];
-    const showFlag = ['!', containsId([...modelIds, ...selected.filter(p => p.trip).map(p => p.id)])];
+    const showFlag = ['!', containsId([...modelIds])];
     const filters = {
       'hsl-station': ['all', ['!', ['has', 'parent']], ['!', ['has', 'platform']], showFlag],
       'hsl-platform-sign': ['all', ['!', ['has', 'parent']], ['has', 'platform'], showFlag],
       'hsl-unnumbered-berths': ['all', ['has', 'parent'], ['!', ['has', 'platform']], showFlag],
-      'hsl-preview-name': ['!', containsId(selected.map(p => p.id))],
+      'hsl-preview-name': ['!', containsId(ids)],
     };
+    for (const part of ['roof', 'support']) {
+      const byPart = ['==', ['get', 'part'], part];
+      filters['hsl-shelter-' + part] = tripStops ? ['all', byPart, containsId([...tripStops])] : byPart;
+    }
     for (const [id, filter] of Object.entries(filters)) {
       if (map.getLayer(id)) map.setFilter(id, filter);
     }
-    if (!map.getLayer('hsl-berths')) return;
-    const platforms = selected.filter(p => p.trip && p.platform);
-    const next = platforms.find(p => p.highlight);
-    const badge = platforms[0]?.badge;
-    map.setLayoutProperty('hsl-berths', 'icon-image', badge ? ['case',
-      ['==', ['get', 'id'], next?.id ?? ''], 'active-' + badge,
-      containsId(platforms.map(p => p.id)), badge, 'hsl-berth-tag',
-    ] : 'hsl-berth-tag');
+    const visibility = tripStops ? 'none' : 'visible';
+    for (const id of backgroundStops) {
+      if (map.getLayer(id) && (map.getLayoutProperty(id, 'visibility') ?? 'visible') !== visibility)
+        map.setLayoutProperty(id, 'visibility', visibility);
+    }
   }
   const onPlatformsChanged = (ids) => {
     modelIds = ids;
     syncStopFilters();
   };
   const nodePaper = () => lowLight() ? '#23373f' : '#fffcf3';
-  const nodeFill = () => ['case', ['get', 'highlight'], routeColor(), nodePaper()];
-  const nodeOutline = () => ['case', ['get', 'highlight'], nodePaper(), routeColor()];
+  const nodeFill = () => selectedRouteId ? routeColor() : ['case', ['get', 'highlight'], routeColor(), nodePaper()];
+  const nodeOutline = () => ['case', ['get', 'highlight'], nodePaper(), selectedRouteId ? routeCase() : routeColor()];
   let nodeSpriteColour;
   function paintNextNode() {
     const exists = map.hasImage('hsl-current-node');
@@ -303,12 +304,15 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
   }
   function syncSelectionColors() {
     if (map.getLayer('hsl-next-node')) paintNextNode();
+    if (map.getLayer('hsl-trip-arrival')) map.setLayoutProperty('hsl-trip-arrival', 'icon-image',
+      ['concat', lowLight() ? 'hsl-eta-night-' : 'hsl-eta-day-', ['to-string', ['get', 'ink']]]);
     for (const [id, property, value] of [
       ['hsl-route', 'line-color', routeColor()], ['hsl-route-case', 'line-color', routeCase()],
       ['hsl-platform-light', 'circle-stroke-color', routeColor()],
       ...['hsl-call', 'hsl-numbered-nodes'].flatMap(id => [
         [id, 'circle-color', nodeFill()], [id, 'circle-stroke-color', nodeOutline()],
       ]),
+      ['hsl-trip-arrival', 'text-color', lowLight() ? '#f5f8f7' : '#172c36'],
       ['hsl-platform-name', 'text-color', routeColor()],
       ['hsl-platform-name', 'text-halo-color', lowLight() ? '#17242b' : '#fffcf6'],
     ]) if (map.getLayer(id)) map.setPaintProperty(id, property, value);
@@ -503,7 +507,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       });
       add({
         id: 'hsl-platform-name', type: 'symbol', source: 'hsl-calls', minzoom: 13, maxzoom: 15.3,
-        filter: ['all', ['get','trip'], ['get', 'highlight']],
+        filter: ['all', ['get','trip'], ['get', 'highlight'], ['!', ['has', 'wait']]],
         layout: {
           'text-field': ['get', 'name'], 'text-offset': [1, 0], 'text-anchor': 'left', 'text-ignore-placement': true,
           'text-font': ['Noto Sans Regular'], 'text-size': 12,
@@ -511,6 +515,23 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         paint: {'text-color': routeColor(), 'text-halo-color': nodePaper(), 'text-halo-width': 2},
       });
       for (const layer of berthLayers(lowLight())) add(layer);
+      add({
+        id: 'hsl-trip-arrival', type: 'symbol', source: 'hsl-calls',
+        filter: ['all', ['get', 'trip'], ['has', 'wait']],
+        layout: {
+          'text-field': ['step', ['zoom'], ['get', 'wait'], 13,
+            ['concat', 'Next bus · ', ['get', 'wait']], berthZoom,
+            ['concat', 'Next bus · ', ['get', 'wait'],
+              ['case', ['has', 'platform'], ['concat', ' · P', ['to-string', ['get', 'platform']]], '']]],
+          'text-font': ['Noto Sans Regular'], 'text-size': 11,
+          'text-variable-anchor': ['left', 'right', 'top', 'bottom'], 'text-radial-offset': 1.15,
+          'text-padding': 3, 'icon-padding': 3, 'text-max-width': 24,
+          'icon-image': ['concat', lowLight() ? 'hsl-eta-night-' : 'hsl-eta-day-', ['to-string', ['get', 'ink']]],
+          'icon-text-fit': 'both', 'icon-text-fit-padding': [3, 6, 3, 6],
+          'symbol-sort-key': ['case', ['get', 'highlight'], -1, ['get', 'order']],
+        },
+        paint: {'text-color': lowLight() ? '#f5f8f7' : '#172c36'},
+      });
       add({
         id: 'hsl-next-node', type: 'symbol', source: 'hsl-calls',
         filter: ['all', ['get', 'highlight'], ['!', ['has', 'platform']]],
@@ -523,11 +544,22 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       if (restoreStopFilters) syncStopFilters();
       for (const layer of lights) if (layer.type === 'circle') add(layer);
       add({
+        id: 'hsl-line-fleet', type: 'symbol', source: 'hsl-vehicles', maxzoom: busModelZoom,
+        filter: ['all', ['==', ['geometry-type'], 'Point'], ['get', 'sameLine'], ['!', ['get', 'selected']]],
+        layout: {
+          'text-field': ['get', 'line'], 'text-font': ['Noto Sans Regular'], 'text-size': 11,
+          'text-anchor': 'bottom', 'text-offset': [0, -.65], 'text-padding': 3,
+          'icon-image': ['concat', 'hsl-number-', ['to-string', ['get', 'ink']]],
+          'icon-text-fit': 'both', 'icon-text-fit-padding': [1, 3, 1, 3],
+        },
+        paint: {'text-color': '#172736'},
+      });
+      add({
         id: 'hsl-numbers',
         type: 'symbol',
         source: 'hsl-vehicles',
         minzoom: overviewEnd,
-        filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['get', 'selected']], ['!', ['get', 'onRoute']]],
+        filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['get', 'selected']], ['!', ['get', 'secondary']], ['!', ['get', 'onRoute']]],
         layout: {
           'text-field': ['get', 'line'],
           'icon-image': ['concat', 'hsl-number-', ['to-string', ['get', 'ink']]],
@@ -552,6 +584,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
           onPlatformsChanged,
           badges.draw,
         );
+        streetLayer.setTripStops(tripStops);
         map.addLayer(streetLayer);
         map.addLayer(buildingOcclusion.layer);
         map.moveLayer('hsl-numbers');
@@ -564,7 +597,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     if (timeOfDay === next) return;
     timeOfDay = next;
     lights = fleetLightLayers(next);
-    halos = forwardHaloLayers(next);
+    halos = forwardHaloLayers(next, selectedRouteId ? routeColor() : undefined);
     controller.update({timeOfDay});
     if (map.getLayer('hsl-terminals')) {
       for (const [key, value] of Object.entries(terminalLabelPaint(lowLight()))) {
@@ -594,7 +627,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       {layers: active},
     );
   }
-  const stopLayers = ['hsl-next-node', 'hsl-call', 'hsl-numbered-nodes', 'hsl-platform-light', 'hsl-platform-name',
+  const stopLayers = ['hsl-trip-arrival', 'hsl-next-node', 'hsl-call', 'hsl-numbered-nodes', 'hsl-platform-light', 'hsl-platform-name',
     'hsl-preview-name', 'hsl-station', 'hsl-platform-sign', 'hsl-shelter-roof'];
   function selectPlace(kind, id, pole = false) {
     handlers.select(kind, id, 'inPlace');
@@ -617,13 +650,13 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     }
     const object = streetLayer?.pick(e.point);
     if (object?.kind === 'bus') return handlers.select('bus', object.id, 'inPlace');
-    const tripStop = placesAt(e.point, 0, ['hsl-next-node', 'hsl-numbered-nodes', 'hsl-call'])[0];
+    const tripStop = placesAt(e.point, 0, ['hsl-trip-arrival', 'hsl-next-node', 'hsl-numbered-nodes', 'hsl-call'])[0];
     if (tripStop) return selectPlace('stop', tripStop.properties.id);
     const platform = placesAt(e.point, 0, terminalLayers)[0];
     if (platform) return selectPlace(platform.layer.id === 'hsl-terminals' ? 'terminal' : 'stop', platform.properties.id);
     if (object) return selectPlace(object.kind, object.id, true);
     if (hit && distance <= 6) return handlers.select('bus', hit);
-    const number = placesAt(e.point, 0, ['hsl-numbers'])[0];
+    const number = placesAt(e.point, 0, ['hsl-numbers', 'hsl-line-fleet'])[0];
     if (number) return handlers.select('bus', number.properties.id);
     const sign = placesAt(e.point, 0, stopLayers)[0];
     if (sign) return selectPlace('stop', sign.properties.id);
@@ -640,7 +673,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       ...stopLayers,
       'hsl-vehicle',
       'hsl-vehicle-gps',
-      'hsl-numbers',
+      'hsl-numbers', 'hsl-line-fleet',
     ]).length || streetLayer?.pick(e.point)
       ? 'pointer'
       : '';
@@ -695,7 +728,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         );
         if (trail?.length) {
           appendFleetTrail(features, trail, {
-            ink, secondary: bus.secondary, stale: bus.stale,
+            ink, secondary: bus.secondary, sameLine: bus.sameLine, stale: bus.stale,
             ...(bus.punctuality ? {punctuality: bus.punctuality} : {}),
           }, trailGroups);
         }
@@ -729,7 +762,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       set('hsl-preview-stops', previewStops);
       set('hsl-previews', previews);
     },
-    geometry(patterns, ids, progress, routeId, call) {
+    geometry(patterns, ids, progress, routeId, call, stopArrivals) {
       const fullTrip = Boolean(progress && patterns.length);
       const active = Boolean(patterns.length || ids.length);
       if (active !== hasSelection) {
@@ -741,7 +774,8 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       }
       const shapes = [...new Set(patterns.map((p) => p.shape).filter((shape) => network.shapes[shape]))];
       const tripShape = fullTrip ? patterns[0].shape : undefined;
-      const changed = selectedRouteId !== routeId || selectedShape !== tripShape ||
+      const routeChanged = selectedRouteId !== routeId;
+      const changed = routeChanged || selectedShape !== tripShape ||
         focusShapes.length !== shapes.length || shapes.some((shape, i) => shape !== focusShapes[i]);
       selectedShape = tripShape;
       selectedRouteId = routeId;
@@ -749,23 +783,29 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         focusShapes = shapes;
         drawFocus(true);
       }
-      syncSelectionColors();
-      const badge = selectedRouteId ? 'hsl-berth-' + lineIndex(network.routes[selectedRouteId].number) : 'hsl-berth-tag';
+      if (routeChanged) {
+        halos = forwardHaloLayers(timeOfDay, routeId ? routeColor() : undefined);
+        syncDaylightColors();
+      }
+      const ink = routeId ? lineIndex(network.routes[routeId].number) : 0;
       calls = fc(
         [...new Set(progress?.currentStop ? [...ids, progress.currentStop] : ids)]
           .filter((id) => network.stops[id])
-          .map((id) =>
+          .map((id, order) =>
             feature('Point', stopPoint(id), {
               id,
               trip: Boolean(selectedRouteId),
               name: network.stops[id].name,
               ...stationProperties(id),
-              badge,
+              ink, order,
+              ...(stopArrivals?.has(id) && {wait: stopArrivals.get(id)}),
               highlight: progress ? id === progress.currentStop : ids.length === 1,
               atStop: id === call?.id && ['doors', 'at'].includes(call.state),
             }),
           ),
       );
+      tripStops = routeId ? new Set(calls.features.map(f => f.properties.id)) : null;
+      streetLayer?.setTripStops(tripStops);
       set('hsl-calls', calls);
       syncStopFilters();
     },

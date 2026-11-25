@@ -4,7 +4,7 @@ import {ARCO, createArcoGeometries, setArcoGlassLight} from './arco-model.js';
 import {MercatorCoordinate} from 'maplibre-gl';
 import {createPlatformScene, showPlatformModels} from './platform-model.js';
 import {lineColors, lineIndex} from './line-colors.js';
-import {timingColor, timingGroup, timingPalette} from './fleet-lights.js';
+import {contextBusColors, timingColor, timingGroup, timingPalette} from './fleet-lights.js';
 
 function makeBusScene(map, gl, amenities, stops) {
   const scene = new THREE.Scene();
@@ -44,6 +44,7 @@ function makeBusScene(map, gl, amenities, stops) {
   const delayPalette = Object.fromEntries(['day','night'].map(period => [period,
     Object.fromEntries(Object.keys(timingPalette).map(key => [key,new THREE.Color(timingColor(key,period))])),
   ]));
+  const contextBody = {day: new THREE.Color(contextBusColors.day), night: new THREE.Color(contextBusColors.night)};
   const previousColors = [];
   const geometries = createArcoGeometries();
   const origin = MercatorCoordinate.fromLngLat([24.94, 60.17]);
@@ -131,7 +132,10 @@ function makeBusScene(map, gl, amenities, stops) {
       doorTravel.set(bus.id, {value: travel, at: now});
       poses.set(bus.id, i);
       body.setMatrixAt(i, pose.matrix);
-      const shellColor = (bus.fullTrip ?? bus.selected) ? palette[lineIndex(bus.line)] : delays[timingGroup(bus.punctuality)];
+      let shellColor;
+      if (bus.sameLine || (bus.fullTrip ?? bus.selected)) shellColor = palette[lineIndex(bus.line)];
+      else if (bus.secondary) shellColor = contextBody[lightPeriod];
+      else shellColor = delays[timingGroup(bus.punctuality)];
       if (bus.selected) {
         outline.visible = true;
         outline.matrix.multiplyMatrices(pose.matrix, translation.makeTranslation(0, .12, 0));
@@ -273,10 +277,15 @@ export function createBusLayer(map, getFrame, getSun, amenities, stops, getPerio
   let world;
   let timer;
   let hasPlatforms = false;
+  let tripStops = null;
   function notifyPlatforms(ids) {
     hasPlatforms = ids.size > 0;
     // MapLibre must finish drawing its custom layer before a style mutation.
     if (onPlatformsChanged) queueMicrotask(() => onPlatformsChanged(ids));
+  }
+  function refreshPlatforms() {
+    const changed = world?.refreshPlatforms(tripStops);
+    if (changed) notifyPlatforms(changed);
   }
   return {
     id: 'helsinki-bus-models',
@@ -291,16 +300,20 @@ export function createBusLayer(map, getFrame, getSun, amenities, stops, getPerio
     platformPoint(id) {
       return world?.platformPoint(id);
     },
+    setTripStops(ids) {
+      if (ids === tripStops || (ids && tripStops && ids.size === tripStops.size &&
+          [...ids].every(id => tripStops.has(id)))) return;
+      tripStops = ids && new Set(ids);
+      refreshPlatforms();
+      map.triggerRepaint();
+    },
     render(gl, input) {
       const now = performance.now();
       const vehicles = getFrame(now, map.getBounds());
       const showPlatforms = showPlatformModels(map);
       if (!world && !vehicles.length && !showPlatforms) return;
       if (!world) world = makeBusScene(map, gl, amenities, stops);
-      if (showPlatforms || hasPlatforms) {
-        const changedPlatforms = world.refreshPlatforms();
-        if (changedPlatforms) notifyPlatforms(changedPlatforms);
-      }
+      if (showPlatforms || hasPlatforms) refreshPlatforms();
       if (!vehicles.length && !hasPlatforms) {
         if (world.clearVehicles(now)) onBadgesFrame?.([]);
         return;

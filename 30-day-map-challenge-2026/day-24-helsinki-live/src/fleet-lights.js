@@ -1,6 +1,7 @@
 import {lineColors} from './line-colors.js';
 import {distance} from './route-track.js';
 
+export const contextBusColors = {day: '#83959e', night: '#72838d'};
 export const overviewEnd = 14.6;
 export const overviewStart = 13.4;
 // MapLibre maxzoom is exclusive. Three starts at exactly the same camera zoom.
@@ -60,9 +61,9 @@ export function appendFleetTrail(features, coordinates, properties, groups) {
   }
   const length = offsets.at(-1);
   if (!(length > 0)) return;
-  const {punctuality, ink, secondary, stale} = properties;
-  const color = punctuality === undefined ? {ink} : {punctuality: timingGroup(punctuality)};
-  const key = [color.punctuality ?? ink, secondary, stale].join('|');
+  const {punctuality, ink, secondary, stale, sameLine} = properties;
+  const color = sameLine ? {ink, sameLine: true} : punctuality === undefined ? {ink} : {punctuality: timingGroup(punctuality)};
+  const key = [color.punctuality ?? ink, Boolean(sameLine), secondary, stale].join('|');
   let bands = groups.get(key);
   if (!bands) {
     bands = trailAlphas.map(trailAlpha => {
@@ -95,7 +96,7 @@ export function appendFleetTrail(features, coordinates, properties, groups) {
   }
 }
 
-export function forwardHaloLayers(period) {
+export function forwardHaloLayers(period, lineColour) {
   // Widths grow with the bus so the ribbon fits within its lane, even close up.
   const strokes = [
     {prefix: 'hsl-halo-glow-', width: [4.4, 5.5, 10, 21, 66], blur: [1.4, 1.8, 3, 6, 16], opacity: .30},
@@ -104,7 +105,7 @@ export function forwardHaloLayers(period) {
   const scale = ([a, b, c, d, e]) => ['interpolate', ['exponential', 2], ['zoom'],
     busModelZoom, a, 16, b, 17, c, 18, d, 20, e];
   return strokes.flatMap(({prefix, width, blur, opacity}) => Object.keys(timingPalette).map(status => {
-    const color = timingColor(status, period);
+    const color = lineColour ?? timingColor(status, period);
     return {
       id: prefix + status,
       type: 'line',
@@ -120,10 +121,11 @@ export function forwardHaloLayers(period) {
     };
   }));
 }
-const strength = ['case', ['get', 'stale'], 0.38, ['get', 'secondary'], 0.78, 1];
-const presence = ['case', ['==', ['get', 'punctuality'], 'unknown'], 0.45, 1];
+const strength = ['case', ['get', 'stale'], 0.38, ['get', 'secondary'], 0.35, 1];
+const peer = ['boolean', ['get', 'sameLine'], false];
+const presence = ['case', peer, 1, ['==', ['get', 'punctuality'], 'unknown'], 0.45, 1];
 const overviewStrength = ['*', strength, presence];
-const atStreet = ['case', ['get', 'secondary'], 0.68, 1];
+const atStreet = ['case', ['get', 'secondary'], 0.42, 1];
 // The selected trip has its own 3D vehicle at every zoom.
 const point = ['all', ['==', ['geometry-type'], 'Point'], ['!', ['boolean', ['get', 'fullTrip'], false]]];
 
@@ -133,7 +135,9 @@ export function fleetLightLayers(period) {
   const ink = ['match', ['get', 'ink'], ...colors.flatMap((color, i) => [i, color]), colors[0]];
   const hasStatus = ['has', 'punctuality'];
   const statusInk = timingColorExpression(period);
-  const fleetInk = ['case', hasStatus, statusInk, ink];
+  const peerInk = ['match', ['get', 'ink'], ...lineColors.flatMap((c, i) => [i, c.body]), lineColors[0].body];
+  const fleetInk = ['case', peer, peerInk, ['get', 'secondary'], night ? contextBusColors.night : contextBusColors.day,
+    hasStatus, statusInk, ink];
   const source = 'hsl-vehicles';
   const rank = {'circle-sort-key': ['case', ['get', 'selected'], 2, ['get', 'secondary'], 0, 1]};
   const trailStrength = ['*', overviewStrength, ['number', ['get', 'trailAlpha']]];
@@ -215,9 +219,9 @@ export function fleetLightLayers(period) {
       maxzoom: overviewEnd,
       layout: rank,
       paint: {
-        'circle-color': ['case', hasStatus, statusInk, night ? '#fffae7' : '#fff1cf'],
+        'circle-color': ['case', ['any', peer, ['get', 'secondary'], hasStatus], fleetInk, night ? '#fffae7' : '#fff1cf'],
         'circle-radius': zoom(8, 0.48, 12, 1.05, overviewStart, ['case', ['get', 'selected'], 1.55, 1.22]),
-        'circle-opacity': zoom(overviewStart, ['*', presence, ['case', ['get', 'trailing'], 1, 0.57]], overviewEnd, 0),
+        'circle-opacity': zoom(overviewStart, ['*', overviewStrength, ['case', ['get', 'trailing'], 1, 0.57]], overviewEnd, 0),
       },
     },
   ];
