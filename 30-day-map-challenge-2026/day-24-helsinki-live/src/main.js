@@ -48,7 +48,6 @@ let network,
   showAll = false;
 let lastGeometry,
   lastDetail,
-  didStart = false,
   visibleFleet = [],
   lastCamera = 0,
   lastFollowPosition,
@@ -358,12 +357,10 @@ function navigationLabel() {
 }
 function select(kind, id, camera = 'keep', options = {}) {
   if (!network || !['home', 'bus', 'stop', 'terminal'].includes(kind)) return;
-  didStart = true;
   const restored = options.restore;
   if (kind === 'bus' && !vehicles.has(id) && !restored) return;
   if (kind === 'terminal' && !network.terminals[id]) return;
   const bus = kind === 'bus' ? vehicles.get(id) : null;
-  const startup = camera === 'startup';
   const fromKeyboardBadge = bus && document.activeElement?.matches('.bus-label:focus-visible');
   const sameBus = bus && selection.kind === 'bus' && selection.id === id;
   if (kind === 'home') {
@@ -393,7 +390,7 @@ function select(kind, id, camera = 'keep', options = {}) {
   selection = restored?.selection ?? {
     kind,
     id,
-    fullTrip: Boolean(bus && !startup),
+    fullTrip: Boolean(bus),
     originStop:
       options.originStop ?? (sameBus && bus.key === selection.tripKey ? selection.originStop : undefined),
     tripKey: bus?.key,
@@ -402,7 +399,7 @@ function select(kind, id, camera = 'keep', options = {}) {
   $('dock').hidden = selection.kind === 'home';
   busPicker.select(selection.kind === 'bus' ? selection.id : '');
   following = Boolean(bus && !restored && !reducedCameraMotion.matches);
-  revealSelectedBus = Boolean(bus && !restored && !startup);
+  revealSelectedBus = Boolean(bus && !restored);
   followAnchor = null;
   view?.resetBusAnchor();
   lastFollowPosition = bus && displayedPose(bus, performance.now()).coordinate;
@@ -435,9 +432,8 @@ function select(kind, id, camera = 'keep', options = {}) {
     return;
   }
   frameMap();
-  if (bus && startup) view?.fly(displayedPose(bus, performance.now()).coordinate, 17.9, true);
   if (kind === 'stop') view?.fly(network.stops[id].coordinate, 17);
-  if (kind === 'home') view?.fly([24.922, 60.174], 12.7);
+  if (kind === 'home') view?.overview();
 }
 function detach() {
   revealSelectedBus = false;
@@ -526,19 +522,6 @@ function drawPreviews(t) {
   }
   view.drawPreviews(items);
 }
-function startSelection() {
-  if (!view || didStart || !visibleFleet.length) return;
-  const fresh = visibleFleet.filter((b) => now() - b.timestamp < 30);
-  const u12On21 = fresh.filter((b) => b.track && b.route === '1021' && isNobinaU12(b.id));
-  const recent = u12On21.length ? u12On21 : fresh;
-  if (!recent.length) return;
-  const score = (b) =>
-    Math.hypot((b.coordinate[0] - 24.9025) * 0.5, b.coordinate[1] - 60.163) +
-    (b.route === '1021' ? 0 : 0.045) +
-    (b.speed > 1 ? 0 : 0.002);
-  const closest = recent.reduce((a, b) => (score(a) < score(b) ? a : b));
-  select('bus', closest.id, 'startup');
-}
 function updateGeometry() {
   if (!view || !network) return;
   const {kind, id} = selection;
@@ -614,7 +597,6 @@ function feedMessage({data: {name, data, timestamp, error}}) {
     for (const trip of data) predictions.set(trip.key, trip);
   }
   draw();
-  if (name === 'positions') startSelection();
   updateGeometry();
   paint();
 }
@@ -1136,7 +1118,6 @@ async function init() {
   view.setTimeOfDay(timeOfDay);
   updateGeometry();
   draw();
-  startSelection();
   const frame = new ResizeObserver((entries) => {
     const resized = entries.some(({target}) => target === $('map'));
     if (resized) {

@@ -23,6 +23,8 @@ const feature = (type, coordinates, properties = {}) => ({
   geometry: {type, coordinates},
 });
 const empty = fc([]);
+const networkBounds = [[24.64, 60.13], [25.19, 60.34]];
+const overviewFit = {padding: 20, maxZoom: 11.3};
 
 class CollapsedAttribution extends AttributionControl {
   onAdd(map) {
@@ -72,7 +74,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     timeOfDay,
     viewMode: '3d',
     navigationControl: false,
-    mapOptions: {attributionControl: false},
+    mapOptions: {attributionControl: false, bounds: networkBounds, fitBoundsOptions: overviewFit},
     onError: ({code, error}) => console.warn(code, error),
   });
   const map = await controller.ready;
@@ -248,15 +250,15 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     return lineColor(network.routes[selectedRouteId]?.number).body;
   };
   const routeCase = () => lowLight() ? '#101b25' : '#354858';
-  // The base stop layer keeps ownership of the sign (or its physical model)
-  // independently of the selected trip. A platform changes ink in the same layer.
+  // Trip rings replace ordinary flags. Numbered boarding points keep their platform badges.
   let modelIds = new Set();
   function syncStopFilters() {
     const selected = calls.features.map(f => f.properties);
     const containsId = ids => ['in', ['get', 'id'], ['literal', ids]];
-    const showFlag = ['!', containsId([...modelIds])];
+    const showFlag = ['!', containsId([...modelIds, ...selected.filter(p => p.trip).map(p => p.id)])];
     const filters = {
       'hsl-station': ['all', ['!', ['has', 'parent']], ['!', ['has', 'platform']], showFlag],
+      'hsl-platform-sign': ['all', ['!', ['has', 'parent']], ['has', 'platform'], showFlag],
       'hsl-unnumbered-berths': ['all', ['has', 'parent'], ['!', ['has', 'platform']], showFlag],
       'hsl-preview-name': ['!', containsId(selected.map(p => p.id))],
     };
@@ -465,23 +467,26 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
           },
         });
       }
-      add({
-        id: 'hsl-station', type: 'symbol', source: 'hsl-stops', minzoom: overviewEnd,
-        filter: ['all', ['!', ['has', 'parent']], ['!', ['has', 'platform']]],
-        layout: {
-          'icon-image': ['concat', 'local-', ['get', 'sign']], 'icon-anchor': 'bottom',
-          'icon-size': ['interpolate', ['linear'], ['zoom'], overviewEnd, .48, 17, .72, 19, .84],
-          'icon-padding': 3,
-        },
-      });
+      for (const [id, numbered] of [['hsl-station', false], ['hsl-platform-sign', true]]) {
+        add({
+          id, type: 'symbol', source: 'hsl-stops', minzoom: 12.5,
+          ...(numbered && {maxzoom: berthZoom}),
+          filter: ['all', ['!', ['has', 'parent']], numbered ? ['has', 'platform'] : ['!', ['has', 'platform']]],
+          layout: {
+            'icon-image': ['concat', 'local-', ['get', 'sign']], 'icon-anchor': 'bottom',
+            'icon-size': ['interpolate', ['linear'], ['zoom'], 12.5, .62, 15, .83, 18, 1],
+            'icon-padding': 3,
+          },
+        });
+      }
       for (const [id, numbered] of [['hsl-call', false], ['hsl-numbered-nodes', true]]) {
         const nodeRadius = (size) => ['case', ['get', 'highlight'], size + 2, size];
         add({
           id, type: 'circle', source: 'hsl-calls',
-          maxzoom: numbered ? berthZoom : overviewEnd,
           filter: numbered ? ['has', 'platform'] : ['all', ['get', 'trip'], ['!', ['get', 'highlight']], ['!', ['has', 'platform']]],
           paint: {
-            'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, nodeRadius(2), 16, nodeRadius(4)],
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, nodeRadius(2.2), 12, nodeRadius(3.3), 16, nodeRadius(5), 19, nodeRadius(6)],
+            'circle-pitch-alignment': 'viewport', 'circle-pitch-scale': 'viewport',
             'circle-color': nodeFill(), 'circle-stroke-color': nodeOutline(),
             'circle-stroke-width': ['case', ['get', 'highlight'], 2, 1.6],
           },
@@ -489,7 +494,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       }
       add({
         id: 'hsl-platform-light', type: 'circle', source: 'hsl-calls', minzoom: overviewEnd,
-        filter: ['all', ['get', 'trip'], ['get', 'highlight'], ['!', ['has', 'platform']]],
+        filter: ['all', ['get', 'highlight'], ['!', ['has', 'platform']]],
         paint: {
           'circle-opacity': 0, 'circle-stroke-color': routeColor(), 'circle-stroke-width': 2,
           'circle-pitch-alignment': 'map', 'circle-pitch-scale': 'viewport',
@@ -507,7 +512,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
       });
       for (const layer of berthLayers(lowLight())) add(layer);
       add({
-        id: 'hsl-next-node', type: 'symbol', source: 'hsl-calls', maxzoom: overviewEnd,
+        id: 'hsl-next-node', type: 'symbol', source: 'hsl-calls',
         filter: ['all', ['get', 'highlight'], ['!', ['has', 'platform']]],
         layout: {
           'icon-image': 'hsl-current-node', 'icon-padding': 4,
@@ -590,7 +595,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     );
   }
   const stopLayers = ['hsl-next-node', 'hsl-call', 'hsl-numbered-nodes', 'hsl-platform-light', 'hsl-platform-name',
-    'hsl-preview-name', 'hsl-station', 'hsl-shelter-roof'];
+    'hsl-preview-name', 'hsl-station', 'hsl-platform-sign', 'hsl-shelter-roof'];
   function selectPlace(kind, id, pole = false) {
     handlers.select(kind, id, 'inPlace');
     tappedPlace = {kind, id, pole};
@@ -611,6 +616,8 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     }
     const object = streetLayer?.pick(e.point);
     if (object?.kind === 'bus') return handlers.select('bus', object.id, 'inPlace');
+    const tripStop = placesAt(e.point, 0, ['hsl-next-node', 'hsl-numbered-nodes', 'hsl-call'])[0];
+    if (tripStop) return selectPlace('stop', tripStop.properties.id);
     const platform = placesAt(e.point, 0, terminalLayers)[0];
     if (platform) return selectPlace(platform.layer.id === 'hsl-terminals' ? 'terminal' : 'stop', platform.properties.id);
     if (object) return selectPlace(object.kind, object.id, true);
@@ -620,7 +627,7 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
     const sign = placesAt(e.point, 0, stopLayers)[0];
     if (sign) return selectPlace('stop', sign.properties.id);
     if (hit) return handlers.select('bus', hit);
-    const stop = placesAt(e.point, 7, stopLayers)[0];
+    const stop = placesAt(e.point, touch ? 12 : 8, stopLayers)[0];
     if (stop) return selectPlace('stop', stop.properties.id);
     // Route strokes are visual guides. Keep the open details when a stroke is tapped.
     if (placesAt(e.point, 5, ['hsl-route', 'hsl-network', ...halos.map(layer => layer.id), ...trailLayerIds]).length) return;
@@ -814,8 +821,11 @@ export async function makeMap(network, handlers, timeOfDay, amenities = {}) {
         color: lineColor(line).body, lineNumber: line});
       return roof;
     },
-    fly(coordinate, zoom = 16.5, immediate = false) {
-      moveCamera({center: coordinate, zoom}, 53, immediate ? 0 : 650);
+    overview() {
+      map.fitBounds(networkBounds, {...overviewFit, bearing: 0, pitch: 0, linear: true, duration: 650});
+    },
+    fly(coordinate, zoom = 16.5) {
+      moveCamera({center: coordinate, zoom}, 53, 650);
     },
     fit(patterns) {
       const bounds = new LngLatBounds();

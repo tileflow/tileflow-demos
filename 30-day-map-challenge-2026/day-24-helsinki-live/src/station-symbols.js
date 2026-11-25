@@ -1,5 +1,5 @@
 // The terminal name gives way to individual boarding points at this zoom.
-export const berthZoom = 16.2;
+export const berthZoom = 15.5;
 export const terminalLayers = ['hsl-terminals', 'hsl-berths', 'hsl-unnumbered-berths'];
 
 export function indexTerminals(catalogue, network) {
@@ -50,7 +50,7 @@ export function terminalLabelPaint(night) {
 export function berthLayers(night) {
   const font = ['Noto Sans Regular'];
   const berth = {
-    'text-font': font, 'text-size': 12,
+    'text-font': font, 'text-size': 13,
     'text-field': ['format', 'Platform ', {'font-scale': 0.94}, ['to-string', ['get', 'platform']], {'font-scale': 1.1}],
     'text-padding': 2, 'icon-padding': 2, 'icon-image': 'hsl-berth-tag',
     'icon-text-fit': 'both', 'icon-text-fit-padding': [1, 3, 1, 3],
@@ -60,9 +60,10 @@ export function berthLayers(night) {
   const numbered = ['has', 'platform'];
   return [
     {
-      id: 'hsl-terminals', type: 'symbol', source: 'hsl-terminals', minzoom: 13.5, maxzoom: berthZoom,
+      id: 'hsl-terminals', type: 'symbol', source: 'hsl-terminals', minzoom: 10, maxzoom: berthZoom,
       layout: {
-        'icon-image': 'local-platform', 'icon-size': .72, 'icon-padding': 3,
+        'icon-image': 'local-platform', 'icon-size': ['interpolate', ['linear'], ['zoom'], 10, .58, 13, .8, 15.5, .93], 'icon-padding': 3,
+        'text-optional': true,
         'text-field': ['get', 'name'], 'text-size': 12, 'text-font': font, 'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
         'text-justify': 'auto', 'text-radial-offset': 1.05, 'text-max-width': 16, 'text-padding': 3,
         'symbol-sort-key': ['-', 0, ['get', 'count']],
@@ -72,7 +73,7 @@ export function berthLayers(night) {
     {
       id: 'hsl-unnumbered-berths', type: 'symbol', source: 'hsl-stops', minzoom: berthZoom,
       filter: ['all', ['has', 'parent'], ['!', numbered]],
-      layout: {'icon-image': ['concat', 'local-', ['get', 'sign']], 'icon-anchor': 'bottom', 'icon-size': .72, 'icon-padding': 3},
+      layout: {'icon-image': ['concat', 'local-', ['get', 'sign']], 'icon-anchor': 'bottom', 'icon-size': .93, 'icon-padding': 3},
     },
     {
       id: 'hsl-berths', type: 'symbol', source: 'hsl-stops', minzoom: berthZoom,
