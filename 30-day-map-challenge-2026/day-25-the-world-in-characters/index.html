@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf8f1"><link rel="icon" href="data:,"><title>The World in Characters · Is This a Map? · Tileflow</title>
+<link rel="stylesheet" href="/runtime/renderer/maplibre-gl.css"><style>
+html,body,main,.scene,.maplibregl-canvas-container{margin:0;width:100%;height:100%;overflow:hidden;background:#faf8f1}
+main,.scene,.maplibregl-canvas{position:absolute;inset:0}.maplibregl-canvas{display:block;outline:none}.maplibregl-canvas-container{touch-action:none}
+.sr{height:1px;width:1px;position:absolute;overflow:hidden;clip-path:inset(50%)}
+#map-footer {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 4;
+  pointer-events: none;
+  --brand-space: 104px;
+}
+@media (max-width: 250px) {
+  #map-footer { --brand-space: 49px; }
+}
+#credit {
+  position: relative;
+  margin: 0 calc(5px + env(safe-area-inset-right)) calc(3px + env(safe-area-inset-bottom)) auto;
+  max-width: calc(100% - var(--brand-space) - 5px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  width: fit-content;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0 9px;
+  padding: 2px 4px;
+  color: #344d47;
+  background: #faf8f1;
+  font: 11px/1.45 Menlo, monospace;
+  text-align: right;
+}
+#credit a { color: inherit; text-underline-offset: 2px; pointer-events: auto; }
+#credit [hidden] { display: none; }
+#regional-credits { pointer-events: auto; }
+#regional-credits summary { cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+#regional-credits div {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  width: max-content;
+  max-width: min(44ch, calc(100vw - var(--brand-space) - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: min(24vh, 9em);
+  overscroll-behavior: contain;
+  overflow: auto;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  background: #faf8f1;
+  box-shadow: 0 1px 5px #344d4740;
+  text-align: left;
+}
+#regional-credits div a { display: block; padding: 2px 0; overflow-wrap: anywhere; }
+#network { position: fixed; z-index: 3; left: calc(8px + env(safe-area-inset-left)); bottom: calc(48px + env(safe-area-inset-bottom)); font: 11px/1.3 Menlo,monospace; color: #82543b; background: #faf8f1; }
+#problem{position:absolute;inset:40% 10% auto;text-align:center;color:#294640;font:18px Georgia,serif}#problem[hidden]{display:none}
+.scene{visibility:hidden;opacity:0;pointer-events:none}.scene.active{visibility:visible;opacity:1;pointer-events:auto}
+#globe{background:#f3f1ea;isolation:isolate}
+#globe [data-tileflow-atmosphere]{z-index:0}
+#globe [data-tileflow-atmosphere-rim]{z-index:1;mix-blend-mode:multiply;filter:sepia(.65) saturate(.5) opacity(.085)}
+#globe .maplibregl-canvas-container{position:absolute;inset:0;z-index:2;background:transparent}.in-orbit #network{display:none}
+</style></head><body>
+<main aria-label="Is this a map? The world in type, rendered by Tileflow" aria-describedby="description"><div id="globe" class="scene"></div><div id="map" class="scene"></div></main>
+<p id="description" class="sr">A world globe drawn with letters and punctuation. Drag left or right to turn the globe. Tildes form waves and dashes trace the coasts. Scroll or pinch to zoom into a regional atlas and street map. On the globe and overview, Space or a single tap toggles animated ink. Home restores the globe. F opens fullscreen.</p>
+<footer id="map-footer">
+  <aside id="credit" aria-label="Map data attribution">
+    <a href="https://tileflow.dev/" target="_blank" rel="noopener noreferrer">Map by Tileflow</a>
+    <a href="https://maplibre.org/" target="_blank" rel="noopener noreferrer">MapLibre</a>
+    <a href="https://tileflow.dev/copyright" target="_blank" rel="noopener noreferrer">© Tileflow</a>
+    <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+    <a data-source="natural" href="https://www.naturalearthdata.com/" target="_blank" rel="noopener noreferrer">Natural Earth</a>
+    <a data-source="etopo" href="https://doi.org/10.25921/fd45-gt74" target="_blank" rel="noopener noreferrer">NOAA ETOPO 2022</a>
+    <a hidden data-source="madrid" href="https://geoportal.madrid.es/IDEAM_WBGEOPORTAL/dataset.iam?id=e251898e-4a9c-11eb-9104-dc4a3e8ce33b" target="_blank" rel="noopener noreferrer">Ayuntamiento de Madrid · 31/08/2026</a>
+    <a hidden data-source="ign" href="https://datos.gob.es/es/catalogo/e00125901-spaignllm" target="_blank" rel="noopener noreferrer">Obra derivada de BDLJE CC-BY 4.0 ign.es</a>
+    <details id="regional-credits" hidden>
+      <summary>Regional sources</summary>
+      <div></div>
+    </details>
+  </aside>
+</footer>
+<div id="network" role="status" hidden></div>
+<p id="problem" hidden role="alert"></p><script type="module" src="/viewer.mjs?v=world-attribution-2"></script>
+</body></html>

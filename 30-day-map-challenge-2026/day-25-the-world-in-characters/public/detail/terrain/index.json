@@ -1,0 +1,13 @@
+{
+  "west": 0.04166666666665719,
+  "north": 89.95833333333334,
+  "step": 0.08333333333333333,
+  "tile": 360,
+  "width": 4320,
+  "height": 2160,
+  "metersPerUnit": 8,
+  "source": "NOAA NCEI ETOPO 2022 ice surface, sampled every 5 arc-minutes",
+  "doi": "https://doi.org/10.25921/fd45-gt74",
+  "url": "https://oceanwatch.pifsc.noaa.gov/erddap/griddap/ETOPO_2022_v1_60s.nc?z%5B2:5:10799%5D%5B2:5:21599%5D",
+  "sha256": "27df84811c70590224e010d196ca13c20e2e7f8325418cbc54a64dc6fd278d43"
+}

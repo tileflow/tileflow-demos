@@ -1,0 +1,8 @@
+{
+  "name": "the-world-in-type-cartography",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": { "@tileflow/core": "0.1.0-alpha.55" },
+  "devDependencies": { "maplibre-gl":"6.19.0", "playwright":"1.62.1" }
+}

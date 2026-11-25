@@ -1,0 +1,86 @@
+{
+  "paper": "#faf8f1",
+  "projections": {
+    "landscape": "Equal Earth",
+    "portrait": "Lambert azimuthal equal-area, western and eastern hemispheres stacked"
+  },
+  "roles": {
+    "water": {
+      "color": "#33747d",
+      "size": 12,
+      "font": [
+        "JetBrains Mono",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "field": "text"
+    },
+    "shore": {
+      "color": "#294640",
+      "size": 12,
+      "font": [
+        "JetBrains Mono",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "field": "text"
+    },
+    "border": {
+      "color": "#9a543b",
+      "size": 9,
+      "font": [
+        "JetBrains Mono",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "field": "text"
+    },
+    "road": {
+      "color": "#82543b",
+      "size": 9,
+      "font": [
+        "JetBrains Mono",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "field": "text"
+    },
+    "river": {
+      "color": "#427a86",
+      "size": 10,
+      "font": [
+        "JetBrains Mono",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "field": "text"
+    },
+    "label": {
+      "color": "#243e37",
+      "size": 14,
+      "font": [
+        "JetBrains Mono",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
+      "field": "text"
+    },
+    "ocean": {
+      "color": "#326d76",
+      "size": 20,
+      "font": [
+        "Instrument Serif",
+        "Baskerville",
+        "Georgia",
+        "serif"
+      ],
+      "field": "text"
+    }
+  }
+}

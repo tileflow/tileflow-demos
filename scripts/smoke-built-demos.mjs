@@ -169,6 +169,26 @@ await smokeDemo({
   theme: 'dawn',
 });
 
+const charactersDirectory = join(repositoryRoot, '30-day-map-challenge-2026/day-25-the-world-in-characters');
+const charactersPort = await reserveFreePort();
+await smokeDemo({
+  name: 'The World in Characters',
+  executable: join(charactersDirectory, 'node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', String(charactersPort), '--strictPort'],
+  cwd: charactersDirectory,
+  origin: `http://127.0.0.1:${charactersPort}`,
+  assetBases: [''],
+  map: 'globe',
+  theme: 'paper',
+  async validatePage({origin, html}) {
+    assert.match(html, /viewer\.mjs/u);
+    const manifest = await requestJson(new URL('manifest.json', origin));
+    assert.ok(manifest.maps['world-in-type']);
+    const entry = await requestText(new URL('viewer.mjs', origin));
+    assert.match(entry, /tileflowWorld/u);
+  },
+});
+
 const atlasDirectory = join(repositoryRoot, '30-day-map-challenge-2026/day-23-drinking-water-atlas');
 const atlasPort = await reserveFreePort();
 await smokeDemo({

@@ -1,0 +1,26 @@
+Madrid navigation database
+© OpenStreetMap contributors. Database available under the Open Database License 1.0.
+https://www.openstreetmap.org/copyright
+https://opendatacommons.org/licenses/odbl/1-0/
+
+Source: the Madrid OSM GeoPackage extract produced by Geofabrik on 23 November 2026.
+https://download.geofabrik.de/europe/spain/madrid-261123-free.gpkg.zip
+
+The redistributable database in this directory is a geographic subset of the
+original extract. Lines were simplified and coordinates quantized; the source
+attributes were selected for map display. Each .gz file is a gzip-compressed
+UTF-8 JSON array. Level a contains main streets, places, rivers and larger
+areas. Level b contains local streets and other detail. Overlapping cells may
+repeat rows. Row keys are the combination of geometry category and feature id.
+
+Array columns in order:
+0 category (0 road, 1 place, 2 waterway, 3 water area, 4 land use)
+1 Geofabrik feature id within that category
+2 source fclass
+3 name
+4 road ref
+5 structure: bridge, tunnel or empty
+6 [west,south,east,north] in decimal degrees multiplied by 100000
+7 geometry: point [x,y], line [x0,y0,dx1,dy1,...], area [polygon[ring,...],...].
+All geometry coordinates use the same 1/100000-degree unit, longitude first.
+Index.json identifies available cells, source download and SHA-256 digest.

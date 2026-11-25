@@ -188,6 +188,12 @@ importers:
         specifier: 8.0.16
         version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
 
+  30-day-map-challenge-2026/day-25-the-world-in-characters:
+    devDependencies:
+      vite:
+        specifier: 8.0.16
+        version: 8.0.16(@types/node@25.9.3)(jiti@2.7.0)
+
   apps/next-basic:
     dependencies:
       '@tileflow/core':
