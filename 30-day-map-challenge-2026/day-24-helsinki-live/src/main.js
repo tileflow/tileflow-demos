@@ -336,7 +336,7 @@ function frameMap(fitBus = false) {
       left = Math.floor(free.left); top = Math.floor(free.top);
       right = Math.floor(canvas.width - free.right); bottom = Math.floor(canvas.height - free.bottom);
     }
-  } else if (selection.kind !== 'bus') {
+  } else if (selection.kind !== 'bus' && (selection.kind !== 'home' || !sidePanel.matches)) {
     top = Math.round(Math.min(document.querySelector('.map-top').getBoundingClientRect().bottom - canvas.top, canvas.height * .45));
     bottom = side ? 30 : Math.min(Math.round(dock.height + 32), Math.floor(canvas.height * .42));
     right = side ? Math.round(dock.width + 32) : 0;
