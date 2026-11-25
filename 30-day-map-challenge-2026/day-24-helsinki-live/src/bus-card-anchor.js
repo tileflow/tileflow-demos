@@ -19,7 +19,7 @@ function crosses(a,b,rect) {
 
 export function createBusCardAnchor(map, dock) {
   const canvas = map.getCanvas();
-  const controls = [...document.querySelectorAll('.map-top, .map-controls, #punctuality-panel')];
+  const controls = [...document.querySelectorAll('.map-top, .map-controls, #timing-breakdown')];
   const svg = document.createElementNS(svgNS, 'svg');
   svg.classList.add('bus-card-connector');
   svg.setAttribute('aria-hidden', 'true');

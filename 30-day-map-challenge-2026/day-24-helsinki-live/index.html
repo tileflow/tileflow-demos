@@ -19,24 +19,33 @@
                 <option value="">Bus network</option>
               </select>
             </label>
+            <button type="button" id="mobile-tools" aria-label="Map controls" title="Map controls"
+                    aria-expanded="false" aria-controls="camera-controls">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4m6 0h8M3 17h10m6 0h2"/><circle cx="10" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></svg>
+            </button>
           </div>
           <section id="punctuality-panel" aria-labelledby="timing-title">
             <div class="timing-heading">
               <h2 id="timing-title">Next arrivals</h2>
+              <span id="mobile-delay"></span>
               <span class="city-meta">
                 <span id="live" role="status" data-compact="Sync" title="Connecting">Connecting</span>
                 <time id="clock" aria-label="Helsinki local time"></time>
               </span>
+              <button type="button" id="mobile-arrivals" aria-labelledby="timing-title mobile-delay"
+                      aria-expanded="false" aria-controls="timing-breakdown"></button>
             </div>
-            <p class="timing-value">
-              <span id="timing-sample" hidden><strong id="timing-late-count"></strong> <span id="timing-base"></span><br></span>
-              <span id="timing-outlook">Expected late</span> <strong id="timing-percent">—</strong>
-            </p>
-            <dl id="timing-legend" aria-label="Bus counts by expected arrival"></dl>
-            <footer class="timing-footer">
-              <span id="timing-coverage" title="Buses whose next arrival could be compared with the timetable">Waiting for live data</span>
-              <span id="timing-unknown"></span>
-            </footer>
+            <div id="timing-breakdown">
+              <p class="timing-value">
+                <span id="timing-sample" hidden><strong id="timing-late-count"></strong> <span id="timing-base"></span><br></span>
+                <span id="timing-outlook">Expected late</span> <strong id="timing-percent">—</strong>
+              </p>
+              <dl id="timing-legend" aria-label="Bus counts by expected arrival"></dl>
+              <footer class="timing-footer">
+                <span id="timing-coverage" title="Buses whose next arrival could be compared with the timetable">Waiting for live data</span>
+                <span id="timing-unknown"></span>
+              </footer>
+            </div>
           </section>
         </header>
         <div class="map-controls" id="camera-controls" role="group" aria-label="Map controls">

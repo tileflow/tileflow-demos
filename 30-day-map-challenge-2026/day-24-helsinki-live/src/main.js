@@ -16,6 +16,37 @@ import {trackDetail} from './door-feed.js';
 import {platformInfo, vehicleAtStop, callForBus, matchesService} from './stop-call.js';
 
 const $ = (id) => document.getElementById(id);
+const mobileToolbar = document.querySelector('.map-toolbar');
+const toolsButton = $('mobile-tools');
+const arrivalsButton = $('mobile-arrivals');
+function openMobilePanel(panel) {
+  mobileToolbar.dataset.open = panel;
+  toolsButton.setAttribute('aria-expanded', String(panel === 'tools'));
+  arrivalsButton.setAttribute('aria-expanded', String(panel === 'arrivals'));
+}
+toolsButton.addEventListener('click', event => {
+  const open = mobileToolbar.dataset.open !== 'tools';
+  openMobilePanel(open ? 'tools' : '');
+  if (open && event.detail === 0) $('overview').focus();
+});
+arrivalsButton.addEventListener('click', () => {
+  openMobilePanel(mobileToolbar.dataset.open === 'arrivals' ? '' : 'arrivals');
+});
+function dismissMobilePanel(event) {
+  const panel = mobileToolbar.dataset.open;
+  if (!panel) return;
+  const inside = panel === 'tools' ? '#mobile-tools, #camera-controls' : '#punctuality-panel';
+  if (!event.target.closest(inside)) openMobilePanel('');
+}
+document.addEventListener('pointerdown', dismissMobilePanel, {capture: true, passive: true});
+document.addEventListener('focusin', dismissMobilePanel);
+document.addEventListener('keydown', event => {
+  const panel = mobileToolbar.dataset.open;
+  if (event.key !== 'Escape' || !panel) return;
+  openMobilePanel('');
+  (panel === 'tools' ? toolsButton : arrivalsButton).focus({preventScroll: true});
+});
+sidePanel.addEventListener('change', () => openMobilePanel(''));
 const escape = (v) =>
   String(v ?? '').replace(
     /[&<>"']/g,
@@ -146,6 +177,7 @@ function updateTimingPanel() {
   $('timing-base').textContent = 'of ' + covered + (covered === 1 ? ' bus' : ' buses');
   $('timing-outlook').textContent = hasEstimate ? (delayed === 1 ? 'is expected late' : 'are expected late') : 'Expected late';
   timingPercent.textContent = hasEstimate ? Math.round(100 * delayed / covered) + '%' : '—';
+  $('mobile-delay').textContent = hasEstimate ? timingPercent.textContent + ' late' : '';
   $('timing-coverage').textContent = !current ? 'Waiting for live data and timetable'
     : total ? covered + ' of ' + total + (total === 1 ? ' bus analysed' : ' buses analysed')
     : 'No recent bus positions in the HSL feed';
@@ -357,6 +389,7 @@ function navigationLabel() {
 }
 function select(kind, id, camera = 'keep', options = {}) {
   if (!network || !['home', 'bus', 'stop', 'terminal'].includes(kind)) return;
+  if (mobileToolbar.dataset.open) openMobilePanel('');
   const restored = options.restore;
   if (kind === 'bus' && !vehicles.has(id) && !restored) return;
   if (kind === 'terminal' && !network.terminals[id]) return;
@@ -668,7 +701,11 @@ function busDetail(id) {
   const primary = platform ? [platform.id, 0, platform.id === b.stopId ? b.stopSequence : null] : next;
   const primaryLabel = platform ? currentLabel : boarding && boarding === next?.[0] ? 'Your stop is next' : 'Next stop';
   const followingStops = platform ? rows : rows.slice(1);
-  const hasMore = followingStops.length > 2;
+  const compact = !sidePanel.matches;
+  const previewStops = compact ? 0 : 2;
+  const hasMore = followingStops.length > previewStops;
+  const extraStops = !hasMore ? '' : '<div id="extra-bus-stops"' + (compact ? ' class="bus-calls"' : '') +
+    (showAll ? '>' + followingStops.slice(previewStops).map(call => busStopRow(call)).join('') : ' hidden>') + '</div>';
   const band = timingPalette[timingGroup(timing?.status)];
   const boardingLine = boarding && boarding !== primary?.[0]
     ? '<div class="boarding-call"><span>' +
@@ -689,9 +726,8 @@ function busDetail(id) {
     '</h2></div>' + closeDetails('bus') +
     boardingLine + '</article><section class="bus-calls" aria-label="Stops">' +
     (primary ? '<div class="bus-next">' + busStopRow(primary, primaryLabel, atStop) + '</div>' : '') +
-    followingStops.slice(0, 2).map(call => busStopRow(call)).join('') +
-    (hasMore ? '<div id="extra-bus-stops"' + (showAll ? '>' +
-      followingStops.slice(2).map(call => busStopRow(call)).join('') : ' hidden>') + '</div>' : '') +
+    followingStops.slice(0, previewStops).map(call => busStopRow(call)).join('') +
+    (compact ? '' : extraStops) +
     (!rows.length ? empty(trip ? 'No more arrivals are expected on this trip.'
       : 'HSL has not published arrivals for this trip yet.') : '') +
     '</section><footer class="bus-summary">' +
@@ -699,10 +735,10 @@ function busDetail(id) {
     Boolean(selection.reportOpen) + '" title="Arrival and vehicle details" style="--timing-day:' + band.day +
     ';--timing-night:' + band.night + '">' + timingLabel(timing?.status) + '</button>' +
     '<button type="button" class="route-link locate-bus" data-action="locate" hidden>Locate bus</button>' +
-    (p && (!hasMore || showAll) ? fitButton : '') +
+    (p && (compact || !hasMore || showAll) ? fitButton : '') +
     (hasMore ? '<button type="button" class="bus-more" data-action="more" aria-controls="extra-bus-stops" aria-expanded="' +
       showAll + '">' + (showAll ? 'Fewer stops' : 'More stops') + '</button>' : '') +
-    '</footer><div id="bus-report"' + (selection.reportOpen ? '>' + arrivalComparison(timing, timingStop) +
+    '</footer>' + (compact ? extraStops : '') + '<div id="bus-report"' + (selection.reportOpen ? '>' + arrivalComparison(timing, timingStop) +
       '<div class="vehicle-type">Bus ' + escape(id.split('/').at(-1)) +
       (isNobinaU12(id) ? ' · Nobina Yutong U12' : '') +
       (details.length ? ' · ' + escape(details.join(' · ')) : '') +
@@ -719,9 +755,14 @@ function terminalDetail(id) {
     const number = stop.platform ? '<span class="terminal-code">' + escape(stop.code) + '</span>' : '';
     return row('stop', key, '<span class="name">' + escape(label) + '</span>' + number);
   });
+  const expandable = !sidePanel.matches && platforms.length > 2;
+  const board = expandable ? platforms.slice(0, 2).join('') +
+    '<button class="bus-more platform-toggle" data-action="more" aria-expanded="' + showAll +
+    '" aria-controls="extra-platforms">' + (showAll ? 'Fewer platforms' : 'All ' + platforms.length + ' platforms') + '</button>' +
+    '<div id="extra-platforms"' + (showAll ? '>' + platforms.slice(2).join('') : ' hidden>') + '</div>' : platforms.join('');
   return '<section class="place-panel terminal-panel"><header class="place-heading"><div class="eyebrow">Bus station</div><h2>' +
     escape(group.name) + '</h2>' + closeDetails('station') + '</header><section class="place-board">' +
-    section('Bus boarding points') + platforms.join('') + '</section></section>';
+    section('Bus boarding points') + board + '</section></section>';
 }
 function stopHeadline(id, arrivals, byTrip) {
   const source = selection.fromBus;
@@ -883,7 +924,7 @@ function paint() {
 }
 // Only the actual control rectangles hide the bus. A floating card does not
 // make the entire right-hand column (or the entire bottom of a phone) unusable.
-const mapObstacles = [...document.querySelectorAll('.map-top, #camera-controls, #punctuality-panel, #dock')];
+const mapObstacles = [...document.querySelectorAll('.map-top, #camera-controls, #timing-breakdown, #dock')];
 function busViewport() {
   const canvas = view.map.getCanvas().getBoundingClientRect();
   return createBusViewport(canvas, mapObstacles.map(element => element.getBoundingClientRect()));
@@ -1135,6 +1176,7 @@ async function init() {
     if (resized || selection.kind === 'home') frameMap();
   });
   frame.observe($('map'));
+  sidePanel.addEventListener('change', paint);
   frame.observe($('dock'));
   frame.observe(document.querySelector('.map-top'));
   let wasOverview = view.map.getZoom() < overviewEnd;
