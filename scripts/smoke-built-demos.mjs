@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
 import {createServer} from 'node:net';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -146,6 +148,15 @@ await smokeDemo({
   cwd: join(repositoryRoot, 'apps/next-basic'),
   origin: `http://127.0.0.1:${nextPort}`,
   assetBases: ['/tileflow', '/api/tileflow'],
+  async validatePage({origin}) {
+    const require = createRequire(new URL('../apps/next-basic/package.json', import.meta.url));
+    const {version} = require('maplibre-gl/package.json');
+    for (const file of ['maplibre-gl-worker.mjs', 'maplibre-gl-shared.mjs']) {
+      const expected = await readFile(require.resolve(`maplibre-gl/dist/${file}`), 'utf8');
+      const served = await requestText(`${origin}/maplibre/${version}/${file}`);
+      assert.ok(served === expected, `Next demo must serve the installed ${file}.`);
+    }
+  },
 });
 
 const sunPort = await reserveFreePort();

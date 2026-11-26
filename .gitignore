@@ -4,6 +4,7 @@ dist
 .vite
 *.tsbuildinfo
 apps/*/public/tileflow
+apps/next-basic/public/maplibre
 30-day-map-challenge-2026/*/public/tileflow
 .DS_Store
 .env

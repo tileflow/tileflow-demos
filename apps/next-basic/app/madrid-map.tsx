@@ -2,7 +2,11 @@
 
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useState } from "react";
-import { Map } from "@tileflow/react";
+import { configureTileflowMapLibre, Map } from "@tileflow/react";
+
+configureTileflowMapLibre({
+  workerUrl: `/maplibre/${process.env.NEXT_PUBLIC_MAPLIBRE_VERSION}/maplibre-gl-worker.mjs`,
+});
 
 const madridCenter: [number, number] = [-3.7038, 40.4168];
 const madridZoom = 15;
