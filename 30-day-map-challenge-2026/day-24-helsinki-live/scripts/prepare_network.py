@@ -1,4 +1,4 @@
-"""Extract the Helsinki bus network from HSL's official GTFS ZIP (Python 3, standard library).
+"""Extract the Helsinki bus network from HSL's official GTFS ZIP (Python 3 and Shapely 2).
 
 Usage: python3 scripts/prepare_network.py /path/to/hsl.zip
 Source: https://infopalvelut.storage.hsldev.com/gtfs/hsl.zip (HSL, CC BY 4.0).
@@ -176,7 +176,9 @@ def extract(archive):
         stops = {
             row["stop_id"]: {
                 "name": row["stop_name"], "code": row["stop_code"],
-                "coordinate": [float(row["stop_lon"]), float(row["stop_lat"])]
+                "coordinate": [float(row["stop_lon"]), float(row["stop_lat"])],
+                **({"platform": row["platform_code"].strip()} if row.get("platform_code", "").strip() else {}),
+                **({"indoorLevel": "E"} if row["stop_desc"].strip() == "Sisäterminaali E" else {})
             }
             for row in rows if row["stop_id"] in stop_ids
         }
@@ -206,6 +208,9 @@ def main():
     args = parser.parse_args()
     with ZipFile(args.gtfs_zip) as archive:
         network = extract(archive)
+    from roundabouts import apply_roundabouts
+    circles = json.loads((Path(__file__).parent / "data" / "roundabouts.json").read_text())
+    apply_roundabouts(network, circles, segment_metres)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     # A concurrent build or running map should always see one complete catalogue.
     with TemporaryDirectory(dir=args.output.parent) as directory:

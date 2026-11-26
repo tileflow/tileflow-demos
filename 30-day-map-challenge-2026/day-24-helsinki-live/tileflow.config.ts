@@ -8,5 +8,5 @@ export default defineMap({
   extends: streets,
   defaultTheme: 'light',
   modules: {labels: labels({roads: 'major', places: 'major'}), poi: poi({categories: []})},
-  view: {center: [24.9029, 60.1628], zoom: 16.7, pitch: 54, bearing: -26},
+  view: {center: [24.915, 60.235], zoom: 10.5, pitch: 0, bearing: 0},
 });

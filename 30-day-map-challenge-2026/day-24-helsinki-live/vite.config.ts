@@ -1,6 +1,7 @@
 import {defineConfig} from 'vite';
 import {tileflow} from '@tileflow/vite';
 import {hslFeeds} from '../../sites/maps/helsinki-feed.mjs';
+import {helsinkiBuildingRenderer} from './scripts/building-renderer-plugin.mjs';
 
 const base = process.env.MAP_BASE ?? '/';
 const proxy = Object.fromEntries(
@@ -19,7 +20,8 @@ const proxy = Object.fromEntries(
 
 export default defineConfig({
   base,
-  plugins: [tileflow()],
+  plugins: [helsinkiBuildingRenderer(), tileflow()],
+  optimizeDeps: {rolldownOptions: {plugins: [helsinkiBuildingRenderer()]}},
   server: {proxy},
   preview: {proxy},
   worker: {format: 'es'},

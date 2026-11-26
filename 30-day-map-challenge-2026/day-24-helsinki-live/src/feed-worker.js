@@ -13,6 +13,7 @@ function positions(entities) {
     results.push({
       id: v.vehicle.id,
       key: tripKey(v.trip),
+      relationship: v.trip.scheduleRelationship ?? 0,
       route: v.trip.routeId,
       direction: v.trip.directionId,
       coordinate: [v.position.longitude, v.position.latitude],
@@ -29,16 +30,32 @@ function positions(entities) {
 
 function arrivals(entities) {
   const results = [];
+  const seen = new Map();
   for (const {tripUpdate: u} of entities) {
     if (!u?.trip || !routeIds.has(u.trip.routeId) || [3, 7].includes(u.trip.scheduleRelationship)) continue;
     const stops = u.stopTimeUpdate.map((s) => ({
       id: s.stopId,
+      relationship: s.scheduleRelationship ?? 0,
+      sequence: own(s, 'stopSequence') ? s.stopSequence : null,
+      arrivalDelay: own(s.arrival, 'delay') ? s.arrival.delay : null,
       arrival: Number(s.arrival?.time || 0),
       departure: Number(s.departure?.time || 0),
+      arrived: own(s.arrival, 'uncertainty') && s.arrival.uncertainty === 0,
       passed: own(s.departure, 'uncertainty') && s.departure.uncertainty === 0,
       skipped: s.scheduleRelationship === 1 || s.scheduleRelationship === 2,
     }));
-    results.push({key: tripKey(u.trip), route: u.trip.routeId, direction: u.trip.directionId, stops});
+    const update = {
+      key: tripKey(u.trip),
+      route: u.trip.routeId,
+      direction: u.trip.directionId,
+      stops,
+      relationship: u.trip.scheduleRelationship ?? 0,
+      timestamp: own(u, 'timestamp') ? Number(u.timestamp) : null,
+    };
+    const other = seen.get(update.key);
+    if (other) other.ambiguous = update.ambiguous = true;
+    seen.set(update.key, update);
+    results.push(update);
   }
   return results;
 }

@@ -566,23 +566,33 @@ function materials() {
 
 /** Create an exportable metre-scale U12. Texture canvases hold original drawings, not photographs. */
 export function createU12Model(vehicle = {}) {
+  return createCityBusModel(vehicle, true);
+}
+
+export function createCityBusModel(vehicle, nobinaLivery = isNobinaU12(vehicle.id)) {
   const root = new T.Group();
-  root.name = 'Nobina Yutong U12-B';
+  root.name = nobinaLivery ? 'Nobina Yutong U12-B' : 'Representative HSL city bus';
   const fixed = new T.Group();
   fixed.name = 'Body and interior';
   root.add(fixed);
-  const fleet = String(vehicle.id || '').match(namedFleet)?.[1] || '';
-  const plate = fleet ? 'YMN-' + (Number(fleet) - 600) : '';
+  const fleet = String(vehicle.id || '').split('/')[1]?.replace(/^0+(?=\d)/, '') || '';
+  const plate = isNobinaU12(vehicle.id) ? 'YMN-' + (Number(fleet) - 600) : '';
   const m = materials();
   const leaves = [];
+  const axles = AXLES.map((z) => {
+    const axle = new T.Group();
+    axle.position.set(0, 0.48, z);
+    root.add(axle);
+    return axle;
+  });
   box(fixed, m.black, 0, 0.33, 0, 2.1, 0.29, 10.8, 0.1);
   for (const side of [-1, 1]) {
-    const artwork = imageMaterial(sideArt(side, fleet));
+    const artwork = imageMaterial(sideArt(side, fleet, nobinaLivery));
     const shell = sideWall(side === 1);
     skinSection(shell, side, artwork, fixed);
     skinSection(shell, side, m.glass, fixed, HALF - 0.024);
     for (const z of AXLES) {
-      rim(fixed, side, z, m);
+      rim(axles[AXLES.indexOf(z)], side, z, m);
       arcTrim(fixed, side, z, z < 0 ? m.blue : m.white);
     }
     if (side === 1)
@@ -605,8 +615,8 @@ export function createU12Model(vehicle = {}) {
         box(fixed, m.chrome, 1.272, 0.245, door.z, 0.022, 0.04, door.width - 0.02);
       }
   }
-  nose(fixed, true, imageMaterial(endArt(true, fleet, plate)), m.glass);
-  nose(fixed, false, imageMaterial(endArt(false, fleet, plate)), m.glass);
+  nose(fixed, true, imageMaterial(endArt(true, fleet, plate, nobinaLivery)), m.glass);
+  nose(fixed, false, imageMaterial(endArt(false, fleet, plate, nobinaLivery)), m.glass);
   const brakeLights = new T.Group();
   brakeLights.name = 'Brake lamps';
   root.add(brakeLights);
@@ -614,9 +624,13 @@ export function createU12Model(vehicle = {}) {
   interior(fixed, m);
   roof(fixed, m);
   const boards = signs(fixed);
+  for (const axle of axles) {
+    for (const part of axle.children) part.position.sub(axle.position);
+    batch(axle);
+  }
   batch(fixed);
   batch(brakeLights);
-  instances.set(root, {boards, leaves, brakeLights, lastSign: null});
+  instances.set(root, {boards, leaves, axles, brakeLights, lastSign: null});
   updateU12Model(root, vehicle);
   return root;
 }
@@ -625,7 +639,10 @@ export function createU12Model(vehicle = {}) {
 export function updateU12Model(root, vehicle, opening = vehicle.doors === true ? 1 : 0) {
   const state = instances.get(root);
   if (!state) return;
-  const {boards, leaves, brakeLights} = state;
+  const {boards, leaves, axles, brakeLights} = state;
+  if (Number.isFinite(vehicle.wheelDistance)) {
+    for (const axle of axles) axle.rotation.x = -(vehicle.wheelDistance / 0.48) % (Math.PI * 2);
+  }
   for (const {leaf, direction, width} of leaves) {
     leaf.position.set(Math.min(1, opening * 4) * 0.073, 0, direction * opening * width);
   }

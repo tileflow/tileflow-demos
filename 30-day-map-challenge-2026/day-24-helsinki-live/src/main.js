@@ -1,19 +1,64 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
+import {lineColor} from './line-colors.js';
 import {makeMap} from './map.js';
+import {indexTerminals} from './station-symbols.js';
 import {helsinkiTimeOfDay} from './daylight.js';
-import {choosePattern, move, progress as tripOffset, samplePose, upcoming} from './transit.js';
+import {sidePanel} from './place-card.js';
+import {createBusPicker} from './bus-picker.js';
+import {createBusViewport} from './bus-viewport.js';
+import {busModelZoom, overviewEnd, timingGroup, timingPalette} from './fleet-lights.js';
+import {alreadyArrived, vehiclePunctuality, stopPunctuality} from './punctuality.js';
+import {indexRouteTrips, nextRouteArrivals, servedRouteStops} from './route-arrivals.js';
+import {choosePattern, move, progress as tripOffset, recentTrail, samplePose} from './transit.js';
 import {isNobinaU12} from './u12-model.js';
-import {distance, routePreview, routeTrack} from './route-track.js';
+import {distance, networkTrack, routePreview} from './route-track.js';
 import {trackDetail} from './door-feed.js';
+import {platformInfo, vehicleAtStop, callForBus, matchesService} from './stop-call.js';
 
 const $ = (id) => document.getElementById(id);
+const mobileToolbar = document.querySelector('.map-toolbar');
+const toolsButton = $('mobile-tools');
+const arrivalsButton = $('mobile-arrivals');
+function openMobilePanel(panel) {
+  mobileToolbar.dataset.open = panel;
+  toolsButton.setAttribute('aria-expanded', String(panel === 'tools'));
+  arrivalsButton.setAttribute('aria-expanded', String(panel === 'arrivals'));
+}
+function closeMobilePanel() {
+  if (!mobileToolbar.dataset.open) return false;
+  openMobilePanel('');
+  return true;
+}
+toolsButton.addEventListener('click', event => {
+  const open = mobileToolbar.dataset.open !== 'tools';
+  openMobilePanel(open ? 'tools' : '');
+  if (open && event.detail === 0) $('overview').focus();
+});
+arrivalsButton.addEventListener('click', () => {
+  openMobilePanel(mobileToolbar.dataset.open === 'arrivals' ? '' : 'arrivals');
+});
+function dismissMobilePanel(event) {
+  const panel = mobileToolbar.dataset.open;
+  // The map handles the same touch as a gesture or click. Let it dismiss one layer.
+  if (!panel || event.target.closest('.maplibregl-canvas-container')) return;
+  const inside = panel === 'tools' ? '#mobile-tools, #camera-controls' : '#punctuality-panel';
+  if (!event.target.closest(inside)) openMobilePanel('');
+}
+document.addEventListener('pointerdown', dismissMobilePanel, {capture: true, passive: true});
+document.addEventListener('focusin', dismissMobilePanel);
+document.addEventListener('keydown', event => {
+  const panel = mobileToolbar.dataset.open;
+  if (event.key !== 'Escape' || !panel) return;
+  openMobilePanel('');
+  (panel === 'tools' ? toolsButton : arrivalsButton).focus({preventScroll: true});
+});
+sidePanel.addEventListener('change', () => openMobilePanel(''));
 const escape = (v) =>
   String(v ?? '').replace(
     /[&<>"']/g,
     (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c],
   );
-const fold = (s) => String(s).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 const timeFormat = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/Helsinki',
   hour: '2-digit',
@@ -25,15 +70,12 @@ const time = (seconds) => timeFormat.format(new Date(seconds * 1000));
 const eta = (seconds) => (seconds <= now() + 29 ? 'Now' : Math.round((seconds - now()) / 60) + ' min');
 const vehicles = new Map(),
   predictions = new Map(),
-  servedBy = new Map(),
-  destinations = new Map();
+  servedBy = new Map();
 const navigation = [];
-let nearbyFix,
-  locationStatus = '',
-  nearestStops = [];
 const stamps = {positions: 0, arrivals: 0},
   errors = {};
 const freshArrivals = () => now() - stamps.arrivals < 75;
+let amenities = {};
 let network,
   view,
   timeOfDay,
@@ -44,48 +86,205 @@ let network,
   showAll = false;
 let lastGeometry,
   lastDetail,
-  query = '',
-  didStart = false,
   visibleFleet = [],
-  lastCamera = 0;
+  lastCamera = 0,
+  lastFollowPosition,
+  followAnchor,
+  cameraChasing = false,
+  revealSelectedBus = false;
+const reducedCameraMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const patternCache = new Map();
-const locateIcon =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>';
+const busPicker = createBusPicker($('bus-picker'), $('bus-picker-caption'), (bus) => ({
+  line: network.routes[bus.route].number,
+  destination: titleFor(bus),
+}), (id) => {
+  if (!id) return select('home');
+  const bus = vehicles.get(id);
+  if (bus && now() - bus.timestamp < 90) select('bus', id, 'picker');
+});
 const target = (kind, id) => 'data-kind="' + kind + '" data-id="' + escape(id) + '"';
 const fitButton =
-  '<button class="route-link" data-action="fit">Fit route <span aria-hidden="true">→</span></button>';
-const badge = (n) => '<span class="route-tag">' + escape(n) + '</span>';
+  '<button class="route-link" data-action="fit">Fit route<span aria-hidden="true">→</span></button>';
+function badge(number) {
+  const color = lineColor(number);
+  const style = '--line-ink:' + color.ink + ';--line-body:' + color.body;
+  return '<span class="route-tag" style="' + style + '">' + escape(number) + '</span>';
+}
 const empty = (s) => '<p class="empty">' + escape(s) + '</p>';
-const row = (kind, id, contents, attributes = '') =>
-  '<button class="row" ' + target(kind, id) + attributes + '>' + contents + '</button>';
+const row = (kind, id, contents, sequence) =>
+  '<button class="row" ' + target(kind, id) +
+  (Number.isInteger(sequence) ? ' data-sequence="' + sequence + '"' : '') + '>' + contents + '</button>';
 const section = (title) => '<div class="section-head"><h3>' + escape(title) + '</h3></div>';
-function caption(text, kind = 'network') {
-  $('map-caption').textContent = text;
-  $('map-key').dataset.kind = kind;
+function closeDetails(kind) {
+  const label = 'Close ' + kind + ' details';
+  return '<button type="button" class="ride-close" data-action="close" aria-label="' + label + '" title="' + label +
+    '"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15"/></svg></button>';
 }
-function expandDock(expanded) {
-  $('detail').hidden = !expanded;
-  $('fold').setAttribute('aria-expanded', String(expanded));
-  $('fold').title = expanded ? 'Collapse details' : 'Expand details';
+let timetable, timingClock = -Infinity;
+const busTimings = new Map(), reportedFleet = new Map();
+const positionsByTrip = new Map();
+let tripsByRoute = new Map();
+function mapStatus(id) {
+  return busTimings.get(id)?.status ?? 'unknown';
 }
-function clearSearch() {
-  query = '';
-  $('search').value = '';
-  $('search-results').hidden = true;
+let fleetTimingCounts;
+const timingBands = new Map();
+const timingPercent = $('timing-percent');
+timingPercent.style.setProperty('--timing-day', timingPalette.late.day);
+timingPercent.style.setProperty('--timing-night', timingPalette.late.night);
+for (const status of ['on-time', 'late', 'very-late']) {
+  const colour = timingPalette[status];
+  const entry = document.createElement('div');
+  const band = document.createElement('span');
+  band.style.setProperty('--timing-day', colour.day);
+  band.style.setProperty('--timing-night', colour.night);
+  const track = document.createElement('span');
+  track.className = 'timing-track';
+  track.setAttribute('aria-hidden', 'true');
+  track.append(band);
+  const label = document.createElement('dt');
+  label.textContent = colour.label;
+  entry.title = colour.hint;
+  label.setAttribute('aria-label', colour.label + '. ' + colour.hint);
+  const detail = document.createElement('dd');
+  const value = document.createElement('span');
+  value.textContent = '—';
+  detail.append(track, value);
+  entry.append(label, detail);
+  $('timing-legend').append(entry);
+  timingBands.set(status, {value, band});
+}
+function refreshTimings() {
+  const clock = now();
+  if (timingClock === clock) return;
+  timingClock = clock;
+  busTimings.clear();
+  fleetTimingCounts = Object.fromEntries(Object.keys(timingPalette).map((status) => [status, 0]));
+  // Extra HFP observations for a selected bus refine its card separately from fleet-wide totals.
+  for (const bus of reportedFleet.values()) {
+    const timing = vehiclePunctuality(timetable, bus, predictions.get(bus.key), clock, stamps.arrivals);
+    busTimings.set(bus.id, timing);
+    if (bus.timestamp <= clock + 5 && clock - bus.timestamp < 30) fleetTimingCounts[timingGroup(timing.status)]++;
+  }
+  for (const bus of visibleFleet) {
+    if (bus.precise || !reportedFleet.has(bus.id)) {
+      busTimings.set(bus.id, vehiclePunctuality(timetable, bus, predictions.get(bus.key), clock, stamps.arrivals));
+    }
+  }
+}
+function updateTimingPanel() {
+  refreshTimings();
+  const clock = now();
+  const current = clock - stamps.positions < 30 && freshArrivals() && Boolean(timetable);
+  const counts = fleetTimingCounts;
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const covered = total - counts.unknown;
+  const hasEstimate = current && covered > 0;
+  const delayed = counts.late + counts['very-late'];
+  $('timing-sample').hidden = !hasEstimate;
+  $('timing-late-count').textContent = delayed;
+  $('timing-base').textContent = 'of ' + covered + (covered === 1 ? ' bus' : ' buses');
+  $('timing-outlook').textContent = hasEstimate ? (delayed === 1 ? 'is expected late' : 'are expected late') : 'Expected late';
+  timingPercent.textContent = hasEstimate ? Math.round(100 * delayed / covered) + '%' : '—';
+  $('mobile-delay').textContent = hasEstimate ? timingPercent.textContent + ' late' : '';
+  $('timing-coverage').textContent = !current ? 'Waiting for live data and timetable'
+    : total ? covered + ' of ' + total + (total === 1 ? ' bus analysed' : ' buses analysed')
+    : 'No recent bus positions in the HSL feed';
+  $('timing-unknown').textContent = current && total ? counts.unknown + ' without an estimate' : '';
+  for (const [status, {value, band}] of timingBands) {
+    value.textContent = current ? counts[status] : '—';
+    band.style.width = (hasEstimate ? 100 * counts[status] / covered : 0) + '%';
+  }
+}
+function futureArrivals(bus, trip) {
+  if (!trip) return [];
+  refreshTimings();
+  const timing = busTimings.get(bus.id);
+  const index = timing?.callIndex ?? -1;
+  const clock = now();
+  const calls = index >= 0 ? trip.stops.slice(index) : trip.stops;
+  return calls.flatMap((call) => {
+    if (call.relationship === 1 || (call.skipped && call.relationship !== 2)) return [];
+    const pending = call === trip.stops[index] && timing?.status === 'unknown'
+      ? [{...call, arrival: 0, departure: 0}] : [];
+    const predicted = call.arrival || (Number.isFinite(call.arrivalDelay)
+      ? stopPunctuality(timetable, trip, call, clock, stamps.arrivals).eta : null);
+    if (call.relationship === 2 || alreadyArrived(call, predicted, clock)) return pending;
+    if (predicted) return [call.arrival ? call : {...call, arrival: predicted}];
+    return call.departure && call.departure >= clock - 3 ? [call] : pending;
+  });
+}
+// A fresh update can contain only the stop the bus just served. HSL's reported
+// next stop still identifies the remaining scheduled visits, without predicting an ETA.
+function remainingCalls(bus, p, trip) {
+  const live = futureArrivals(bus, trip);
+  if (live.length || !p || trip?.ambiguous || (trip?.relationship ?? bus.relationship ?? 0) !== 0) return live;
+  const sequence = bus.stopSequence;
+  let start = Number.isInteger(sequence) ? (p.sequences ? p.sequences.indexOf(sequence) : sequence - 1) : -1;
+  if (start < 0 || p.stops[start] !== bus.stopId) {
+    start = p.stops.indexOf(bus.stopId);
+    if (start < 0 || p.stops.indexOf(bus.stopId, start + 1) >= 0) return [];
+  }
+  const omitted = trip?.stops.filter(c => c.relationship === 1 || (c.skipped && c.relationship !== 2) ||
+    (c.passed && (c.departure || c.arrival) <= now())) ?? [];
+  return p.stops.slice(start).flatMap((id, i) => {
+    const visit = p.sequences?.[start + i] ?? start + i + 1;
+    if (omitted.some(c => c.id === id && (c.sequence == null || c.sequence === visit))) return [];
+    return [{id, sequence: visit}];
+  });
+}
+function timingLabel(status) {
+  if (!status || status === 'unknown') return 'Delay unknown';
+  if (status === 'early') return 'Early';
+  return status === 'on-time' ? 'On time' : timingPalette[timingGroup(status)].label;
+}
+function arrivalComparison(result, stopName = '') {
+  if (!result || result.status === 'unknown') return '';
+  const {eta: predicted, scheduled, delta, status} = result;
+  const palette = timingPalette[timingGroup(status)];
+  const label = timingLabel(status);
+  const seconds = Math.abs(delta), minutes = Math.floor(seconds / 60), rest = seconds % 60;
+  const offset = (delta < 0 ? '−' : delta > 0 ? '+' : '') +
+    (minutes ? minutes + 'm' + (rest ? ' ' + rest + 's' : '') : seconds + 's');
+  return '<span class="arrival-accuracy" style="--timing-day:' + palette.day + ';--timing-night:' + palette.night +
+    '"><strong>' + label + ' · ' + offset + '</strong><span>' +
+    (stopName ? escape(stopName) + ' · ' : '') +
+    'Scheduled ' + time(scheduled) + ' · Expected ' + time(predicted) + '</span></span>';
 }
 function displayedPose(bus, time) {
-  return samplePose(bus, time, bus.track && view?.align.covers(bus.coordinate) ? view.align : undefined);
+  const pose = samplePose(bus, time, bus.track && view?.align.covers(bus.coordinate) ? view.align : undefined);
+  if (pose.uncertain && bus.rawCoordinate && selection.fullTrip && selection.id === bus.id)
+    return {coordinate: bus.rawCoordinate, bearing: bus.bearing, uncertain: true};
+  return pose;
 }
 function placeFix(previous, update, time) {
   const p = pattern(update);
-  return move(previous, update, time, {pattern: p, track: routeTrack(network.shapes[p?.shape])});
+  const track = networkTrack(network, p?.shape);
+  return move(previous, update, time, {pattern: p, track});
 }
 
-function visible(time, bounds) {
+function activeTripBus() {
+  if (selection.kind === 'bus') return vehicles.get(selection.id);
+  const origin = selection.routeService;
+  if (!origin) return;
+  const current = vehicles.get(origin.id);
+  return current?.key === origin.key ? current : origin;
+}
+function selectedBusLine() {
+  const bus = activeTripBus();
+  return bus && network.routes[bus.route]?.number;
+}
+function visible(time, bounds, selectedOnly = false) {
+  const selectedLine = selectedBusLine();
+  let fleet = visibleFleet;
+  if (selectedOnly) {
+    const bus = selection.fullTrip && selection.kind === 'bus' && vehicles.get(selection.id);
+    if (!bus || now() - bus.timestamp >= 90) return [];
+    fleet = [bus];
+  }
   const extent = bounds.toArray(),
     results = [];
-  for (const bus of visibleFleet) {
-    if (!matchesDestination(bus)) continue;
+  for (const bus of fleet) {
     const [x, y] = bus.coordinate;
     if (
       x < extent[0][0] - 0.002 ||
@@ -94,17 +293,25 @@ function visible(time, bounds) {
       y > extent[1][1] + 0.001
     )
       continue;
+    const line = network.routes[bus.route].number;
     const selected = selection.kind === 'bus' && selection.id === bus.id;
     const pose = displayedPose(bus, time);
     results.push({
       id: bus.id,
       ...pose,
+      punctuality: mapStatus(bus.id),
       onRoute: Boolean(bus.track) && !pose.uncertain,
       destination: selected ? titleFor(bus) : undefined,
       selected,
+      sameLine: line === selectedLine,
+      secondary: selectedLine != null && line !== selectedLine,
+      fullTrip: selected && selection.fullTrip,
+      speed: bus.speed,
       stopped: bus.status === 1 && (bus.speed == null || bus.speed < 1),
-      doors: selected && door?.time > now() - 8 ? door.open : null,
-      line: network.routes[bus.route].number,
+      doors: selected && door?.key === bus.key && door.time > now() - 8 ? door.open : null,
+      doorStop: selected && door?.open ? vehicleAtStop(bus, door, network.stops, now())?.id : undefined,
+      wheelDistance: bus.track ? tripOffset(bus, time) : undefined,
+      line,
     });
   }
   return results;
@@ -134,11 +341,22 @@ function subscribeBus(id) {
       !current ||
       current.route !== route ||
       Number(reading.dir) - 1 !== current.direction ||
+      !matchesService(current.key, reading) ||
       !Number.isFinite(reading.tsi) ||
       Math.abs(now() - reading.tsi) > 35
     )
       return;
-    if (reading.drst === 0 || reading.drst === 1) door = {open: reading.drst === 1, time: reading.tsi};
+    if (
+      (reading.drst === 0 || reading.drst === 1) &&
+      (door?.key !== current.key || reading.tsi >= door.time)
+    ) {
+      door = {
+        open: reading.drst === 1,
+        time: reading.tsi,
+        key: current.key,
+        stopId: reading.stop && String(reading.stop),
+      };
+    }
     if (Number.isFinite(reading.long) && Number.isFinite(reading.lat)) {
       vehicles.set(
         id,
@@ -151,38 +369,38 @@ function subscribeBus(id) {
             timestamp: reading.tsi,
             bearing: reading.hdg ?? current.bearing,
             speed: reading.spd ?? current.speed,
-            status: reading.drst === 1 ? 1 : current.status,
           },
           performance.now(),
         ),
       );
       updateFleet();
     }
+    updateGeometry();
+    paint();
   }).catch(() => {});
 }
-function frameMap() {
+function frameMap(fitBus = false) {
   if (!view) return;
-  const top = Math.round(document.querySelector('.map-top').getBoundingClientRect().bottom);
-  const dockHeight = $('dock').getBoundingClientRect().height;
-  const bottom = Math.min(Math.round(dockHeight + 32), Math.floor(innerHeight * 0.52));
-  const padding = view.map.getPadding();
-  if (padding.top !== top || padding.bottom !== bottom) view.map.setPadding({top, bottom, left: 0, right: 0});
-}
-function routeGroup() {
-  return destinations.get(selection.id)[selection.destination];
-}
-function matchesDestination(bus) {
-  if (selection.kind !== 'route') return true;
-  const group = routeGroup();
-  return bus.route === selection.id && bus.direction === group.direction && titleFor(bus) === group.headsign;
-}
-function busesToDestination() {
-  return visibleFleet.filter(matchesDestination);
-}
-function shownPatterns() {
-  if (selection.kind === 'bus') return [pattern(vehicles.get(selection.id))].filter(Boolean);
-  const active = new Set(busesToDestination().map(pattern).filter(Boolean));
-  return active.size ? [...active] : [routeGroup().patterns[0]];
+  const map = view.map;
+  const canvas = map.getCanvas().getBoundingClientRect();
+  const dock = $('dock').getBoundingClientRect();
+  const side = sidePanel.matches && selection.kind !== 'home' && !$('detail').hidden;
+  let left = 0, right = 0, top = 0, bottom = 0;
+  if (fitBus) {
+    const free = busViewport().freeRect();
+    if (free) {
+      left = Math.floor(free.left); top = Math.floor(free.top);
+      right = Math.floor(canvas.width - free.right); bottom = Math.floor(canvas.height - free.bottom);
+    }
+  } else if (selection.kind !== 'bus' && (selection.kind !== 'home' || !sidePanel.matches)) {
+    top = Math.round(Math.min(document.querySelector('.map-top').getBoundingClientRect().bottom - canvas.top, canvas.height * .45));
+    bottom = side ? 30 : Math.min(Math.round(dock.height + 32), Math.floor(canvas.height * .42));
+    right = side ? Math.round(dock.width + 32) : 0;
+  }
+  const padding = map.getPadding();
+  if (padding.top !== top || padding.bottom !== bottom || padding.right !== right || padding.left !== left) {
+    map.setPadding({top, bottom, left, right});
+  }
 }
 function navigationLabel() {
   if (selection.kind === 'bus') {
@@ -190,24 +408,25 @@ function navigationLabel() {
     return b ? network.routes[b.route].number + ' → ' + titleFor(b) : 'bus';
   }
   if (selection.kind === 'stop') return network.stops[selection.id].name;
-  if (selection.kind === 'route') return network.routes[selection.id].number + ' → ' + routeGroup().headsign;
-  return 'nearby stops';
+  if (selection.kind === 'terminal') return network.terminals[selection.id].name;
+  return '';
 }
 function select(kind, id, camera = 'keep', options = {}) {
-  if (!network) return;
-  didStart = true;
+  if (!network || !['home', 'bus', 'stop', 'terminal'].includes(kind)) return;
+  closeMobilePanel();
   const restored = options.restore;
   if (kind === 'bus' && !vehicles.has(id) && !restored) return;
+  if (kind === 'terminal' && !network.terminals[id]) return;
   const bus = kind === 'bus' ? vehicles.get(id) : null;
-  const startup = camera === 'startup';
+  const fromKeyboardBadge = bus && document.activeElement?.matches('.bus-label:focus-visible');
   const sameBus = bus && selection.kind === 'bus' && selection.id === id;
-  if (options.root || kind === 'home' || kind === 'nearby') {
+  if (kind === 'home') {
     if (!restored) navigation.length = 0;
   } else if (
     !restored &&
     view &&
     kind !== selection.kind &&
-    ['stop', 'bus', 'route', 'nearby'].includes(selection.kind)
+    selection.kind !== 'home'
   ) {
     const m = view.map;
     navigation.push({
@@ -225,188 +444,199 @@ function select(kind, id, camera = 'keep', options = {}) {
     });
     if (navigation.length > 12) navigation.shift();
   }
-  const destination =
-    options.destination ?? (selection.kind === 'route' && selection.id === id ? selection.destination : 0);
+  // A stop opened from the trip is a drill-down into the same line.
+  const routeService = kind === 'stop' ? activeTripBus() : undefined;
   selection = restored?.selection ?? {
+    routeBus: routeService?.id,
+    routeService,
     kind,
     id,
-    destination,
-    fullTrip: Boolean(bus && !startup),
+    fullTrip: Boolean(bus),
     originStop:
       options.originStop ?? (sameBus && bus.key === selection.tripKey ? selection.originStop : undefined),
     tripKey: bus?.key,
+    fromBus: options.fromBus,
   };
-  following = Boolean(bus && startup);
+  $('dock').hidden = selection.kind === 'home';
+  busPicker.select(selection.kind === 'bus' ? selection.id : '');
+  following = Boolean(bus && !restored && !reducedCameraMotion.matches);
+  revealSelectedBus = Boolean(bus && !restored);
+  followAnchor = null;
+  view?.resetBusAnchor();
+  lastFollowPosition = bus && displayedPose(bus, performance.now()).coordinate;
+  lastCamera = performance.now();
+  $('dock').removeAttribute('data-bus-outside');
   showAll = restored?.showAll ?? false;
   if (!sameBus) door = null;
-  clearSearch();
-  expandDock(true);
   lastGeometry = null;
   if (!sameBus) subscribeBus(bus?.id ?? null);
   if (kind !== 'bus') view?.label(null);
-  if (kind === 'home') caption('Bus network');
-  if (kind === 'nearby') {
-    if (!restored) nearbyFix = null;
-    locationStatus = '';
-    refreshNearby();
-    caption('Nearby stops', 'stop');
-  }
   updateGeometry();
   draw();
   lastPreviewUpdate = -Infinity;
   drawPreviews(performance.now());
   paint();
   $('detail').scrollTop = restored?.scroll ?? 0;
+  if (fromKeyboardBadge) $('detail').querySelector('[data-action="close"]')?.focus({preventScroll: true});
   if (restored) {
-    view.map.stop();
-    view.map.jumpTo(restored.camera);
+    view.restoreCamera(restored.camera);
     return;
   }
-  if (camera === 'keep' && (bus || kind === 'route' || kind === 'nearby')) {
+  if (camera === 'picker' && bus && view) {
+    frameMap();
+    view.map.stop();
+    centerBus(displayedPose(bus, performance.now()).coordinate);
+    return;
+  }
+  if (camera === 'inPlace' || (camera === 'keep' && (bus || kind === 'terminal'))) {
     view?.map.stop();
     return;
   }
   frameMap();
-  if (bus && startup) view?.fly(displayedPose(bus, performance.now()).coordinate, 17.9, true);
   if (kind === 'stop') view?.fly(network.stops[id].coordinate, 17);
-  if (kind === 'home') view?.fly([24.922, 60.174], 12.7);
+  if (kind === 'home') view?.overview();
 }
 function detach() {
-  if (selection.kind === 'nearby') {
-    nearbyFix = null;
-    locationStatus = '';
-  }
+  revealSelectedBus = false;
   if (following) {
     following = false;
-    paint();
+    followAnchor = null;
+    if (cameraChasing) view.map.stop();
+    showFollowControl(!$('dock').hasAttribute('data-bus-outside'));
   }
 }
 function updateFleet() {
   visibleFleet = [...vehicles.values()].filter((b) => now() - b.timestamp < 90);
+  if (view) busPicker.update(visibleFleet);
 }
-function draw() {
+let lastFleetDraw = -Infinity;
+function refreshFleetDrawing(t = performance.now(), interval = 0) {
   if (!view) return;
+  // Across the city a bus travels only a few screen pixels during a gesture.
+  // Leave time for camera frames between updates of the entire GeoJSON source.
+  if (view.map.getZoom() < overviewEnd && view.map.isMoving()) interval = 900;
+  if (t - lastFleetDraw >= interval) draw(t);
+}
+function draw(t = performance.now()) {
+  if (!view) return;
+  lastFleetDraw = t;
+  const clock = Date.now() / 1000;
+  const overview = view.map.getZoom() < overviewEnd;
+  refreshTimings();
+  const selectedLine = selectedBusLine();
   view.drawVehicles(
-    visibleFleet.filter(matchesDestination).map((bus) => {
-      const pose = displayedPose(bus, performance.now());
+    visibleFleet.map((bus) => {
+      const pose = displayedPose(bus, t);
+      const line = network.routes[bus.route].number;
+      const secondary = selectedLine != null && line !== selectedLine;
+      const fullTrip = Boolean(selection.fullTrip && selection.kind === 'bus' && selection.id === bus.id);
       return {
+        fullTrip,
+        trail: overview && !secondary && !fullTrip && !pose.uncertain ? recentTrail(bus, t, clock) : undefined,
+        punctuality: mapStatus(bus.id),
+        stale: clock - bus.timestamp > 30,
         id: bus.id,
-        line: network.routes[bus.route].number,
+        line,
+        sameLine: line === selectedLine,
         coordinate: pose.coordinate,
         onRoute: Boolean(bus.track) && !pose.uncertain,
         selected: selection.kind === 'bus' && selection.id === bus.id,
-        routeSelected: selection.kind === 'route',
-        secondary: selection.kind === 'bus' && selection.id !== bus.id,
+        secondary,
       };
     }),
   );
 }
 let lastPreviewUpdate = -Infinity;
 function drawPreviews(t) {
-  if (!view || t - lastPreviewUpdate < 600) return;
+  if (!view) return;
+  const zoom = view.map.getZoom();
+  if (t - lastPreviewUpdate < 100) return;
   lastPreviewUpdate = t;
   const items = [];
   const map = view.map;
-  if (selection.kind === 'bus' && selection.fullTrip) {
-    const bus = vehicles.get(selection.id);
-    const track = bus?.track;
-    view.tripProgress(track, track ? tripOffset(bus, t) : 0);
-  }
-  if (map.getZoom() >= 11.5) {
-    const bounds = map.getBounds();
-    const align = map.getZoom() >= 15 ? view.align : undefined;
-    for (const bus of visibleFleet) {
-      if (
-        !matchesDestination(bus) ||
-        !bus.track ||
-        now() - bus.timestamp > 30 ||
-        !bounds.contains(bus.coordinate)
-      )
-        continue;
-      if (selection.fullTrip && selection.id === bus.id && pattern(bus)?.shape) continue;
-      const path = routePreview(bus.track, tripOffset(bus, t), 100, align);
-      if (path.length > 1)
-        items.push({id: bus.id, selected: selection.kind === 'bus' && selection.id === bus.id, path});
+  if (zoom >= busModelZoom) {
+    // Start under the twelve-metre model, whose size increases at neighbourhood zoom.
+    // The ribbon extends another one or two bus lengths beyond the windscreen.
+    const metresPerPixel = 40075017 * Math.cos(map.getCenter().lat * Math.PI / 180) / (512 * 2 ** zoom);
+    const halfModelLength = 6 * Math.max(1, 2 ** (15.5 - zoom));
+    const guideLength = halfModelLength + Math.max(12, Math.min(28, 18 * metresPerPixel));
+    const showArrivals = zoom >= 15.5 && !activeTripBus() && freshArrivals();
+    for (const model of visible(t, map.getBounds())) {
+      if (!model.onRoute || model.fullTrip || model.secondary) continue;
+      const bus = vehicles.get(model.id);
+      const offset = model.wheelDistance;
+      const align = view.align.covers(bus.coordinate) ? view.align : undefined;
+      const path = routePreview(bus.track, offset, guideLength, align);
+      if (path.length < 2) continue;
+      const trip = showArrivals && now() - bus.timestamp <= 30 ? predictions.get(bus.key) : undefined;
+      const call = trip && futureArrivals(bus, trip)[0];
+      const patternForBus = call && pattern(bus);
+      const index = call && patternForBus?.stops.findIndex(
+        (id, i) => id === call.id && patternForBus.stopOffsets?.[i] >= offset - 4,
+      );
+      const metres = Number.isInteger(index) && index >= 0 ? patternForBus.stopOffsets[index] - offset : Infinity;
+      const stop = call && network.stops[call.id];
+      // A valid upcoming platform may be beyond the tip of the guide.
+      let passingStop = false;
+      if (stop && metres <= 550) {
+        const approach = metres + 12 > guideLength ? routePreview(bus.track, offset, metres + 12, align) : path;
+        passingStop = approach.some((p) => distance(p, stop.coordinate) < 42);
+      }
+      const arrival = call && (call.arrival || call.departure);
+      items.push({
+        id: model.id,
+        line: model.line,
+        punctuality: model.punctuality,
+        path,
+        call: passingStop && arrival ? {id: call.id, name: stop.name, eta: eta(arrival), arrival} : undefined,
+      });
     }
   }
   view.drawPreviews(items);
-}
-function startSelection() {
-  if (!view || didStart || !visibleFleet.length) return;
-  const fresh = visibleFleet.filter((b) => now() - b.timestamp < 30);
-  const u12On21 = fresh.filter((b) => b.track && b.route === '1021' && isNobinaU12(b.id));
-  const recent = u12On21.length ? u12On21 : fresh;
-  if (!recent.length) return;
-  const score = (b) =>
-    Math.hypot((b.coordinate[0] - 24.9025) * 0.5, b.coordinate[1] - 60.163) +
-    (b.route === '1021' ? 0 : 0.045) +
-    (b.speed > 1 ? 0 : 0.002);
-  const closest = recent.reduce((a, b) => (score(a) < score(b) ? a : b));
-  select('bus', closest.id, 'startup');
-}
-function doorsOpen() {
-  return Boolean(door?.time > now() - 8 && door.open);
-}
-function stoppedAtPlatform(bus) {
-  return doorsOpen() || (bus.status === 1 && (bus.speed == null || bus.speed < 1));
 }
 function updateGeometry() {
   if (!view || !network) return;
   const {kind, id} = selection;
   let patterns = [],
     ids = [],
-    progress;
-  if (kind === 'bus') {
-    const bus = vehicles.get(id),
-      p = pattern(bus);
-    if (p) {
-      const trip = freshArrivals() ? predictions.get(bus.key) : null;
-      const start = p.stops.indexOf(bus.stopId);
-      const remaining = trip
-        ? upcoming(trip.stops, now()).map((s) => s.id)
-        : p.stops.slice(Math.max(0, start));
-      patterns = selection.fullTrip ? [p] : [];
-      ids = selection.fullTrip ? p.stops : remaining;
-      const track = bus.track;
-      const offset = track && track.line === network.shapes[p.shape] ? tripOffset(bus, performance.now()) : 0;
-      const ahead = new Set(p.stops.filter((stop, i) => (p.stopOffsets?.[i] ?? Infinity) >= offset - 4));
-      progress = {
-        currentStop: stoppedAtPlatform(bus) && bus.stopId ? bus.stopId : remaining[0],
-        boarding: doorsOpen(),
-        passedStops: p.stops.filter((stop) => !ahead.has(stop)),
-      };
-      caption(
-        'Route ' + network.routes[bus.route].number + ' · ' + titleFor(bus),
-        selection.fullTrip ? 'route' : 'bus',
-      );
-    } else caption(bus ? 'Route ' + network.routes[bus.route].number : 'Bus signal lost', 'bus');
-  } else if (kind === 'route') {
-    patterns = shownPatterns();
-    ids = patterns.flatMap((p) => p.stops);
-    caption('Route ' + network.routes[id].number + ' · ' + routeGroup().headsign, 'route');
+    progress,
+    call,
+    routeId,
+    stopArrivals = new Map();
+  const bus = activeTripBus();
+  if (bus) {
+    const p = pattern(bus);
+    routeId = bus.route;
+    const clock = now();
+    const trip = freshArrivals() ? predictions.get(bus.key) : null;
+    const remaining = remainingCalls(bus, p, trip).map(s => s.id);
+    const fullTrip = selection.fullTrip || kind === 'stop';
+    patterns = fullTrip && p ? [p] : [];
+    ids = fullTrip ? servedRouteStops(p, trip, clock, stamps.arrivals) : remaining;
+    if (fullTrip) {
+      stopArrivals = nextRouteArrivals(tripsByRoute.get(routeId)?.[bus.direction], ids,
+        positionsByTrip, timetable, clock, stamps.arrivals);
+    }
+    call = p && callForBus(bus, p, remaining, door, network.stops, clock);
+    if (call && !ids.includes(call.id)) call = undefined;
+    progress = {currentStop: kind === 'stop' ? id : call?.id};
   } else if (kind === 'stop') {
     ids = [id];
-    caption('Stop · ' + network.stops[id].name, 'stop');
-  } else if (kind === 'nearby') {
-    ids = nearestStops.map((s) => s.id);
   }
   const key = JSON.stringify([
     kind,
     id,
+    routeId,
     patterns.map((p) => p.shape),
     ids,
-    progress?.passedStops,
     progress?.currentStop,
-    progress?.boarding,
+    call,
+    [...stopArrivals],
+    timeOfDay,
   ]);
   if (key !== lastGeometry) {
     lastGeometry = key;
-    const routeId = kind === 'bus' ? vehicles.get(id)?.route : kind === 'route' ? id : undefined;
-    view.geometry(patterns, ids, progress, routeId);
-    if (selection.fullTrip) {
-      const bus = vehicles.get(id);
-      if (bus?.track) view.tripProgress(bus.track, tripOffset(bus, performance.now()));
-    }
+    view.geometry(patterns, ids, progress, routeId, call, stopArrivals);
   }
 }
 function feedMessage({data: {name, data, timestamp, error}}) {
@@ -417,75 +647,92 @@ function feedMessage({data: {name, data, timestamp, error}}) {
   }
   if (timestamp < stamps[name]) return;
   stamps[name] = timestamp;
+  timingClock = -Infinity;
   if (name === 'positions') {
-    const seen = new Set();
+    reportedFleet.clear();
+    positionsByTrip.clear();
     for (const v of data) {
       if (now() - v.timestamp > 90) continue;
-      seen.add(v.id);
-      vehicles.set(v.id, placeFix(vehicles.get(v.id), v, performance.now()));
+      reportedFleet.set(v.id, v);
+      if (v.timestamp >= (positionsByTrip.get(v.key)?.timestamp ?? 0)) positionsByTrip.set(v.key, v);
+      const previous = vehicles.get(v.id);
+      const fix = placeFix(previous, {...v, statusTime: v.timestamp}, performance.now());
+      // A newer HFP location can arrive before this GTFS report carries its new stop.
+      if (fix === previous && previous.precise && v.timestamp >= (previous.statusTime ?? 0)) {
+        vehicles.set(v.id, {
+          ...previous,
+          stopId: v.stopId,
+          stopSequence: v.stopSequence,
+          status: v.status,
+          statusTime: v.timestamp,
+        });
+      } else vehicles.set(v.id, fix);
     }
     for (const [id, v] of vehicles)
-      if (!seen.has(id) && (selection.kind !== 'bus' || selection.id !== id || now() - v.timestamp > 120))
+      if (!reportedFleet.has(id) && (selection.kind !== 'bus' || selection.id !== id || now() - v.timestamp > 120))
         vehicles.delete(id);
     updateFleet();
-    draw();
-    startSelection();
   } else {
     predictions.clear();
     patternCache.clear();
     for (const trip of data) predictions.set(trip.key, trip);
+    tripsByRoute = indexRouteTrips(predictions.values());
   }
+  refreshFleetDrawing();
   updateGeometry();
   paint();
 }
-function stopRow(id, at, highlight) {
-  const s = network.stops[id];
-  const name =
-    '<span class="dot' +
-    (highlight ? ' highlighted' : '') +
-    '"></span><span class="name">' +
-    escape(s?.name || id) +
-    '</span><span class="eta">' +
-    (at ? eta(at) : '—') +
-    '</span>';
-  return s ? row('stop', id, name) : '<div class="row">' + name + '</div>';
+function busStopRow([id, at, sequence], label = '', current = false) {
+  const stop = network.stops[id];
+  const arrival = current ? 'Now' : at ? eta(at) : '';
+  const contents = '<span class="name">' + (label ? '<small>' + escape(label) + '</small>' : '') +
+    escape(stop?.name || id) + '</span>' +
+    (arrival ? '<span class="eta">' + arrival + '</span>' : '<span class="eta" aria-label="Live arrival unavailable">—</span>');
+  return stop ? row('stop', id, contents, sequence) : '<div class="row">' + contents + '</div>';
 }
 function busDetail(id) {
   const b = vehicles.get(id);
   if (!b || now() - b.timestamp > 90)
-    return section('Bus signal lost') + empty('HSL is no longer reporting this vehicle’s location.');
+    return '<div class="ride-layout bus-panel"><article class="ride-card">' + closeDetails('bus') +
+      section('Bus signal lost') + empty('HSL is no longer reporting this vehicle’s location.') + '</article></div>';
   const route = network.routes[b.route],
     p = pattern(b),
     trip = freshArrivals() ? predictions.get(b.key) : null;
-  const live = trip ? upcoming(trip.stops, now()) : [];
-  const stopName = network.stops[b.stopId]?.name;
-  const open = doorsOpen();
-  const atStop = stoppedAtPlatform(b);
+  const visits = remainingCalls(b, p, trip);
+  const platform = vehicleAtStop(b, door, network.stops, now());
+  const atStop = Boolean(platform);
+  const open = platform?.state === 'doors';
   const status =
     now() - b.timestamp > 20
       ? 'Delayed signal'
-      : open
-        ? 'Doors open'
-        : atStop
-          ? 'At stop'
+      : atStop
+        ? 'At stop'
           : b.status === 0
             ? 'Approaching stop'
             : b.speed != null && b.speed < 0.5
               ? 'Stopped'
               : 'In service';
   const dir = titleFor(b);
-  const pos = p?.stops.indexOf(b.stopId) ?? -1;
-  const scheduleStops = pos >= 0 ? p.stops.slice(pos) : [];
-  const rows = trip ? live.map((s) => [s.id, s.arrival || s.departure]) : scheduleStops.map((s) => [s, 0]);
+  const rows = visits.map(s => [s.id, s.arrival || s.departure, s.sequence]);
+  // The live board may already start with the next stop while this bus is still boarding.
+  // Remove only the matching current visit; a loop can serve the same stop again.
+  const firstVisit = visits[0]?.sequence;
+  if (platform && rows[0]?.[0] === platform.id &&
+      (firstVisit == null || b.stopSequence == null || firstVisit === b.stopSequence)) rows.shift();
   const next = rows[0];
-  const namedPlatform = atStop && next?.[0] === b.stopId;
+  const timing = busTimings.get(id);
+  const line = lineColor(route.number);
+  const timingStop = timing?.stopId !== next?.[0] ? network.stops[timing?.stopId]?.name : '';
+  const platformNumber = network.stops[platform?.id]?.platform;
   const details = [];
-  if (status !== 'At stop' || !namedPlatform) details.push(status);
-  if (atStop && stopName && !namedPlatform) details.push(stopName);
-  if (b.speed != null && !(namedPlatform && b.speed < 0.5)) details.push(Math.round(b.speed * 3.6) + ' km/h');
+  if (!atStop) details.push(status);
+  if (b.speed != null && !(atStop && b.speed < 0.5)) details.push(Math.round(b.speed * 3.6) + ' km/h');
   const boarding = selection.tripKey === b.key && selection.originStop;
-  const call = boarding && live.find((s) => s.id === boarding);
+  const atLabel = boarding && boarding === platform?.id ? 'At your stop' : 'At stop';
+  const currentLabel = platformNumber ? atLabel + ' · Platform ' + platformNumber : atLabel;
   const report = boarding && trip?.stops.find((s) => s.id === boarding);
+  const call = report && !report.skipped && report.departure >= now() && !(report.passed && report.departure <= now())
+    ? report : boarding && visits.find((s) => s.id === boarding && (s.departure || s.arrival));
   const boardingTime = call
     ? eta(call.departure || call.arrival)
     : report?.skipped
@@ -493,22 +740,18 @@ function busDetail(id) {
       : report?.passed
         ? 'Departed'
         : 'Live time unavailable';
-  const nextLine =
-    next && boarding !== next[0]
-      ? '<div class="next-call"><span>' +
-        (atStop && next[0] === b.stopId ? 'At stop' : 'Next') +
-        '</span> ' +
-        escape(network.stops[next[0]]?.name ?? next[0]) +
-        (next[1] ? ' · ' + eta(next[1]) : '') +
-        '</div>'
-      : '';
-  const boardingLine = boarding
+  const primary = platform ? [platform.id, 0, platform.id === b.stopId ? b.stopSequence : null] : next;
+  const primaryLabel = platform ? currentLabel : boarding && boarding === next?.[0] ? 'Your stop is next' : 'Next stop';
+  const followingStops = platform ? rows : rows.slice(1);
+  const compact = !sidePanel.matches;
+  const previewStops = compact ? 0 : 2;
+  const hasMore = followingStops.length > previewStops;
+  const extraStops = !hasMore ? '' : '<div id="extra-bus-stops"' + (compact ? ' class="bus-calls"' : '') +
+    (showAll ? '>' + followingStops.slice(previewStops).map(call => busStopRow(call)).join('') : ' hidden>') + '</div>';
+  const band = timingPalette[timingGroup(timing?.status)];
+  const boardingLine = boarding && boarding !== primary?.[0]
     ? '<div class="boarding-call"><span>' +
-      (next?.[0] === boarding
-        ? atStop && boarding === b.stopId
-          ? 'At your stop'
-          : 'Your stop is next'
-        : 'Your stop') +
+      (next?.[0] === boarding ? 'Your stop is next' : 'Your stop') +
       '</span> ' +
       escape(network.stops[boarding].name) +
       ' · ' +
@@ -516,169 +759,162 @@ function busDetail(id) {
       '</div>'
     : '';
   return (
-    '<div class="ride-layout"><article class="ride-card"><div class="route-heading">' +
+    '<div class="ride-layout bus-panel" data-route="' + escape(route.number) + '" style="--route-body:' +
+    line.body + ';--route-ink:' + line.ink +
+    '"><article class="ride-card"><div class="route-heading">' +
     badge(route.number) +
     '<h2>' +
     escape(dir) +
-    '</h2></div>' +
-    boardingLine +
-    nextLine +
-    '<div class="vehicle-type">Bus ' +
-    escape(id.split('/').at(-1)) +
-    (isNobinaU12(id) ? ' · Nobina Yutong U12' : '') +
-    '</div>' +
-    (details.length ? '<div class="status-text">' + escape(details.join(' · ')) + '</div>' : '') +
-    '<div class="actions"><button class="action ' +
-    (following ? 'active' : '') +
-    '" data-action="follow" aria-pressed="' +
-    following +
-    '">' +
-    locateIcon +
-    (following ? 'Following' : 'Follow') +
-    '</button>' +
-    (isNobinaU12(id) && b.track ? '<button class="action" data-action="closeup">Street view</button>' : '') +
-    '</div></article><section class="itinerary" aria-label="Itinerary">' +
-    '<div class="itinerary-top">' +
-    section('Upcoming stops') +
-    (p ? fitButton : '') +
-    '</div>' +
-    (rows.length
-      ? '<div class="timeline">' +
-        rows
-          .slice(0, showAll ? Infinity : 5)
-          .map(([s, a]) => stopRow(s, a, s === (atStop && b.stopId ? b.stopId : rows[0][0])))
-          .join('') +
-        '</div>'
-      : empty(
-          trip
-            ? 'No more arrivals are expected on this trip.'
-            : 'HSL has not published arrivals for this trip yet.',
-        )) +
-    (rows.length > 5
-      ? '<button class="back" data-action="more">' +
-        (showAll ? 'Show less' : 'Show all ' + rows.length + ' stops') +
-        '</button>'
-      : '') +
-    (!trip && rows.length ? empty('Scheduled route · live times pending.') : '') +
-    '<div class="data-note">Last location · ' +
-    Math.max(0, now() - b.timestamp) +
-    (b.track ? ' s' : ' s · GPS outside the matched route') +
-    '</div></section></div>'
+    '</h2></div>' + closeDetails('bus') +
+    boardingLine + '</article><section class="bus-calls" aria-label="Stops">' +
+    (primary ? '<div class="bus-next">' + busStopRow(primary, primaryLabel, atStop) + '</div>' : '') +
+    followingStops.slice(0, previewStops).map(call => busStopRow(call)).join('') +
+    (compact ? '' : extraStops) +
+    (!rows.length ? empty(trip ? 'No more arrivals are expected on this trip.'
+      : 'HSL has not published arrivals for this trip yet.') : '') +
+    '</section><footer class="bus-summary">' +
+    '<button type="button" class="bus-timing" data-action="timing" aria-controls="bus-report" aria-expanded="' +
+    Boolean(selection.reportOpen) + '" title="Arrival and vehicle details" style="--timing-day:' + band.day +
+    ';--timing-night:' + band.night + '">' + timingLabel(timing?.status) + '</button>' +
+    '<button type="button" class="route-link locate-bus" data-action="locate" hidden>Locate bus</button>' +
+    (p && (compact || !hasMore || showAll) ? fitButton : '') +
+    (hasMore ? '<button type="button" class="bus-more" data-action="more" aria-controls="extra-bus-stops" aria-expanded="' +
+      showAll + '">' + (showAll ? 'Fewer stops' : 'More stops') + '</button>' : '') +
+    '</footer>' + (compact ? extraStops : '') + '<div id="bus-report"' + (selection.reportOpen ? '>' + arrivalComparison(timing, timingStop) +
+      '<div class="vehicle-type">Bus ' + escape(id.split('/').at(-1)) +
+      (isNobinaU12(id) ? ' · Nobina Yutong U12' : '') +
+      (details.length ? ' · ' + escape(details.join(' · ')) : '') +
+      '</div><div class="data-note">Last location · ' + Math.max(0, now() - b.timestamp) +
+      (b.track ? ' s' : ' s · GPS outside the matched route') +
+      (open ? ' · Illustrative passengers' : '') + '</div>' : ' hidden>') + '</div></div>'
   );
 }
-function activeRow(b) {
-  return row(
-    'bus',
-    b.id,
-    badge(network.routes[b.route].number) +
-      '<span class="name">' +
-      escape(titleFor(b)) +
-      '<small>Bus ' +
-      escape(b.id.split('/').at(-1)) +
-      '</small></span>',
-  );
+function terminalDetail(id) {
+  const group = network.terminals[id];
+  const platforms = group.stops.map((key) => {
+    const stop = network.stops[key];
+    const label = stop.platform ? 'Platform ' + stop.platform : 'Stop ' + stop.code;
+    const number = stop.platform ? '<span class="terminal-code">' + escape(stop.code) + '</span>' : '';
+    return row('stop', key, '<span class="name">' + escape(label) + '</span>' + number);
+  });
+  const expandable = !sidePanel.matches && platforms.length > 2;
+  const board = expandable ? platforms.slice(0, 2).join('') +
+    '<button class="bus-more platform-toggle" data-action="more" aria-expanded="' + showAll +
+    '" aria-controls="extra-platforms">' + (showAll ? 'Fewer platforms' : 'All ' + platforms.length + ' platforms') + '</button>' +
+    '<div id="extra-platforms"' + (showAll ? '>' + platforms.slice(2).join('') : ' hidden>') + '</div>' : platforms.join('');
+  return '<section class="place-panel terminal-panel"><header class="place-heading"><div class="eyebrow">Bus station</div><h2>' +
+    escape(group.name) + '</h2>' + closeDetails('station') + '</header><section class="place-board">' +
+    section('Bus boarding points') + board + '</section></section>';
 }
-function routeDetail(id) {
-  const r = network.routes[id],
-    groups = destinations.get(id);
-  const buses = busesToDestination(),
-    patterns = shownPatterns();
-  const sequences = new Map(patterns.map((p) => [p.stops.join('|'), p.stops]));
-  const stops = [...sequences.values()]
-    .map(
-      (ids, i) =>
-        (sequences.size > 1 ? section('Stopping pattern ' + (i + 1)) : '') +
-        ids
-          .filter((s) => network.stops[s])
-          .map((id) =>
-            row(
-              'stop',
-              id,
-              '<span class="dot"></span><span class="name">' + escape(network.stops[id].name) + '</span>',
-            ),
-          )
-          .join(''),
-    )
-    .join('');
-  const directions = groups
-    .map(
-      (g, i) =>
-        '<button class="direction" data-action="direction" data-id="' +
-        i +
-        '" aria-pressed="' +
-        (i === selection.destination) +
-        '">To ' +
-        escape(g.headsign) +
-        '</button>',
-    )
-    .join('');
-  return (
-    '<div class="board-layout"><div class="board-intro"><div class="itinerary-top"><div class="route-heading"><h2>Route ' +
-    badge(r.number) +
-    '</h2></div>' +
-    fitButton +
-    '</div><div class="directions" role="group" aria-label="Route destination">' +
-    directions +
-    '</div>' +
-    section('Buses in service') +
-    (buses.length ? buses.map(activeRow).join('') : empty('No recent vehicle locations on this route.')) +
-    '</div><section class="board-list"><div class="itinerary-top">' +
-    section('Stops') +
-    '</div>' +
-    stops +
-    '</section></div>'
-  );
+function stopHeadline(id, arrivals, byTrip) {
+  const source = selection.fromBus;
+  let line, destination, wait, caption, fallback, footer = '', linkedBus;
+  if (!source && selection.routeBus) {
+    const bus = activeTripBus();
+    if (bus) {
+      const route = network.routes[bus.route];
+      line = route.number;
+      const trips = tripsByRoute.get(bus.route)?.[bus.direction];
+      wait = nextRouteArrivals(trips, [id], positionsByTrip, timetable, now(), stamps.arrivals).get(id);
+      // A direction can branch. Advertise a terminus only if every matching pattern at this platform agrees.
+      const headsigns = new Set(route.patterns
+        .filter(p => p.direction === bus.direction && p.stops.includes(id))
+        .map(p => p.headsign));
+      destination = headsigns.size === 1 ? [...headsigns][0] || 'Selected direction' : 'Selected direction';
+    }
+    caption = wait && wait !== 'Due' ? 'Next bus in' : 'Next bus';
+    fallback = 'Live arrival unavailable';
+  } else {
+    const entry = source
+      ? arrivals.find(({t, call}) => !t.ambiguous && t.key === source.key &&
+        (source.sequence == null || call.sequence === source.sequence))
+      : arrivals.reduce((first, visit) => !first || (visit.arrival || visit.at) < (first.arrival || first.at)
+        ? visit : first, null);
+    const bus = source ? vehicles.get(source.id) : entry && !entry.t.ambiguous && byTrip.get(entry.t.key);
+    const active = bus && now() - bus.timestamp < 90 && (!source || bus.key === source.key);
+    const here = active && vehicleAtStop(bus, null, network.stops, now())?.id === id &&
+      (!source || source.sequence == null || bus.stopSequence == null || source.sequence === bus.stopSequence);
+    const at = entry?.arrival || entry?.call.departure;
+    line = source?.line ?? (entry && network.routes[entry.t.route].number);
+    destination = source?.destination ?? (entry && titleFor(entry.t));
+    linkedBus = active ? bus : undefined;
+    wait = here ? 'Now' : at ? eta(at) : '';
+    caption = here ? 'At this stop' : !wait || wait === 'Now' ? (source ? 'Your bus' : 'Next bus')
+      : entry?.arrival ? (source ? 'Your bus arrives in' : 'Next bus in') : 'Departs in';
+    fallback = source ? 'Live time unavailable' : freshArrivals() ? 'No live departures' : 'Awaiting live times';
+    footer = here ? 'At stop now' : at ? time(at) + ' estimated' : '';
+  }
+  const service = line ? badge(line) + '<span>' + escape(destination) + '</span>' : '';
+  const serviceLink = !service ? '' : linkedBus
+    ? '<button class="stop-service" ' + target('bus', linkedBus.id) + ' aria-label="Show bus ' +
+      escape(line + ' to ' + destination) + '">' + service + '</button>'
+    : '<span class="stop-service">' + service + '</span>';
+  const value = wait ? '<strong class="stop-wait">' +
+    wait.replace(' min', ' <small>min</small>') + '</strong>' : '<span class="stop-no-time">' + fallback + '</span>';
+  return '<div class="stop-arrival"><div><span class="stop-caption">' + caption + '</span>' +
+    value + '</div>' + serviceLink + '</div><footer class="stop-footer"><span>' +
+    footer + '</span>' +
+    '<button class="bus-more" data-action="stop-details" aria-expanded="' + Boolean(selection.detailsOpen) +
+    '" aria-controls="stop-details">Stop details</button></footer>';
 }
 function stopDetail(id) {
-  const s = network.stops[id],
+  const s = network.stops[id], parent = network.parentOf.get(id),
     arrivals = [];
-  if (freshArrivals()) {
+  const routeContext = !selection.fromBus && Boolean(selection.routeBus);
+  const fullBoard = !routeContext || selection.detailsOpen;
+  const numbers = [...new Set((servedBy.get(id) ?? []).map((route) => network.routes[route].number))];
+  const routes = escape(numbers.join(' · '));
+  const routeList = numbers.length > 8
+    ? '<details class="place-routes" data-stop="' + escape(id) + '"><summary>' + numbers.length +
+      ' routes serve this stop</summary><div class="route-info">' + routes + '</div></details>'
+    : numbers.length ? '<div class="route-info">Routes ' + routes + '</div>' : '';
+  if (fullBoard && freshArrivals()) {
     for (const t of predictions.values()) {
-      for (const call of upcoming(t.stops, now()))
-        if (call.id === id) arrivals.push({t, at: call.departure || call.arrival});
+      if (t.timestamp && now() - t.timestamp > 75) continue;
+      for (const call of t.stops) {
+        if (call.id !== id || call.skipped || (call.passed && (!call.departure || call.departure <= now()))) continue;
+        const accuracy = stopPunctuality(timetable, t, call, now(), stamps.arrivals);
+        const at = call.departure || call.arrival || accuracy.eta;
+        if (at && at >= now() - 3) {
+          const predicted = call.arrival || accuracy.eta;
+          const arrival = predicted && !alreadyArrived(call, predicted, now()) ? predicted : null;
+          arrivals.push({t, call, at, arrival, accuracy});
+        }
+      }
     }
   }
   arrivals.sort((a, b) => a.at - b.at);
-  const byTrip = new Map(visibleFleet.map((b) => [b.key, b]));
+  const byTrip = fullBoard ? new Map(visibleFleet.map((b) => [b.key, b])) : null;
   return (
-    '<div class="board-layout"><div class="board-intro"><div class="eyebrow">Stop ' +
-    escape(s.code) +
+    '<article class="place-panel stop-panel"><header class="place-heading"><div class="stop-caption">Bus stop · ' +
+    escape(s.code || id) +
     '</div><h2 class="stop-heading">' +
     escape(s.name) +
-    '</h2>' +
-    '<div class="route-info">Routes ' +
-    escape((servedBy.get(id) ?? []).map((r) => network.routes[r].number).join(' · ')) +
+    '</h2>' + closeDetails('stop') + '</header>' +
+    stopHeadline(id, arrivals, byTrip) +
+    (selection.detailsOpen ? '<section id="stop-details" class="place-board"><div class="platform-facts">' +
+    escape(platformInfo(s, amenities[id]).join(' · ')) +
     '</div>' +
-    '</div><section class="board-list">' +
-    section('Upcoming departures') +
+    (parent
+      ? '<button class="route-link" ' + target('terminal', parent) + '>All boarding points at ' + escape(network.terminals[parent].name) + '</button>'
+      : '') +
+    routeList +
+    section(routeContext ? 'All upcoming departures' : 'Upcoming departures') +
     (arrivals.length
       ? arrivals
           .slice(0, 15)
-          .map(({t, at}) => {
+          .map(({t, at, accuracy}) => {
             const b = byTrip.get(t.key);
-            return row(
-              b ? 'bus' : 'route',
-              b?.id ?? t.route,
-              badge(network.routes[t.route].number) +
+            const contents = badge(network.routes[t.route].number) +
                 '<span class="name">' +
                 escape(titleFor(t)) +
                 '<small>' +
                 time(at) +
-                (b ? ' · estimated' : ' · estimated · route only') +
-                '</small></span><span class="eta">' +
+                (b ? ' · estimated' : ' · estimated · vehicle location unavailable') +
+                '</small>' + arrivalComparison(accuracy) + '</span><span class="eta">' +
                 eta(at) +
-                '</span>',
-              b
-                ? ''
-                : ' data-destination="' +
-                    Math.max(
-                      0,
-                      destinations
-                        .get(t.route)
-                        .findIndex((g) => g.direction === t.direction && g.headsign === titleFor(t)),
-                    ) +
-                    '"',
-            );
+                '</span>';
+            return b ? row('bus', b.id, contents) : '<div class="row">' + contents + '</div>';
           })
           .join('')
       : empty(
@@ -688,149 +924,18 @@ function stopDetail(id) {
         )) +
     '<div class="data-note"><a class="link" href="https://reittiopas.hsl.fi/pysakit/HSL%3A' +
     encodeURIComponent(id) +
-    '?locale=en" target="_blank" rel="noreferrer">Stop timetable on HSL ↗</a></div></section></div>'
-  );
-}
-function routeRow(id) {
-  const r = network.routes[id];
-  return row('route', id, badge(r.number) + '<span class="name">' + escape(r.name) + '</span>');
-}
-function stopHint(id) {
-  const services = servedBy.get(id) ?? [];
-  const hints = [];
-  for (const route of services) {
-    for (const g of destinations.get(route)) {
-      if (g.patterns.some((p) => p.stops.slice(0, -1).includes(id))) {
-        hints.push(network.routes[route].number + ' → ' + g.headsign);
-      }
-      if (hints.length === 2) return hints.join(' · ');
-    }
-  }
-  return hints.length
-    ? hints.join(' · ')
-    : services
-        .map((r) => network.routes[r].number)
-        .slice(0, 3)
-        .join(' · ');
-}
-function stopResult(id, metres) {
-  const s = network.stops[id],
-    hint = stopHint(id);
-  const meta = s.code + (hint ? ' · ' + hint : '');
-  return row(
-    'stop',
-    id,
-    '<span class="name">' +
-      escape(s.name) +
-      '<small>' +
-      escape(meta) +
-      '</small></span>' +
-      (metres === undefined ? '' : '<span class="eta">' + Math.round(metres) + ' m</span>'),
-  );
-}
-function refreshNearby() {
-  const center = nearbyFix ?? view?.map.getCenter().toArray() ?? [24.922, 60.174];
-  nearestStops = [];
-  for (const [id, s] of Object.entries(network.stops)) {
-    if (Math.abs(s.coordinate[0] - center[0]) > 0.04 || Math.abs(s.coordinate[1] - center[1]) > 0.02)
-      continue;
-    const metres = distance(center, s.coordinate);
-    if (metres <= 2000) nearestStops.push({id, metres});
-  }
-  nearestStops.sort((a, b) => a.metres - b.metres);
-  nearestStops = nearestStops.slice(0, 8);
-}
-function nearbyDetail() {
-  return (
-    '<div class="itinerary-top">' +
-    section(nearbyFix ? 'Near your location' : 'Near the map centre') +
-    '<button class="route-link" data-action="locate">Use my location</button></div>' +
-    (locationStatus ? '<p class="data-note" role="status">' + escape(locationStatus) + '</p>' : '') +
-    (nearestStops.length
-      ? nearestStops.map((s) => stopResult(s.id, s.metres)).join('')
-      : empty('No HSL bus stops within 2 km. Move the map to another area.'))
-  );
-}
-function locateNearby() {
-  const requested = selection;
-  if (!navigator.geolocation) {
-    locationStatus = 'Location unavailable. Showing stops near the map centre.';
-    paint();
-    return;
-  }
-  locationStatus = 'Finding your location…';
-  paint();
-  navigator.geolocation.getCurrentPosition(
-    ({coords}) => {
-      if (selection !== requested) return;
-      nearbyFix = [coords.longitude, coords.latitude];
-      refreshNearby();
-      if (nearestStops.length) {
-        locationStatus = '';
-        view?.map.easeTo({center: nearbyFix, zoom: 15, duration: 500});
-      } else {
-        nearbyFix = null;
-        refreshNearby();
-        locationStatus = 'No HSL stops within 2 km of your location. Showing the map area.';
-      }
-      updateGeometry();
-      paint();
-    },
-    () => {
-      if (selection !== requested) return;
-      nearbyFix = null;
-      refreshNearby();
-      updateGeometry();
-      locationStatus = 'Location unavailable. Showing stops near the map centre.';
-      paint();
-    },
-    {timeout: 8000, maximumAge: 60000},
-  );
-}
-function searchResults() {
-  const term = fold(query.trim()),
-    routes = Object.keys(network.routes).filter(
-      (id) =>
-        fold(network.routes[id].number).startsWith(term) || fold(network.routes[id].name).includes(term),
-    );
-  routes.sort(
-    (a, b) =>
-      Number(fold(network.routes[b].number) === term) - Number(fold(network.routes[a].number) === term),
-  );
-  const stops = Object.entries(network.stops)
-    .filter(([, s]) => fold(s.name).includes(term) || fold(s.code).includes(term))
-    .slice(0, 18);
-  return (
-    (routes.length ? section('Routes') + routes.slice(0, 12).map(routeRow).join('') : '') +
-    (stops.length ? section('Stops') + stops.map(([id]) => stopResult(id)).join('') : '') +
-    (!routes.length && !stops.length ? empty('No matching routes or stops.') : '')
-  );
-}
-function home() {
-  const center = view?.position() ?? {lng: 24.92, lat: 60.17};
-  const distance = (b) => Math.hypot((b.coordinate[0] - center.lng) * 0.5, b.coordinate[1] - center.lat);
-  const nearest = [...visibleFleet].sort((a, b) => distance(a) - distance(b)).slice(0, 8);
-  return (
-    '<div class="board-layout"><section>' +
-    section('Nearby buses') +
-    (nearest.length
-      ? nearest.map(activeRow).join('')
-      : empty('No recent bus locations. Browse the routes and stops.')) +
-    '</section><section class="board-list">' +
-    section('Helsinki routes') +
-    ['1021', '1022', '2105']
-      .filter((id) => network.routes[id])
-      .map(routeRow)
-      .join('') +
-    '</section></div>'
+    '?locale=en" target="_blank" rel="noreferrer">Stop timetable on HSL ↗</a></div></section>' :
+      '<section id="stop-details" hidden></section>') + '</article>'
   );
 }
 function paint() {
+  refreshTimings();
+  updateTimingPanel();
   $('clock').textContent = time(now());
   const age = now() - stamps.positions;
   const ok = age < 20 && !errors.positions;
   $('live').classList.toggle('on', ok);
-  $('live').textContent = ok
+  const feedStatus = ok
     ? 'Live'
     : stamps.positions
       ? age < 90
@@ -839,8 +944,11 @@ function paint() {
       : errors.positions
         ? 'No signal'
         : 'Connecting';
+  const signal = $('live');
+  signal.textContent = signal.title = feedStatus;
+  signal.dataset.compact = ok ? 'Live' : feedStatus === 'No signal' ? 'Offline' : 'Sync';
   if (!network) return;
-  const back = navigation.length
+  const back = (selection.kind === 'terminal' || selection.routeBus) && navigation.length
     ? '<button class="return-link" data-action="back">← Back to ' +
       escape(navigation.at(-1).label) +
       '</button>'
@@ -848,23 +956,28 @@ function paint() {
   const content =
     selection.kind === 'bus'
       ? busDetail(selection.id)
-      : selection.kind === 'route'
-        ? routeDetail(selection.id)
-        : selection.kind === 'stop'
-          ? stopDetail(selection.id)
-          : selection.kind === 'nearby'
-            ? nearbyDetail()
-            : home();
+      : selection.kind === 'stop'
+        ? stopDetail(selection.id)
+        : selection.kind === 'terminal' ? terminalDetail(selection.id) : '';
   const html = back + content;
   if (html === lastDetail) return;
   const detail = $('detail'),
     focused = document.activeElement;
+  const expandedRoutes = detail.querySelector('.place-routes[open]')?.dataset.stop;
+  const focusRoutes = focused?.matches('.place-routes > summary');
+  const focusedLink = detail.contains(focused) && focused.closest('a')?.href;
   const focusKey = detail.contains(focused)
     ? [focused.dataset.kind, focused.dataset.id, focused.dataset.action]
     : null;
   detail.innerHTML = html;
   lastDetail = html;
-  if (focusKey) {
+  const routes = detail.querySelector('.place-routes');
+  if (routes && expandedRoutes === routes.dataset.stop) routes.open = true;
+  if (focusRoutes && routes) {
+    routes.querySelector('summary').focus({preventScroll: true});
+  } else if (focusedLink) {
+    [...detail.querySelectorAll('a')].find((a) => a.href === focusedLink)?.focus({preventScroll: true});
+  } else if (focusKey) {
     [...detail.querySelectorAll('button')]
       .find(
         (e) =>
@@ -873,116 +986,176 @@ function paint() {
       ?.focus({preventScroll: true});
   }
 }
+// Only the actual control rectangles hide the bus. A floating card does not
+// make the entire right-hand column (or the entire bottom of a phone) unusable.
+const mapObstacles = [...document.querySelectorAll('.map-top, #camera-controls, #timing-breakdown, #dock')];
+function busViewport() {
+  const canvas = view.map.getCanvas().getBoundingClientRect();
+  return createBusViewport(canvas, mapObstacles.map(element => element.getBoundingClientRect()));
+}
+function frameBus(coordinate, point, duration, chase = false) {
+  const map = view.map;
+  const anchor = map.project(map.getCenter());
+  map.easeTo({center: coordinate, offset: [point.x - anchor.x, point.y - anchor.y],
+    duration: reducedCameraMotion.matches ? 0 : duration,
+    ...(chase && {easeId: 'hsl-bus-follow', easing: t => 1 - (1 - t) ** 2}),
+  }, {busChase: chase});
+}
+function centerBus(coordinate, returnToCard = false) {
+  const area = busViewport(), canvas = view.map.getCanvas().getBoundingClientRect();
+  const point = view.map.project(coordinate);
+  let target = area.place(point, {mode: 'center'});
+  if (returnToCard && $('dock').hasAttribute('data-bus-anchored')) {
+    const card = $('dock').getBoundingClientRect();
+    const y = card.top - canvas.top + 42;
+    const sides = [card.left - canvas.left - 60, card.right - canvas.left + 60];
+    const preferredX = followAnchor?.x ?? target.x;
+    sides.sort((a, b) => Math.abs(a - preferredX) - Math.abs(b - preferredX));
+    for (const x of sides) {
+      const beside = area.place({x, y}, {footprint: {left: 16, right: 16, top: 18, bottom: 12}});
+      if (beside.visible) {
+        target = beside;
+        break;
+      }
+    }
+  }
+  followAnchor = target.feasible ? {x: target.x, y: target.y} : null;
+  if (followAnchor) frameBus(coordinate, followAnchor, 420);
+}
+function showFollowControl(visible) {
+  const button = $('dock').querySelector('[data-action="locate"]');
+  if (!button) return;
+  const hidden = visible && (following || reducedCameraMotion.matches);
+  if (button.hidden !== hidden) button.hidden = hidden;
+  const text = visible ? 'Resume follow' : 'Locate bus';
+  if (button.textContent !== text) button.textContent = text;
+}
+function trackSelectedBus(coordinate, roof, t) {
+  if (t - lastCamera < 100) return;
+  lastCamera = t;
+  const map = view.map, point = map.project(coordinate);
+  const area = busViewport();
+  // Keep the projected body clear of overlays, even when viewing a tall roof from the street.
+  const badgeHeight = selection.fullTrip ? 0 : 27;
+  const footprint = roof ? {
+    left: Math.max(10, point.x - roof.left), right: Math.max(10, roof.right - point.x),
+    top: Math.max(8, point.y - roof.top + badgeHeight), bottom: Math.max(6, roof.bottom - point.y),
+  } : {left: 10, right: 10, top: 8 + badgeHeight, bottom: 8};
+  const reveal = area.place(point, {mode: 'reveal', footprint});
+  // A clipped bumper warrants a small framing correction, but the visible roof
+  // still identifies the bus. Offer Locate only when its centre is actually hidden.
+  const identifiable = area.place(roof ?? point, {footprint: {left: 3, right: 3, top: 3, bottom: 3}}).visible;
+  $('dock').toggleAttribute('data-bus-outside', !identifiable);
+  showFollowControl(identifiable);
+  if (map.isMoving() && !cameraChasing) return;
+
+  if (!followAnchor || revealSelectedBus) {
+    followAnchor = {x: reveal.x, y: reveal.y};
+    const mayReveal = revealSelectedBus;
+    revealSelectedBus = false;
+    if (mayReveal && !reveal.visible && reveal.feasible) {
+      frameBus(coordinate, followAnchor, 360);
+      return;
+    }
+  }
+  if (!following || reducedCameraMotion.matches || !lastFollowPosition) return;
+  if (distance(coordinate, lastFollowPosition) < .25) return;
+  lastFollowPosition = coordinate;
+  // Keep the initial framing. Small movements can play out naturally next to
+  // the card; a bus travelling down a street gently carries the map with it.
+  const dx = point.x - followAnchor.x, dy = point.y - followAnchor.y;
+  const drift = Math.hypot(dx, dy), slack = 24;
+  const desired = drift > slack
+    ? {x: followAnchor.x + dx * slack / drift, y: followAnchor.y + dy * slack / drift}
+    : point;
+  const target = area.place(desired, {mode: 'follow', footprint, previous: followAnchor});
+  if (target.feasible && Math.hypot(target.x - point.x, target.y - point.y) > 3) {
+    frameBus(coordinate, target, 360, true);
+  }
+}
 function animate(t) {
+  if (view && view.map.getZoom() < overviewEnd) refreshFleetDrawing(t, 400);
   drawPreviews(t);
+  view?.pulseDirections(t);
   if (view && selection.kind === 'bus') {
     const bus = vehicles.get(selection.id);
     if (bus && now() - bus.timestamp < 90) {
       const pos = displayedPose(bus, t).coordinate;
-      view.label(bus, pos, titleFor(bus));
-      if (following && !view.map.isMoving() && t - lastCamera >= 32) {
-        const center = view.map.getCenter();
-        if (view.map.project(pos).dist(view.map.project(center)) > 0.6) {
-          const ease = 1 - Math.exp(-(t - lastCamera) / 75);
-          view.map.setCenter([
-            center.lng + (pos[0] - center.lng) * ease,
-            center.lat + (pos[1] - center.lat) * ease,
-          ]);
-        }
-        lastCamera = t;
-      }
-    } else view.label(null);
+      const roof = view.label(bus, pos, titleFor(bus), !selection.fullTrip);
+      trackSelectedBus(pos, roof, t);
+    } else {
+      view.label(null);
+      $('dock').removeAttribute('data-bus-outside');
+    }
+  } else if (view && (selection.kind === 'stop' || selection.kind === 'terminal')) {
+    view.labelPlace(selection.kind, selection.id);
   }
   requestAnimationFrame(animate);
 }
 $('detail').addEventListener('click', (e) => {
   const el = e.target.closest('button');
   if (!el) return;
-  if (el.dataset.kind)
-    select(el.dataset.kind, el.dataset.id, 'keep', {
-      originStop: selection.kind === 'stop' && el.dataset.kind === 'bus' ? selection.id : undefined,
-      destination: el.dataset.destination === undefined ? undefined : Number(el.dataset.destination),
+  if (el.dataset.kind) {
+    const boarding = selection.kind === 'stop' && el.dataset.kind === 'bus';
+    const origin = selection.kind === 'bus' && el.dataset.kind === 'stop' && vehicles.get(selection.id);
+    select(el.dataset.kind, el.dataset.id, boarding ? 'picker' : 'keep', {
+      originStop: boarding ? selection.id : undefined,
+      fromBus: origin ? {id: origin.id, key: origin.key, line: network.routes[origin.route].number,
+        destination: titleFor(origin), sequence: el.hasAttribute('data-sequence') ? Number(el.dataset.sequence) : null} : undefined,
     });
-  if (el.dataset.action === 'direction')
-    select('route', selection.id, 'keep', {destination: Number(el.dataset.id)});
+  }
+  if (el.dataset.action === 'stop-details') {
+    selection.detailsOpen = !selection.detailsOpen;
+    paint();
+  }
+  if (el.dataset.action === 'close') {
+    select('home', undefined, 'inPlace');
+    $('bus-picker').focus({preventScroll: true});
+  }
   if (el.dataset.action === 'back') {
     const previous = navigation.pop();
     if (previous) select(previous.selection.kind, previous.selection.id, 'restore', {restore: previous});
   }
-  if (el.dataset.action === 'locate') locateNearby();
-  if (el.dataset.action === 'fit' && view) {
+  if (el.dataset.action === 'locate' && view && selection.kind === 'bus') {
+    const bus = vehicles.get(selection.id);
+    if (!bus || now() - bus.timestamp >= 90) return;
+    const coordinate = displayedPose(bus, performance.now()).coordinate;
+    const outside = $('dock').hasAttribute('data-bus-outside');
+    view.map.stop();
+    if (!outside) followAnchor = null;
+    following = !reducedCameraMotion.matches;
+    lastFollowPosition = coordinate;
+    if (outside) {
+      centerBus(coordinate, true);
+      revealSelectedBus = true;
+    }
+    showFollowControl(true);
+  }
+  if (el.dataset.action === 'fit' && view && selection.kind === 'bus') {
+    const trip = pattern(vehicles.get(selection.id));
+    if (!trip) return;
     following = false;
-    if (selection.kind === 'bus') selection.fullTrip = true;
+    selection.fullTrip = true;
     updateGeometry();
-    frameMap();
-    view.fit(shownPatterns());
+    lastPreviewUpdate = -Infinity;
+    drawPreviews(performance.now());
+    revealSelectedBus = false;
+    followAnchor = null;
+    frameMap(true);
+    view.fit([trip]);
     paint();
   }
   if (el.dataset.action === 'more') {
     showAll = !showAll;
     paint();
   }
-  if (el.dataset.action === 'closeup') {
-    const bus = vehicles.get(selection.id);
-    if (bus && view) {
-      const pose = displayedPose(bus, performance.now());
-      following = true;
-      frameMap();
-      view.map.easeTo({
-        center: pose.coordinate,
-        zoom: 19.25,
-        pitch: 60,
-        bearing: (pose.bearing + 223) % 360,
-        duration: 650,
-      });
-      paint();
-    }
-  }
-  if (el.dataset.action === 'follow') {
-    following = !following;
-    const bus = vehicles.get(selection.id);
-    if (following && bus && view) {
-      frameMap();
-      view.fly(displayedPose(bus, performance.now()).coordinate, Math.max(17, view.map.getZoom()));
-    }
+  if (el.dataset.action === 'timing') {
+    selection.reportOpen = !selection.reportOpen;
     paint();
   }
+
 });
-function showSearch() {
-  const results = $('search-results');
-  results.hidden = !query.trim() || !network;
-  if (!results.hidden) results.innerHTML = searchResults();
-}
-$('search').addEventListener('input', (e) => {
-  query = e.target.value;
-  if (query.trim()) didStart = true;
-  showSearch();
-});
-$('search').addEventListener('focus', showSearch);
-document.querySelector('.finder').addEventListener('focusout', (e) => {
-  if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) $('search-results').hidden = true;
-});
-$('search-results').addEventListener('click', (e) => {
-  const el = e.target.closest('button[data-kind]');
-  if (el) {
-    select(el.dataset.kind, el.dataset.id, 'keep', {root: true});
-    $('fold').focus({preventScroll: true});
-  }
-});
-document.addEventListener('pointerdown', (e) => {
-  if (!e.target.closest('.finder')) $('search-results').hidden = true;
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && e.target.closest('.finder')) {
-    clearSearch();
-    $('search').focus();
-  }
-});
-$('fold').onclick = () => expandDock($('detail').hidden);
-$('nearby').onclick = () => select('nearby');
 $('overview').onclick = () => select('home');
-$('plus').onclick = () => view?.map.zoomIn();
-$('minus').onclick = () => view?.map.zoomOut();
 function mapError(message) {
   $('map-error').textContent = message;
   $('map-error').hidden = false;
@@ -990,25 +1163,34 @@ function mapError(message) {
 async function init() {
   $('detail').innerHTML = empty('Loading the Helsinki network…');
   const base = new URL(import.meta.env.BASE_URL, location.href).href;
-  const result = await fetch(base + 'data/network.json');
+  fetch(base + 'data/timetable.json').then((response) => response.ok ? response.json() : null).then((data) => {
+    timetable = data;
+    timingClock = -Infinity;
+    paint();
+    draw();
+  }).catch(() => {});
+  const [result, facilities, terminalCatalogue] = await Promise.all([
+    fetch(base + 'data/network.json'),
+
+    fetch(base + 'data/stop-facilities.json', {signal: AbortSignal.timeout(5000)})
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({})),
+    fetch(base + 'data/terminals.json')
+      .then((r) => r.ok ? r.json() : null)
+      .catch(() => null),
+  ]);
+  amenities = facilities;
   if (!result.ok) throw Error('Could not load the HSL network.');
   network = await result.json();
+  const {stations, parentOf} = indexTerminals(terminalCatalogue, network);
+  network.terminals = stations;
+  network.parentOf = parentOf;
   const serviceDate = new Intl.DateTimeFormat('sv-SE', {timeZone: 'Europe/Helsinki'}).format(new Date());
   if (serviceDate > network.validThrough)
     mapError(
       'Route data valid through ' + network.validThrough + '. Check HSL for subsequent route changes.',
     );
   for (const [id, r] of Object.entries(network.routes)) {
-    const groups = [];
-    for (const p of r.patterns) {
-      let g = groups.find((g) => g.headsign === p.headsign && g.direction === p.direction);
-      if (!g) {
-        g = {headsign: p.headsign, direction: p.direction, patterns: []};
-        groups.push(g);
-      }
-      g.patterns.push(p);
-    }
-    destinations.set(id, groups);
     for (const sid of new Set(r.patterns.flatMap((p) => p.stops))) {
       if (!servedBy.has(sid)) servedBy.set(sid, []);
       servedBy.get(sid).push(id);
@@ -1037,29 +1219,48 @@ async function init() {
   }
   document.addEventListener('visibilitychange', syncFeeds);
   syncFeeds();
-  showSearch();
   paint();
-  view = await makeMap(network, {visible, select, detach}, timeOfDay);
+  function dismissPlaceOrBus() {
+    if (['bus', 'stop', 'terminal'].includes(selection.kind)) select('home', undefined, 'inPlace');
+  }
+  view = await makeMap(network, {visible, select, detach, closeMobilePanel, dismiss: dismissPlaceOrBus}, timeOfDay, amenities);
+  view.map.on('movestart', event => {
+    cameraChasing = event.busChase === true;
+    if (event.originalEvent) closeMobilePanel();
+  });
+  view.map.on('moveend', () => { cameraChasing = false; });
+  busPicker.update(visibleFleet);
   view.setTimeOfDay(timeOfDay);
-  if (selection.kind === 'nearby') refreshNearby();
   updateGeometry();
   draw();
-  startSelection();
+  const credits = [...$('map').querySelectorAll('.tileflow-branding, .maplibregl-ctrl-bottom-right')];
   const frame = new ResizeObserver((entries) => {
+    if (entries.some(({target}) => credits.includes(target))) {
+      const height = Math.max(...credits.map(element => element.offsetHeight));
+      $('map').parentElement.style.setProperty('--map-credit-height', height + 'px');
+    }
     const resized = entries.some(({target}) => target === $('map'));
-    if (resized) view.map.resize();
+    if (resized) {
+      followAnchor = null;
+      view.map.resize();
+    }
     // Changing the contents of a floating card must not shift the street under the pointer.
-    if (resized || following || (selection.kind !== 'bus' && selection.kind !== 'route')) frameMap();
+    if (resized || selection.kind === 'home') frameMap();
   });
+  for (const control of credits) frame.observe(control);
   frame.observe($('map'));
+  sidePanel.addEventListener('change', paint);
   frame.observe($('dock'));
   frame.observe(document.querySelector('.map-top'));
-  view.map.on('moveend', () => {
-    if (selection.kind === 'nearby') {
-      refreshNearby();
-      updateGeometry();
+  let wasOverview = view.map.getZoom() < overviewEnd;
+  view.map.on('zoom', () => {
+    const overview = view.map.getZoom() < overviewEnd;
+    if (overview !== wasOverview) {
+      wasOverview = overview;
+      draw();
+      lastPreviewUpdate = -Infinity;
+      drawPreviews(performance.now());
     }
-    if (selection.kind === 'home' || selection.kind === 'nearby') paint();
   });
   requestAnimationFrame(animate);
 }
@@ -1073,18 +1274,28 @@ function syncTimeOfDay() {
       .getPropertyValue('--paper')
       .trim();
     $('clock').title = 'Helsinki · ' + timeOfDay;
+    if (view) {
+      view.setTimeOfDay(timeOfDay);
+      updateGeometry();
+      draw();
+      lastPreviewUpdate = -Infinity;
+      drawPreviews(performance.now());
+      paint();
+    }
   }
-  view?.setTimeOfDay(timeOfDay);
 }
 syncTimeOfDay();
 document.addEventListener('visibilitychange', syncTimeOfDay);
 setInterval(syncTimeOfDay, 60_000);
 init().catch((e) => {
   mapError(e.message);
-  $('live').textContent = 'Unavailable';
+  const signal = $('live');
+  signal.textContent = signal.title = 'Unavailable';
+  signal.dataset.compact = 'Offline';
 });
 setInterval(() => {
   updateFleet();
+  updateGeometry();
   paint();
-  draw();
+  refreshFleetDrawing();
 }, 1500);
