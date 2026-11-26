@@ -114,7 +114,7 @@ function sideCable(ctx) {
   path(ctx, 'M -2.88 1.49 L -2.92 1.70 M -2.64 1.51 L -2.68 1.72', '#edeee5', 0.047);
 }
 
-export function sideArt(side, fleet) {
+export function sideArt(side, fleet, nobinaLivery) {
   const {ctx, texture} = surface(LENGTH, HEIGHT, 2048, 544);
   const flip = -side;
   rect(ctx, -6.1, 0, 12.2, HEIGHT, 0, WHITE);
@@ -158,7 +158,7 @@ export function sideArt(side, fleet) {
       rect(ctx, z - width / 2 + 0.018, 0.215, width - 0.036, 0.026, 0, '#a5afb0');
       rect(ctx, z - width / 2 - 0.03, 2.61, width + 0.06, 0.057, 0.018, '#32424a');
     }
-  sideCable(ctx);
+  if (nobinaLivery) sideCable(ctx);
   ctx.save();
   ctx.setLineDash([0.02, 0.06]);
   path(ctx, 'M 2.62 1.35 C 2.72 2.03 2.56 2.58 2.33 2.88', BLUE, 0.021);
@@ -172,15 +172,17 @@ export function sideArt(side, fleet) {
     for (let n = 0; n < 4; n++) {
       rect(ctx, 5.42 + i * 0.027, 0.49 + n * 0.024, 0.015, 0.014, 0.006, '#667575');
     }
-  nobina(ctx, -5.13, 2.78, 0.22, flip);
-  nobina(ctx, 5.02, 2.79, 0.2, flip);
+  if (nobinaLivery) {
+    nobina(ctx, -5.13, 2.78, 0.22, flip);
+    nobina(ctx, 5.02, 2.79, 0.2, flip);
+  }
   line(ctx, -3.39, 1.19, fleet, 0.13, WHITE, flip, 650);
   hsl(ctx, -4.04, 0.94, 0.225, flip, WHITE);
   serviceDots(ctx, -4.12, 1.39, flip);
   return texture;
 }
 
-export function endArt(front, fleet, plate) {
+export function endArt(front, fleet, plate, nobinaLivery) {
   const {ctx, texture} = surface(WIDTH, HEIGHT, 576, 720);
   const flip = front ? -1 : 1;
   rect(ctx, -1.3, 0, 2.6, 3.2, 0, front ? BLUE : WHITE);
@@ -193,7 +195,7 @@ export function endArt(front, fleet, plate) {
   if (front) {
     hsl(ctx, 0.54, 0.61, 0.22, flip, WHITE);
     line(ctx, -0.74, 0.6, fleet, 0.148, WHITE, flip);
-    line(ctx, 0, 0.895, 'Y  U  T  O  N  G', 0.059, '#dedfdd', flip, 600);
+    if (nobinaLivery) line(ctx, 0, 0.895, 'Y  U  T  O  N  G', 0.059, '#dedfdd', flip, 600);
     for (const [i, y] of [0.79, 0.67, 0.55].entries()) {
       ctx.strokeStyle = WHITE;
       ctx.lineWidth = 0.008;
@@ -205,8 +207,10 @@ export function endArt(front, fleet, plate) {
   } else {
     hsl(ctx, -0.38, 0.91, 0.25, flip, BLUE);
     line(ctx, 0.69, 0.81, fleet, 0.14, INK, flip);
-    line(ctx, 0, 1.03, 'Y U T O N G', 0.069, '#475354', flip);
-    nobina(ctx, -0.81, 2.9, 0.28, flip);
+    if (nobinaLivery) {
+      line(ctx, 0, 1.03, 'Y U T O N G', 0.069, '#475354', flip);
+      nobina(ctx, -0.81, 2.9, 0.28, flip);
+    }
     for (let n = 0; n < 15; n++) rect(ctx, -0.98, 0.4 + n * 0.029, 0.27, 0.013, 0.005, '#616963');
   }
   if (plate) {

@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import {
   atOffset,
   distance,
+  displaySections,
   matchFix,
   routePose,
   routePreview,
   routeTrack,
   shapeAhead,
   splitShape,
+  splitDisplaySections,
   turn,
 } from '../src/route-track.js';
 import {move, samplePose} from '../src/transit.js';
@@ -169,4 +171,82 @@ test('rounded feed seconds do not cut an observed four-second corner short', () 
   const precise = move(b, {...fix(16, 60, 90, 14), precise: true}, 6000, road);
   assert.deepEqual(samplePose(precise, 6000), samplePose(b, 6000));
   assert.equal(precise.started + precise.duration, b.started + b.duration);
+});
+
+test('direction marks stay at fixed distances as the bus advances and stop before an unverified gap', () => {
+  const track = routeTrack([xy(0, 0), xy(215, 0)], undefined, [[137, 138]]);
+  const first = [], later = [], beyond = [];
+  const path = routePreview(track, 8, 185, undefined, first);
+  routePreview(track, 44, 150, undefined, later);
+  routePreview(track, 144, 60, undefined, beyond);
+  assert.deepEqual(first.map((mark) => mark.index), [1, 2, 3]);
+  assert.deepEqual(later, first.slice(1));
+  assert.deepEqual(beyond.map((mark) => mark.index), [5]);
+  for (const mark of first) {
+    assert(distance(mark.coordinate, atOffset(track, mark.index * 36)) < 0.01);
+    assert(Math.abs(mark.bearing - 90) < 0.01);
+  }
+  assert(distance(path.at(-1), track.line[0]) < 137);
+  assert.deepEqual(routePreview(track, 137.5, 60, undefined, []), []);
+});
+
+test('the full trip samples a divided street inside loaded tiles even if both segment ends are far outside', () => {
+  const track = routeTrack([xy(-4000, 0), xy(4000, 0)]);
+  const [west, south] = xy(-90, -15), [east, north] = xy(90, 15);
+  const covers = ([x, y]) => x >= west && x <= east && y >= south && y <= north;
+  const align = p => covers(p.coordinate)
+    ? {...p, coordinate: [p.coordinate[0], p.coordinate[1] + 6 / 111195]}
+    : p;
+  align.bounds = {getWest: () => west, getEast: () => east, getSouth: () => south, getNorth: () => north};
+  align.covers = covers;
+  const sections = displaySections(track, align);
+  const [section] = sections;
+  assert.equal(sections.length, 1);
+  assert.deepEqual([section.coordinates[0], section.coordinates.at(-1)], track.line);
+  assert.ok(section.offsets.length < 100);
+  const offset = track.length * 0.5 + 0.7;
+  const [past, ahead] = splitDisplaySections(sections, offset);
+  assert.deepEqual(past.coordinates.at(-1), ahead.coordinates[0]);
+  assert.ok(distance(ahead.coordinates[0], routePose(track, offset, align).coordinate) < 0.04);
+  assert.ok(distance(ahead.coordinates[0], atOffset(track, offset)) > 5.9);
+  align.bounds = null;
+  align.covers = () => false;
+  assert.deepEqual(displaySections(track, align)[0].coordinates, track.line);
+});
+
+test('a selected loop keeps each visit in its own direction and splits by source metres', () => {
+  const track = routeTrack([xy(0, 0), xy(80, 0), xy(80, 0), xy(0, 0)]);
+  const align = p => ({...p, coordinate: [p.coordinate[0], p.coordinate[1] + (p.bearing > 180 ? -5 : 5) / 111195]});
+  const sections = displaySections(track, align);
+  assert.ok(sections[0].offsets.every((offset, i, all) => i === 0 || offset > all[i - 1]));
+  const [outward] = splitDisplaySections(sections, track.length / 4);
+  const [back, remaining] = splitDisplaySections(sections, track.length * 3 / 4);
+  assert.ok(distance(outward.coordinates.at(-1), xy(40, 5)) < 0.1);
+  assert.ok(distance(back.coordinates.at(-1), xy(40, -5)) < 0.1);
+  assert.deepEqual(back.coordinates.at(-1), remaining.coordinates[0]);
+  assert.ok(back.coordinates.length > outward.coordinates.length);
+});
+
+test('the full trip rounds verified corners, preserves roundabout arcs and resumes beyond a gap', () => {
+  const corner = routeTrack([xy(0, 0), xy(0, 60), xy(60, 60)]);
+  const align = pose => pose;
+  const cornerSections = displaySections(corner, align);
+  for (let offset = 53; offset < 68; offset += 0.34) {
+    const split = splitDisplaySections(cornerSections, offset)[1].coordinates[0];
+    assert.ok(distance(split, routePose(corner, offset, align).coordinate) < 0.15);
+  }
+  const arc = Array.from({length: 13}, (_, i) => xy(18 * Math.cos(i * Math.PI / 12), 18 * Math.sin(i * Math.PI / 12)));
+  const ring = routeTrack([...arc, xy(-80, 0)], [[0, 12]], [[69, 80]]);
+  const uncertain = p => ({...p, uncertain: true});
+  const sections = displaySections(ring, uncertain);
+  assert.equal(sections.length, 2);
+  const parts = splitDisplaySections(sections, 73);
+  assert.deepEqual(parts.map(({passed}) => passed), [true, false]);
+  assert.deepEqual(parts[0].coordinates.at(-1), atOffset(ring, 69));
+  assert.deepEqual(parts[1].coordinates[0], atOffset(ring, 80));
+  for (let offset = 0.4; offset < ring.offsets[12]; offset += 1.1) {
+    const split = splitDisplaySections(sections, offset)[1].coordinates[0];
+    assert.ok(distance(split, xy(0, 0)) > 17.7);
+  }
+  assert.deepEqual(sections[1].coordinates.at(-1), ring.line.at(-1));
 });

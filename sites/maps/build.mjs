@@ -15,6 +15,7 @@ const maps = {
   sniff: '30-day-map-challenge-2026/day-19-sniff',
   'sun-on-the-street': '30-day-map-challenge-2026/day-17-sun-on-the-street',
   'the-world-in-characters': '30-day-map-challenge-2026/day-25-the-world-in-characters',
+  'type-atlas': '30-day-map-challenge-2026/day-25-type-atlas',
   'visibility-explorer': 'apps/visibility-explorer',
 };
 
