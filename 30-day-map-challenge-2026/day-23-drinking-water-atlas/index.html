@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#e5f5ed">
+<title>Drinking Water Atlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23047968' d='M16 1C12 7 4 15 4 20a12 12 0 0024 0C28 15 20 7 16 1Z'/%3E%3Cpath fill='none' stroke='%23c0f8dc' stroke-width='2' d='M7 21q5-4 9-1t9-1'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./src/atlas.css">
+</head>
+<body>
+<main id="scene" tabindex="0" aria-label="World drinking water map. Click or tap a country to open its glass of 1,000 people. Click another country to switch. Click the water or press Escape to clear the selection. You can also zoom with the wheel or pinch.">
+  <div id="globe" aria-hidden="true"></div>
+  <div class="glass-overlay" aria-hidden="true">
+  <canvas id="particles" aria-hidden="true"></canvas>
+  <div class="annotations" id="annotations" hidden aria-hidden="true">
+    <div class="annotation safe" id="safe-label"><div class="annotation-value"><i></i><strong>737</strong><span>73.7%</span></div><small>Safely managed</small></div>
+    <div class="annotation other" id="other-label"><div class="annotation-value"><i></i><strong>263</strong><span>26.3%</span></div><small>Below this level</small></div>
+  </div>
+  </div>
+</main>
+<aside class="card" aria-label="Location and drinking water coverage">
+  <div class="picker">
+    <svg class="water-mark" viewBox="0 0 28 32" aria-hidden="true"><path fill="#047c6c" d="M14 1.5C11.4 6.7 2.4 14.4 2.4 20.2a11.6 11.6 0 0 0 23.2 0C25.6 14.4 16.6 6.7 14 1.5Z"/><path d="M4.8 20.6q4.3-3.5 9 .1t9.2-1.4m-17 6q3.2-2.7 7.6-.3t7.1-.6" fill="none" stroke="#bbf5da" stroke-width="1.85" stroke-linecap="round"/></svg>
+    <select id="place" aria-label="Select the world, a country or a territory"><option value="WLD">World</option></select>
+    <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9.5 5.5 5 5.5-5"/></svg>
+  </div>
+  <div class="stats">
+    <div class="headline"><div class="number"><strong id="value">73.7</strong><span>%</span></div><span class="vintage" id="year">2024</span></div>
+    <p class="indicator">of people use safely managed drinking water services.</p>
+    <div class="meter" aria-hidden="true"><i id="meter-fill"></i></div>
+    <div class="base">Per 1,000 people</div>
+    <div class="breakdown"><i></i><span>Safely managed</span><b id="safe">737</b></div>
+    <div class="breakdown other"><i></i><span>Below this level</span><b id="other">263</b></div>
+    <details id="details"><summary><span id="source">WHO / UNICEF · JMP</span><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M10 9v4M10 6.6v.3"/></svg></summary><div class="notes"><p id="note"></p><a href="https://washdata.org/data/api" target="_blank" rel="noopener">WHO / UNICEF data</a><a href="./data/agua.csv" id="download" download="drinking-water-atlas.csv">Download the data (CSV)</a></div></details>
+  </div>
+</aside>
+<div id="error" role="alert" hidden></div>
+<p class="sr-only" aria-live="polite" id="announcement"></p>
+<script src="./src/app.js" type="module"></script>
+</body>
+</html>

@@ -76,14 +76,14 @@ async function stopServer(child) {
   }
 }
 
-async function validateAssets({assetBase, map, name, origin}) {
+async function validateAssets({assetBase, map, name, origin, theme}) {
   const manifest = await requestJson(`${origin}${assetBase}/manifest.json`);
   assert.equal(manifest.version, 3, `${name} manifest version changed unexpectedly.`);
-  const styleUrl = manifest.maps?.[map]?.themes?.light?.styleUrl;
+  const styleUrl = manifest.maps?.[map]?.themes?.[theme]?.styleUrl;
   assert.equal(
     typeof styleUrl,
     'string',
-    `${name} manifest does not expose the light Style URL of ${map}.`,
+    `${name} manifest does not expose the ${theme} Style URL of ${map}.`,
   );
   const styleLocation = new URL(styleUrl, origin);
   assert.equal(styleLocation.origin, origin, `${name} points ${map} at another origin.`);
@@ -100,7 +100,9 @@ async function smokeDemo({
   cwd,
   origin,
   assetBases = ['/tileflow'],
+  validatePage,
   map = 'madrid',
+  theme = 'light',
 }) {
   let output = '';
   const child = spawn(executable, args, {
@@ -119,7 +121,8 @@ async function smokeDemo({
     const html = await requestText(origin);
     assert.match(html, /<html/u, `${name} did not serve an HTML document.`);
 
-    for (const assetBase of assetBases) await validateAssets({assetBase, map, name, origin});
+    if (validatePage) await validatePage({origin, html});
+    for (const assetBase of assetBases) await validateAssets({assetBase, map, name, origin, theme});
     console.log(`Validated ${name} at ${origin}.`);
   } finally {
     await stopServer(child);
@@ -148,9 +151,79 @@ await smokeDemo({
 const sunPort = await reserveFreePort();
 await smokeDemo({
   name: 'Sun on the street',
-  executable: join(repositoryRoot, 'apps/sun-on-the-street/node_modules/.bin/vite'),
+  executable: join(repositoryRoot, '30-day-map-challenge-2026/day-17-sun-on-the-street/node_modules/.bin/vite'),
   arguments: ['preview', '--host', '127.0.0.1', '--port', sunPort.toString(), '--strictPort'],
-  cwd: join(repositoryRoot, 'apps/sun-on-the-street'),
+  cwd: join(repositoryRoot, '30-day-map-challenge-2026/day-17-sun-on-the-street'),
   origin: `http://127.0.0.1:${sunPort}`,
   map: 'sun-streets',
+});
+
+const sniffPort = await reserveFreePort();
+await smokeDemo({
+  name: 'SNIFF!',
+  executable: join(repositoryRoot, '30-day-map-challenge-2026/day-19-sniff/node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', sniffPort.toString(), '--strictPort'],
+  cwd: join(repositoryRoot, '30-day-map-challenge-2026/day-19-sniff'),
+  origin: `http://127.0.0.1:${sniffPort}`,
+  map: 'scent-trail',
+  theme: 'dawn',
+});
+
+const charactersDirectory = join(repositoryRoot, '30-day-map-challenge-2026/day-25-the-world-in-characters');
+const charactersPort = await reserveFreePort();
+await smokeDemo({
+  name: 'The World in Characters',
+  executable: join(charactersDirectory, 'node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', String(charactersPort), '--strictPort'],
+  cwd: charactersDirectory,
+  origin: `http://127.0.0.1:${charactersPort}`,
+  assetBases: [''],
+  map: 'globe',
+  theme: 'paper',
+  async validatePage({origin, html}) {
+    assert.match(html, /viewer\.mjs/u);
+    const manifest = await requestJson(new URL('manifest.json', origin));
+    assert.ok(manifest.maps['world-in-type']);
+    const entry = await requestText(new URL('viewer.mjs', origin));
+    assert.match(entry, /tileflowWorld/u);
+  },
+});
+
+const atlasDirectory = join(repositoryRoot, '30-day-map-challenge-2026/day-23-drinking-water-atlas');
+const atlasPort = await reserveFreePort();
+await smokeDemo({
+  name: 'Drinking Water Atlas',
+  executable: join(atlasDirectory, 'node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', String(atlasPort), '--strictPort'],
+  cwd: atlasDirectory,
+  origin: `http://127.0.0.1:${atlasPort}`,
+  assetBases: [], // This demo compiles the Tileflow style into its JavaScript.
+  async validatePage({origin, html}) {
+    const entry = html.match(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/u)?.[1];
+    assert.ok(entry, 'Atlas HTML must reference its entry module.');
+    const script = await fetch(new URL(entry, origin), {redirect: 'error'});
+    assert.equal(script.status, 200);
+    assert.match(script.headers.get('content-type') ?? '', /javascript/u);
+    await script.body?.cancel();
+
+    const {world, countries} = await requestJson(new URL('data/agua.json', origin));
+    assert.equal(world.code, 'WLD');
+    assert.ok(countries.length > 0);
+    const places = [world, ...countries];
+    assert.equal(new Set(places.map(place => place.code)).size, places.length, 'Duplicate atlas location.');
+    for (const {code, value} of places) {
+      assert.ok(Number.isFinite(value) && value >= 0 && value <= 100, `Invalid coverage for ${code}.`);
+    }
+  },
+});
+
+const typeAtlasPort = await reserveFreePort();
+await smokeDemo({
+  name: 'Type Atlas',
+  executable: join(repositoryRoot, '30-day-map-challenge-2026/day-25-type-atlas/node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', typeAtlasPort.toString(), '--strictPort'],
+  cwd: join(repositoryRoot, '30-day-map-challenge-2026/day-25-type-atlas'),
+  origin: `http://127.0.0.1:${typeAtlasPort}`,
+  map: 'type-atlas',
+  theme: 'paper',
 });

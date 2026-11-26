@@ -1,0 +1,21 @@
+{
+  "name": "@tileflow-demos/drinking-water-atlas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@tileflow/core": "0.1.0-alpha.55",
+    "d3-geo": "3.1.1",
+    "maplibre-gl": "6.19.0",
+    "topojson-client": "3.1.0"
+  },
+  "devDependencies": {
+    "topojson-server": "3.0.1",
+    "topojson-simplify": "3.0.3",
+    "vite": "8.0.16"
+  }
+}

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Visibility Explorer · Tileflow</title>
+  </head>
+  <body>
+    <main id="world" aria-label="Interactive world visibility map"></main>
+    <div class="floating top">
+      <form class="searchbar" id="search" role="search">
+        <button type="submit" class="icon" title="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10" cy="10" r="6.5" />
+            <path d="m15 15 5 5" />
+          </svg>
+        </button>
+        <input
+          id="query"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Peak or coordinates"
+          aria-label="Search for a mountain or enter coordinates"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls="results"
+          aria-expanded="false"
+        />
+      </form>
+      <div class="results" id="results" role="listbox" aria-label="Places" hidden></div>
+      <section id="search-preview" hidden aria-label="Search result">
+        <div>
+          <strong id="search-name"></strong
+          ><button type="button" id="search-dismiss" aria-label="Dismiss search result">×</button>
+        </div>
+        <div class="search-actions">
+          <button type="button" id="search-place">Place observer here</button
+          ><button type="button" id="search-look" hidden>Look here</button>
+        </div>
+      </section>
+    </div>
+    <div class="floating map-buttons" aria-label="Map navigation">
+      <button class="icon" id="plus" title="Zoom in" aria-label="Zoom in">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg></button
+      ><button class="icon" id="minus" title="Zoom out" aria-label="Zoom out">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14" /></svg></button
+      ><button
+        class="icon dimension"
+        id="dimension"
+        title="Switch perspective"
+        aria-label="Switch perspective"
+      >
+        2D</button
+      ><button
+        class="icon"
+        id="orbit"
+        title="Rotate the map 45°"
+        aria-label="Rotate the map 45 degrees"
+      >
+        <svg viewBox="0 0 24 24">
+          <path d="M5 9a7.5 6 0 1 1-.3 5M2.5 7.3 5 10l3-2.1" />
+          <path d="m9 13 3-5 3 5z" />
+        </svg></button
+      ><button class="icon" id="globe" title="Show world map" aria-label="Show world map">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="8.5" />
+          <ellipse cx="12" cy="12" rx="4" ry="8.5" />
+          <path d="M4 10h16m-16 4h16" />
+        </svg></button
+      ><button
+        id="place-person"
+        class="icon"
+        type="button"
+        aria-label="Place observer. Drag the observer onto the map or tap to choose a location."
+        title="Drag the observer onto the map"
+        aria-pressed="false"
+        disabled
+      >
+        <img class="observer-portrait" src="./src/assets/observer-greeting.png" width="150" height="190"
+          alt="" draggable="false" />
+      </button>
+    </div>
+    <div class="floating target-hint" id="placement-status" role="status" hidden></div>
+    <div class="floating hint" id="hint">
+      Drag the observer onto the map or tap the observer button to choose a location.
+    </div>
+
+    <section
+      class="floating card"
+      id="card"
+      aria-label="Visibility from the selected location"
+      hidden
+    >
+      <div class="card-head">
+        <h1 id="place"></h1>
+        <div class="card-tools">
+          <button id="profile-fold" class="profile-close icon" type="button" aria-expanded="true"
+            aria-controls="profile-content" aria-label="Collapse profile" title="Collapse profile" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></svg>
+          </button>
+          <button id="more-toggle" class="icon" type="button" aria-label="More" title="More"
+            aria-controls="observer-actions" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+              <circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <p class="small" id="summary" role="status" aria-live="polite"></p>
+      <button type="button" class="plain" id="retry" hidden>Retry</button>
+      <div class="actions" id="observer-actions" hidden>
+        <button class="subbutton" id="sky-toggle" aria-expanded="false" disabled>
+          <svg viewBox="0 0 24 24"><path d="m2 16 6-9 4 6 3-5 7 8M2 19h20" /></svg>360° horizon</button
+        ><button class="subbutton" id="closeup" title="Center the camera on the observer">
+          <svg viewBox="0 0 24 24">
+            <circle cx="10" cy="10" r="6" />
+            <path d="m15 15 5 5M10 7.5v5M7.5 10h5" /></svg
+          ><span>Close-up</span></button
+        ><button class="subbutton" id="settings-toggle" aria-controls="settings" aria-expanded="false">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 7h5m4 0h9M3 17h10m4 0h4" />
+            <circle cx="10" cy="7" r="2" />
+            <circle cx="15" cy="17" r="2" /></svg
+          >Settings</button
+        ><button type="button" class="subbutton" id="close">Remove observer</button>
+      </div>
+      <div class="settings" id="settings" hidden>
+        <p class="small" id="location"></p>
+        <div id="observer-stats"></div>
+        <div id="guide" hidden>
+          <div class="patch-key" aria-label="Map legend">
+            <span><i></i>Visible</span><span><i class="blocked"></i>Hidden</span
+            ><span><i class="gaze"></i>View direction</span
+            ><span id="unknown-key" hidden><i class="missing"></i>No data</span>
+          </div>
+          <div id="height-key" hidden></div>
+          <p id="tip" class="card-tip"></p>
+        </div>
+        <div class="settings-row">
+          <label for="eye">Eye height above ground</label
+          ><span><input type="number" id="eye" min="0" value="1.7" step="any" /> m</span>
+        </div>
+        <div class="height-slider">
+          <input
+            id="height-slider"
+            type="range"
+            min="0"
+            max="200"
+            step="0.1"
+            value="1.7"
+            aria-label="Adjust eye height in meters"
+          />
+        </div>
+        <div class="settings-row">
+          <label for="target-height">Target height above ground</label
+          ><span><input id="target-height" type="number" min="0" value="0" step="any" /> m</span>
+        </div>
+        <div class="settings-row">
+          <label for="radius">Analysis radius</label
+          ><select id="radius">
+            <option value="1000">1 km</option>
+            <option value="2000">2 km</option>
+            <option value="5000">5 km</option>
+            <option value="10000" selected>10 km</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label for="representation">Map overlay</label
+          ><select id="representation">
+            <option value="visibility">Visibility</option>
+            <option value="height">Required height</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label for="opacity">Layer opacity</label
+          ><input type="range" min="0" max="1" value="0.67" step="0.01" id="opacity" />
+        </div>
+        <div class="settings-row">
+          <label for="show-hidden">Shade hidden terrain</label
+          ><input type="checkbox" id="show-hidden" checked />
+        </div>
+        <details id="geometry-settings">
+          <summary>Analysis geometry</summary>
+          <div class="settings-row">
+            <label for="sector-width">Sector width</label
+            ><select id="sector-width">
+              <option value="360">360°</option>
+              <option value="180">180°</option>
+              <option value="90">90°</option>
+              <option value="45">45°</option>
+            </select>
+          </div>
+          <div class="settings-row" id="sector-row" hidden>
+            <label for="sector-bearing">Sector bearing</label
+            ><span
+              ><input id="sector-bearing" type="number" min="0" max="359" step="1" value="0" />
+              °</span
+            >
+          </div>
+          <div class="settings-row">
+            <label for="curvature">Curvature and refraction</label
+            ><select id="curvature">
+              <option value="1">No refraction</option>
+              <option value="0.8571428571428571">Standard refraction (1/7)</option>
+              <option value="0">Flat Earth</option>
+            </select>
+          </div>
+        </details>
+        <details id="analysis-details">
+          <summary>Analysis details</summary>
+          <p class="small" id="detail"></p>
+          <button type="button" class="small-link" id="export-analysis">
+            Download scenario and grid
+          </button>
+        </details>
+        <p class="card-tip">Right-drag or use two fingers to rotate the map.</p>
+      </div>
+      <div class="sky" id="sky" hidden>
+        <canvas
+          id="skyplot"
+          tabindex="0"
+          role="slider"
+          aria-label="Explore horizon bearing"
+          aria-valuemin="0"
+          aria-valuemax="359"
+          aria-valuenow="0"
+        ></canvas>
+        <p class="small" id="sky-info">Calculating horizon…</p>
+        <p class="small" id="sky-guide"></p>
+      </div>
+    </section>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

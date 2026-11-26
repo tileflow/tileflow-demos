@@ -1,0 +1,617 @@
+{
+  "version": 8,
+  "name": "The world in type — geographic glyphs",
+  "projection": {
+    "type": "mercator"
+  },
+  "sources": {
+    "glyphs": {
+      "type": "geojson",
+      "data": "./glyphs.geojson"
+    }
+  },
+  "layers": [
+    {
+      "id": "paper",
+      "type": "background",
+      "paint": {
+        "background-color": "#faf8f1"
+      }
+    },
+    {
+      "id": "type-0",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-0"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#294640",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-1",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-1"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#427a86",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-2",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-2"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#9a543b",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-3",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-3"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#33747d",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-4",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-4"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#33747d",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-5",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-5"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#82543b",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-6",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-6"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "Instrument Serif Italic"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#427a86",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-7",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-7"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#33747d",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-8",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-8"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "Instrument Serif Italic"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#326d76",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-9",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-9"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "Instrument Serif"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#243e37",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    },
+    {
+      "id": "type-10",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "b"
+        ],
+        "type-10"
+      ],
+      "layout": {
+        "symbol-placement": "point",
+        "text-field": [
+          "get",
+          "t"
+        ],
+        "text-font": [
+          "JetBrains Mono"
+        ],
+        "text-size": [
+          "get",
+          "s"
+        ],
+        "text-rotate": [
+          "get",
+          "r"
+        ],
+        "text-rotation-alignment": "viewport",
+        "text-anchor": "center",
+        "text-padding": 0,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#243e37",
+        "text-opacity": [
+          "get",
+          "a"
+        ]
+      },
+      "source": "glyphs",
+      "metadata": {
+        "tileflow:overlay": "ink"
+      }
+    }
+  ],
+  "metadata": {
+    "tileflow:map": "the-world-in-type-frame",
+    "tileflow:mapVersion": 1,
+    "tileflow:compiler": "tileflow-semantic",
+    "tileflow:compilerVersion": 1,
+    "tileflow:theme": "paper",
+    "tileflow:colorScheme": "light",
+    "tileflow:route": {
+      "version": 1,
+      "line": "#2563eb",
+      "casing": "#1e3a8a",
+      "core": "#dbeafe",
+      "glow": "#2563eb",
+      "alternative": "#94a3b8",
+      "glowOpacity": 0.16,
+      "coreOpacity": 0
+    },
+    "tileflow:overlays": {
+      "ink": {
+        "layers": [
+          "type-0",
+          "type-1",
+          "type-2",
+          "type-3",
+          "type-4",
+          "type-5",
+          "type-6",
+          "type-7",
+          "type-8",
+          "type-9",
+          "type-10"
+        ],
+        "placement": "above-labels",
+        "source": "glyphs"
+      }
+    },
+    "tileflow:sourceRequirements": {
+      "schemaVersion": 1,
+      "sources": {}
+    },
+    "tileflow:overlay-placement-manifest": {
+      "anchors": {
+        "above-water": null,
+        "below-roads": null,
+        "above-roads": null,
+        "above-buildings": null,
+        "below-labels": null,
+        "above-labels": null
+      },
+      "schemaVersion": 1
+    },
+    "tileflow:modules": [],
+    "world-in-type:frame": {
+      "sourceHtmlSha256": "395bc57f61620ae4c0540abd286be5c71318c32b2f5abbeb6a37f3d27433d2b4",
+      "sourceFrame": {
+        "width": 1600,
+        "height": 900,
+        "seconds": 0,
+        "projection": "Equal Earth",
+        "dpr": 1
+      },
+      "styleProjection": "Mercator",
+      "positions": "WGS84 [longitude, latitude]",
+      "coordinates": 15161,
+      "groups": 6719,
+      "layers": 11,
+      "roleCounts": {
+        "shore": 7440,
+        "river": 1022,
+        "border": 1296,
+        "water": 4697,
+        "road": 231,
+        "ocean": 85,
+        "label": 390
+      },
+      "outsideSourceProjection": 0,
+      "aboveMercatorLimit": 16
+    }
+  },
+  "font-faces": {
+    "Instrument Serif": "./fonts/instrument-serif-latin.woff2",
+    "Instrument Serif Italic": "./fonts/instrument-serif-italic-latin.woff2",
+    "JetBrains Mono": "./fonts/jetbrains-mono.woff2"
+  },
+  "center": [
+    0,
+    0
+  ],
+  "zoom": 0.79
+}

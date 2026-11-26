@@ -1,0 +1,21 @@
+/* Keep the existing DOM and worker result so cancel restores the exact card,
+   locked target and open details. The pointer-capturing marker stays connected. */
+body:is([data-placement='armed'], [data-placement='dragging'])
+  :is(#card, .discovery-sheet, #hint, #search-preview, #results, .tf-probe-popup) {
+  visibility: hidden;
+  pointer-events: none;
+}
+#world.is-placing .maplibregl-marker {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+body[data-placement='dragging'] #place-person .observer-portrait {
+  visibility: hidden;
+}
+body[data-placement='dragging'] #placement-status {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+}

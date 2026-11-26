@@ -1,0 +1,3 @@
+The Tileflow wordmark in tileflow-wordmark.svg is a trademark of Tileflow. It is included only to
+identify Tileflow in this demo and is not covered by this repository's license. See the Tileflow
+trademark rules at https://tileflow.dev/terms before using it elsewhere.

@@ -1,0 +1,19 @@
+:root{--paper:#f5efdf;color-scheme:light;background:var(--paper);color:#352f29}
+*{box-sizing:border-box}
+html,body,#map{width:100%;height:100%;margin:0}
+body{overflow:hidden}
+#map{position:relative;isolation:isolate;background:var(--paper)}
+.printed-lines,.map-ink{position:absolute;inset:0;pointer-events:none;transform-origin:0 0}
+.printed-lines.navigating .letter-lane{display:none}
+.map-ink>svg{will-change:transform}
+.letter-lane{position:absolute;overflow:hidden;transform-origin:0 0;color:#433d35;pointer-events:none}
+.letter-lane span{display:block;width:max-content;white-space:pre;background-image:repeating-linear-gradient(to right,var(--paper) 0 var(--name-end),transparent var(--name-end) var(--next-name),var(--paper) var(--next-name) var(--period));background-size:100% var(--name-height);background-repeat:no-repeat;background-position:0 var(--name-top)}
+.river-lane{z-index:1;color:#206970}.river-lane span{text-shadow:none}
+.featured-lane{z-index:2;color:#a33720}
+.letter-lane.is-focused{z-index:3;color:#bd351e}.river-lane.is-focused{color:#095e77}
+.country-print{position:absolute;overflow:hidden}
+.terrain-ink{font:11px Georgia,serif}.world-waves{position:absolute;overflow:hidden;fill:#579091;font:italic 12px Georgia,serif}
+.wave-ink{font:14px "Courier New",monospace}
+#message{position:absolute;inset:auto 12px 32px;background:#f5efdf;padding:8px;font:14px monospace}
+[hidden]{display:none!important}
+#map .maplibregl-ctrl-attrib{font-size:10px;background:#f5efdfd9;color:#665f52}

@@ -1,0 +1,105 @@
+{
+  "source": "Wikidata (CC0), geographic positions P625; population P1082 used only to prioritize type.",
+  "places": [
+    {
+      "name": "Cáceres",
+      "item": "Q31915927",
+      "point": [
+        -6.37121,
+        39.47317
+      ],
+      "population": 95074,
+      "year": 2024
+    },
+    {
+      "name": "Plasencia",
+      "item": "Q23993886",
+      "point": [
+        -6.09268,
+        40.02941
+      ],
+      "population": 38697,
+      "year": 2024
+    },
+    {
+      "name": "Zamora",
+      "item": "Q107658630",
+      "point": [
+        -5.75495,
+        41.49914
+      ],
+      "population": 59150,
+      "year": 2024
+    },
+    {
+      "name": "Ciudad Real",
+      "item": "Q56241563",
+      "point": [
+        -3.93132,
+        38.98652
+      ],
+      "population": 74237,
+      "year": 2024
+    },
+    {
+      "name": "Segovia",
+      "item": "Q107173751",
+      "point": [
+        -4.12524,
+        40.94987
+      ],
+      "population": 48514,
+      "year": 2024
+    },
+    {
+      "name": "Cuenca",
+      "item": "Q24011583",
+      "point": [
+        -2.13152,
+        40.07654
+      ],
+      "population": 52442,
+      "year": 2024
+    },
+    {
+      "name": "Soria",
+      "item": "Q56121478",
+      "point": [
+        -2.46625,
+        41.76328
+      ],
+      "population": 39788,
+      "year": 2024
+    },
+    {
+      "name": "Ávila",
+      "item": "Q55695431",
+      "point": [
+        -4.69772,
+        40.65587
+      ],
+      "population": 57138,
+      "year": 2024
+    },
+    {
+      "name": "Huesca",
+      "item": "Q97269246",
+      "point": [
+        -0.4089,
+        42.1401
+      ],
+      "population": 55454,
+      "year": 2025
+    },
+    {
+      "name": "Talavera de la Reina",
+      "item": "Q23979439",
+      "point": [
+        -4.8337,
+        39.96017
+      ],
+      "population": 80852,
+      "year": 2024
+    }
+  ]
+}

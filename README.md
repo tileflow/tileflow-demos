@@ -6,8 +6,19 @@ Public demos for Tileflow packages.
 
 - `apps/vite-basic`: React + Vite map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/vite`.
 - `apps/next-basic`: React + Next.js map demo using `@tileflow/core`, `@tileflow/react`, and `@tileflow/next`.
-- `apps/sun-on-the-street`: sun and shade on every sidewalk, a MapLibre custom layer over a Tileflow
-  map shown with `@tileflow/dom`. Published at <https://maps.tileflow.dev/sun-on-the-street/>.
+- [Visibility Explorer](apps/visibility-explorer) shows which terrain is visible from an observer on the worldwide Outdoors 3D map. [Explore the map](https://maps.tileflow.dev/visibility-explorer/).
+
+## 30 Day Map Challenge 2026
+
+- Day 17 · [Sun on the street](30-day-map-challenge-2026/day-17-sun-on-the-street) shows when each sidewalk
+  gets sunlight. [Explore the map](https://maps.tileflow.dev/sun-on-the-street/).
+- Day 19 · [SNIFF!](30-day-map-challenge-2026/day-19-sniff) challenges players to follow scents
+  and find food on real streets. [Play SNIFF!](https://maps.tileflow.dev/sniff/).
+- Day 20 · [Paris on Film](30-day-map-challenge-2026/day-20-paris-on-film) colours the streets of Paris by outdoor film and television shoots. [Explore the map](https://maps.tileflow.dev/paris-on-film/).
+- Day 23 · [Drinking Water Atlas](30-day-map-challenge-2026/day-23-drinking-water-atlas) shows drinking water access as 1,000 people in a glass. [Explore the map](https://maps.tileflow.dev/drinking-water-atlas/).
+- Day 24 · [Helsinki Live](30-day-map-challenge-2026/day-24-helsinki-live) follows real HSL buses in 3D with stop-by-stop arrival predictions. [Explore the map](https://maps.tileflow.dev/helsinki-live/).
+- Day 25 · [The World in Characters](30-day-map-challenge-2026/day-25-the-world-in-characters) draws a spinning globe, coastlines and city streets in animated type for *Is This a Map?* [Explore the map](https://maps.tileflow.dev/the-world-in-characters/).
+- Day 25 · [Type Atlas](30-day-map-challenge-2026/day-25-type-atlas) draws the world in letters and punctuation for **Is this a map?** [Explore the map](https://maps.tileflow.dev/type-atlas/).
 
 ## Run
 
@@ -36,3 +47,8 @@ manual dependency update is part of this repository's normal path.
 `main` represents the latest verified source for every demo. Merging deploys nothing. Maps listed in
 `sites/maps` are published to `maps.tileflow.dev` only when the `Deploy maps` workflow is run by hand
 from `main` (see `sites/maps/README.md`).
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE). Redistributions and derived works must keep
+[NOTICE](NOTICE). "Tileflow" and its logo are trademarks of Tileflow.
