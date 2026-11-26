@@ -1,11 +1,11 @@
-// Bake the local font-faces glyphs with the TinySDF options and metrics of MapLibre 6.19.
+// Bake the local font-faces glyphs with the TinySDF options and metrics of the installed MapLibre.
 import {createRequire} from 'node:module';
 import {readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {launch} from '../qa/browser.mjs';
 const output=resolve('public/detail');
 const require=createRequire(import.meta.url);
-const sdk=createRequire(require.resolve('./sdk/node_modules/maplibre-gl/dist/maplibre-gl.mjs'));
+const sdk=createRequire(require.resolve('maplibre-gl'));
 const tiny=await readFile(sdk.resolve('@mapbox/tiny-sdf'));
 const font=await readFile(resolve(output,'../fonts/jetbrains-mono.woff2'));
 const browser=await launch();

@@ -23,17 +23,14 @@ For animation sources, install `npm install --prefix scripts/qa`, then run `node
 
 ## Tileflow and the street worker
 
-The browser SDK is built from Tileflow SDK f6b85223e7859d80f27b13ae97ca4990406aa5b6. MapLibre GL JS 6.19.0 and esbuild 0.28.2 are pinned in the build tool's npm lockfile. Use Node 24+ and pnpm 11.13.1. In a checkout at that commit, run `pnpm install --frozen-lockfile` and `pnpm --filter @tileflow/dom... run build`. Then from this challenge directory, with `TILEFLOW_SDK_CHECKOUT` set to that checkout's absolute path:
+Before each Vite dev server or build, `scripts/build-runtime.mjs` runs. It bundles the installed `@tileflow/dom` and `@tileflow/core` packages into `public/runtime/` and the street worker into `public/detail/worker.mjs`, and copies MapLibre GL JS beside them. These files are generated, not committed. Use Node 24+ and pnpm 11.13.1. To check the street worker:
 
 ```sh
-npm ci --prefix scripts/visor-dev/sdk
-node scripts/visor-dev/sdk/build.mjs public/runtime "$TILEFLOW_SDK_CHECKOUT"
-node scripts/visor-dev/detail-data/build.mjs "$TILEFLOW_SDK_CHECKOUT"
 node scripts/visor-dev/detail-data/check-geometry.mjs
 node scripts/visor-dev/detail-data/check-worker.mjs
 ```
 
-The last two checks run offline. They cover antimeridian geometry, clipping, polygon holes, ocean inheritance, caching, cancellation and concurrent tile reads. The character atlas is generated from the bundled JetBrains Mono font. With the SDK tool dependencies, Chrome and the QA dependencies installed, run `node scripts/visor-dev/build-glyph-atlas.mjs` to rebuild it.
+These checks run offline. They cover antimeridian geometry, clipping, polygon holes, ocean inheritance, caching, cancellation and concurrent tile reads. The character atlas is generated from the bundled JetBrains Mono font. With the package dependencies, Chrome and the QA dependencies installed, run `node scripts/visor-dev/build-glyph-atlas.mjs` to rebuild it.
 
 ## Geographic inputs
 
@@ -46,4 +43,4 @@ The last two checks run offline. They cover antimeridian geometry, clipping, pol
 | Madrid | `scripts/zoom-revision/districts.py` uses the supplied Ayuntamiento de Madrid input dated 31 August 2026. The data attribution and municipal terms are in `public/detail/madrid-districts.json`. The separate ODbL road and park database and its copying terms are in `public/detail/madrid-navigation/`. To regenerate those cells, use the Geofabrik URL and SHA-256 in its index, save the archive as `scripts/zoom-revision/madrid-open-gpkg.zip`, extract its GeoPackage as `scripts/zoom-revision/madrid.gpkg` and run `scripts/zoom-revision/madrid-navigation.py`. |
 | Worldwide streets | The browser reads [Tileflow World and World Detail](https://api.tileflow.dev/tiles/world,world-detail/tiles.json) at runtime. Tileflow and OpenStreetMap credits are displayed with the data. |
 
-SDK and renderer notices are in `public/runtime/`. The two typeface licenses are in `public/fonts/`. D3 and InternMap notices accompany the authoring libraries in `scripts/mapamundi/vendor/`.
+SDK and renderer notices are generated in `public/runtime/`. The two typeface licenses are in `public/fonts/`. D3 and InternMap notices accompany the authoring libraries in `scripts/mapamundi/vendor/`.
