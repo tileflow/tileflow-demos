@@ -216,3 +216,14 @@ await smokeDemo({
     }
   },
 });
+
+const typeAtlasPort = await reserveFreePort();
+await smokeDemo({
+  name: 'Type Atlas',
+  executable: join(repositoryRoot, '30-day-map-challenge-2026/day-25-type-atlas/node_modules/.bin/vite'),
+  arguments: ['preview', '--host', '127.0.0.1', '--port', typeAtlasPort.toString(), '--strictPort'],
+  cwd: join(repositoryRoot, '30-day-map-challenge-2026/day-25-type-atlas'),
+  origin: `http://127.0.0.1:${typeAtlasPort}`,
+  map: 'type-atlas',
+  theme: 'paper',
+});
