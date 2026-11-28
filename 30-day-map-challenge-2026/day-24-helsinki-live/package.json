@@ -11,17 +11,17 @@
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
-    "@tileflow/core": "0.1.0-alpha.55",
-    "@tileflow/dom": "0.1.0-alpha.5",
-    "@tileflow/maps": "0.1.0-alpha.25",
+    "@tileflow/core": "0.1.0-alpha.60",
+    "@tileflow/dom": "0.1.0-alpha.8",
+    "@tileflow/maps": "0.1.0-alpha.30",
     "gtfs-realtime-bindings": "3.0.0",
     "maplibre-gl": "6.16.0",
     "mqtt": "5.16.1",
     "three": "0.180.0"
   },
   "devDependencies": {
-    "@tileflow/vite": "0.1.0-alpha.28",
-    "tileflow": "0.1.0-alpha.28",
+    "@tileflow/vite": "0.1.0-alpha.31",
+    "tileflow": "0.1.0-alpha.33",
     "vite": "8.0.16"
   }
 }

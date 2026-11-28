@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@mapbox/vector-tile": "2.0.4",
-    "@tileflow/core": "0.1.0-alpha.55",
+    "@tileflow/core": "0.1.0-alpha.60",
     "maplibre-gl": "6.16.0",
     "pbf": "4.0.1"
   },
