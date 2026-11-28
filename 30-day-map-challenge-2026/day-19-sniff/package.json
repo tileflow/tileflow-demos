@@ -12,18 +12,18 @@
   },
   "dependencies": {
     "@mapbox/vector-tile": "3.0.0",
-    "@tileflow/core": "0.1.0-alpha.55",
-    "@tileflow/dom": "0.1.0-alpha.5",
-    "@tileflow/maps": "0.1.0-alpha.25",
+    "@tileflow/core": "0.1.0-alpha.60",
+    "@tileflow/dom": "0.1.0-alpha.8",
+    "@tileflow/maps": "0.1.0-alpha.30",
     "maplibre-gl": "6.16.0",
     "pbf": "5.1.2",
     "three": "0.180.0"
   },
   "devDependencies": {
-    "@tileflow/vite": "0.1.0-alpha.28",
+    "@tileflow/vite": "0.1.0-alpha.31",
     "@types/geojson": "7946.0.16",
     "@types/three": "0.180.0",
-    "tileflow": "0.1.0-alpha.28",
+    "tileflow": "0.1.0-alpha.33",
     "typescript": "5.9.3",
     "vite": "8.0.16"
   },

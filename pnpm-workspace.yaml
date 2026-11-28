@@ -8,19 +8,19 @@ allowBuilds:
 # sdk-sync:start
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - '@tileflow/capture@0.1.0-alpha.42'
-  - '@tileflow/coordinates@0.1.0-alpha.4'
-  - '@tileflow/coordinates-runtime@0.1.0-alpha.7'
-  - '@tileflow/core@0.1.0-alpha.55'
-  - '@tileflow/dev@0.1.0-alpha.49'
-  - '@tileflow/dom@0.1.0-alpha.5'
-  - '@tileflow/interactions@0.1.0-alpha.12'
-  - '@tileflow/maps@0.1.0-alpha.25'
-  - '@tileflow/next@0.1.0-alpha.27'
-  - '@tileflow/react@0.1.0-alpha.43'
-  - '@tileflow/static@0.1.0-alpha.33'
-  - '@tileflow/vite@0.1.0-alpha.28'
-  - 'tileflow@0.1.0-alpha.28'
+  - '@tileflow/capture@0.1.0-alpha.46'
+  - '@tileflow/coordinates@0.1.0-alpha.5'
+  - '@tileflow/coordinates-runtime@0.1.0-alpha.8'
+  - '@tileflow/core@0.1.0-alpha.60'
+  - '@tileflow/dev@0.1.0-alpha.52'
+  - '@tileflow/dom@0.1.0-alpha.8'
+  - '@tileflow/interactions@0.1.0-alpha.15'
+  - '@tileflow/maps@0.1.0-alpha.30'
+  - '@tileflow/next@0.1.0-alpha.30'
+  - '@tileflow/react@0.1.0-alpha.46'
+  - '@tileflow/static@0.1.0-alpha.34'
+  - '@tileflow/vite@0.1.0-alpha.31'
+  - 'tileflow@0.1.0-alpha.33'
 # sdk-sync:end
 
 # Align the renderer pinned by the published Tileflow tooling.
